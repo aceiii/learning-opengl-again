@@ -14,6 +14,8 @@ set(SOURCE_FILES
     src/application.cpp
     src/imgui_impl.hpp
     src/imgui_impl.cpp
+    src/applog.hpp
+    src/applog.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})

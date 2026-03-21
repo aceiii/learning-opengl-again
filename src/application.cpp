@@ -220,10 +220,37 @@ void Application::Render() {
 }
 
 void Application::RenderInterface() {
+  static bool show_logs = true;
+  static bool show_demo_window = false;
+  static int window_width, window_height;
+
+  glfwGetWindowSize(g_window, &window_width, &window_height);
+
   ImGuiImpl::NewFrame();
 
-  static bool show_demo_window = true;
-  ImGui::ShowDemoWindow(&show_demo_window);
+  ImGui::BeginMainMenuBar();
+  {
+    if (ImGui::BeginMenu("View")) {
+      ImGui::MenuItem("Demo Window", nullptr, &show_demo_window);
+      ImGui::MenuItem("Logs", nullptr, &show_logs);
+      ImGui::EndMenu();
+    }
+  }
+  ImGui::EndMainMenuBar();
+
+  if (show_demo_window) {
+    ImGui::ShowDemoWindow(&show_demo_window);
+  }
+
+  if (show_logs) {
+    constexpr auto padding = 5.0f;
+    ImGui::SetNextWindowPos(ImVec2(padding, window_height - padding), ImGuiCond_Always, ImVec2(0.0f, 1.0f));
+    ImGui::SetNextWindowSize(ImVec2(window_width - padding - padding, 180.0f - padding - padding), ImGuiCond_Always);
+    if (ImGui::Begin("Logs", &show_logs, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove)) {
+      app_log_.Draw();
+      ImGui::End();
+    }
+  }
 
   ImGui::Render();
 }

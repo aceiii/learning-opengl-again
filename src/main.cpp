@@ -144,6 +144,10 @@ auto main() -> int {
     glfwPollEvents();
   }
 
+  glDeleteVertexArrays(1, &vao);
+  glDeleteBuffers(1, &vbo);
+  glDeleteProgram(shader_program);
+
   glfwTerminate();
 
   return 0;

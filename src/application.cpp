@@ -2,12 +2,10 @@
 #include <print>
 #include <string>
 #include <string_view>
-#include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
 #include <quill/SimpleSetup.h>
 #include <quill/LogFunctions.h>
 #include "application.hpp"
+#include "imgui_impl.hpp"
 
 namespace {
   quill::Logger* logger = quill::simple_logger();
@@ -128,8 +126,6 @@ std::expected<void, std::string> Application::Init() {
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-  float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
-
   g_window = glfwCreateWindow(800, 600, "Learning OpenGL AGAIN!", nullptr, nullptr);
   if (g_window == nullptr) {
     return std::unexpected{"Failed to create GLFW Window"};
@@ -144,21 +140,7 @@ std::expected<void, std::string> Application::Init() {
   glfwSetFramebufferSizeCallback(g_window, FrameBufferSizeCallback);
   glfwSetMouseButtonCallback(g_window, MouseButtonCallback);
 
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
-
-  ImGuiIO& io = ImGui::GetIO();
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-
-  ImGui::StyleColorsClassic();
-
-  ImGuiStyle& style = ImGui::GetStyle();
-  style.ScaleAllSizes(main_scale);
-  style.FontScaleDpi = main_scale;
-
-  ImGui_ImplGlfw_InitForOpenGL(g_window, true);
-  ImGui_ImplOpenGL3_Init("#version 330 core");
+  ImGuiImpl::Init(g_window);
 
   glViewport(0, 0, 800, 600);
 
@@ -194,7 +176,7 @@ void Application::Run() {
     Render();
     RenderInterface();
 
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ImGuiImpl::RenderDrawData();
     glfwSwapBuffers(g_window);
     glfwPollEvents();
   }
@@ -236,9 +218,7 @@ void Application::Render() {
 }
 
   void Application::RenderInterface() {
-    ImGui_ImplGlfw_NewFrame();
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui::NewFrame();
+    ImGuiImpl::NewFrame();
 
     static bool show_demo_window = true;
     ImGui::ShowDemoWindow(&show_demo_window);

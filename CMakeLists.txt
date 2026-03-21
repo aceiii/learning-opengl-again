@@ -12,6 +12,8 @@ set(SOURCE_FILES
     src/main.cpp
     src/application.hpp
     src/application.cpp
+    src/imgui_impl.hpp
+    src/imgui_impl.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})

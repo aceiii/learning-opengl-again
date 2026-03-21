@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(cmake/glad.cmake)
+include(cmake/imgui.cmake)
 
 set(SOURCE_FILES
     src/main.cpp
@@ -19,5 +20,5 @@ add_subdirectory(external/glfw)
 add_subdirectory(external/glm)
 add_subdirectory(external/quill)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw glm::glm glad quill::quill)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw glm::glm glad quill::quill imgui::imgui)
 

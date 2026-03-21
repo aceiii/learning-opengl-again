@@ -2,6 +2,9 @@
 #include <print>
 #include <string>
 #include <string_view>
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
 #include <quill/SimpleSetup.h>
 #include <quill/LogFunctions.h>
 #include "application.hpp"
@@ -125,6 +128,8 @@ std::expected<void, std::string> Application::Init() {
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
+  float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
+
   g_window = glfwCreateWindow(800, 600, "Learning OpenGL AGAIN!", nullptr, nullptr);
   if (g_window == nullptr) {
     return std::unexpected{"Failed to create GLFW Window"};
@@ -136,10 +141,26 @@ std::expected<void, std::string> Application::Init() {
     return std::unexpected{"Failed to initialize GLAD"};
   }
 
-  glViewport(0, 0, 800, 600);
-
   glfwSetFramebufferSizeCallback(g_window, FrameBufferSizeCallback);
   glfwSetMouseButtonCallback(g_window, MouseButtonCallback);
+
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+
+  ImGuiIO& io = ImGui::GetIO();
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+  ImGui::StyleColorsClassic();
+
+  ImGuiStyle& style = ImGui::GetStyle();
+  style.ScaleAllSizes(main_scale);
+  style.FontScaleDpi = main_scale;
+
+  ImGui_ImplGlfw_InitForOpenGL(g_window, true);
+  ImGui_ImplOpenGL3_Init("#version 330 core");
+
+  glViewport(0, 0, 800, 600);
 
   g_shader_programs[0] = CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource);
   g_shader_programs[1] = CreateShaderProgram(kVertexShaderSource2, kFragmentShaderSource2);
@@ -171,6 +192,9 @@ void Application::Run() {
     ProcessInput(g_window);
     Update();
     Render();
+    RenderInterface();
+
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(g_window);
     glfwPollEvents();
   }
@@ -211,11 +235,27 @@ void Application::Render() {
   // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
+  void Application::RenderInterface() {
+    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui::NewFrame();
+
+    static bool show_demo_window = true;
+    ImGui::ShowDemoWindow(&show_demo_window);
+
+    ImGui::Render();
+  }
+
 void Application::FrameBufferSizeCallback(GLFWwindow* window, int width, int height) {
   glViewport(0, 0, width, height);
 }
 
 void Application::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+  ImGuiIO& io = ImGui::GetIO();
+  if (io.WantCaptureMouse) {
+    return;
+  }
+
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
     static double mouse_x, mouse_y;
     static int window_width, window_height;

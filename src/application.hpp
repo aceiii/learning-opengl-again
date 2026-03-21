@@ -17,6 +17,7 @@ private:
   void Render();
   void RenderInterface();
 
+  static void ErrorCallback(int error_code, const char* description);
   static void FrameBufferSizeCallback(GLFWwindow* window, int width, int height);
   static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
   static void ProcessInput(GLFWwindow* window);

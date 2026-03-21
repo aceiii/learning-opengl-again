@@ -74,7 +74,7 @@ static void CheckShaderCompilation(std::string_view type, unsigned int shader_id
   glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
   if (!success) {
     glGetShaderInfoLog(shader_id, buffer.size() - 1, nullptr, buffer.data());
-    quill::warning(logger, "ERROR: Shader compilation failed [{}]\n{}", type, buffer.data());
+    quill::warning(logger, "[SHADER] Shader compilation failed [{}]\n{}", type, buffer.data());
   }
 }
 
@@ -95,13 +95,13 @@ static unsigned int CreateShaderProgram(const std::string& vertex_shader_source,
   unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertex_shader, 1, &vs_source, nullptr);
   glCompileShader(vertex_shader);
-  CheckShaderCompilation("VERTEX", vertex_shader);
+  CheckShaderCompilation("vertex", vertex_shader);
 
   auto* fs_source = fragment_shader_source.c_str();
   unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
   glShaderSource(fragment_shader, 1, &fs_source, nullptr);
   glCompileShader(fragment_shader);
-  CheckShaderCompilation("FRAGMENT", fragment_shader);
+  CheckShaderCompilation("fragment", fragment_shader);
 
   unsigned int program_id = glCreateProgram();
   glAttachShader(program_id, vertex_shader);
@@ -116,7 +116,9 @@ static unsigned int CreateShaderProgram(const std::string& vertex_shader_source,
 }
 
 std::expected<void, std::string> Application::Init() {
-  quill::info(logger, "Initializing application");
+  quill::info(logger, "[APPLICATION] Initializing application");
+
+  glfwSetErrorCallback(ErrorCallback);
 
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -183,7 +185,7 @@ void Application::Run() {
 }
 
 void Application::Cleanup() {
-  quill::info(logger, "Cleaning up application");
+  quill::info(logger, "[APPLICATION] Cleaning up application");
 
   glDeleteVertexArrays(g_vaos.size(), g_vaos.data());
   g_vaos.fill(0);
@@ -217,14 +219,18 @@ void Application::Render() {
   // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
-  void Application::RenderInterface() {
-    ImGuiImpl::NewFrame();
+void Application::RenderInterface() {
+  ImGuiImpl::NewFrame();
 
-    static bool show_demo_window = true;
-    ImGui::ShowDemoWindow(&show_demo_window);
+  static bool show_demo_window = true;
+  ImGui::ShowDemoWindow(&show_demo_window);
 
-    ImGui::Render();
-  }
+  ImGui::Render();
+}
+
+void Application::ErrorCallback(int error_code, const char* description) {
+  quill::error(logger, "[GLFW] code={}, description={}", error_code, description);
+}
 
 void Application::FrameBufferSizeCallback(GLFWwindow* window, int width, int height) {
   glViewport(0, 0, width, height);
@@ -245,7 +251,7 @@ void Application::MouseButtonCallback(GLFWwindow* window, int button, int action
 
     double norm_x = (mouse_x / window_width * 2.0) - 1.0;
     double norm_y = -((mouse_y / window_height * 2.0) - 1.0);
-    quill::info(logger, "Mouse click: mouse(x={:.0f}, y={:.0f}), window(w={}, h={}), normalize=(x={:.2f}, y={:.2f})", mouse_x, mouse_y, window_width, window_height, norm_x, norm_y);
+    quill::info(logger, "[APPLICATION] Mouse press: pos=({:.0f}, {:.0f}), ndc=({:.2f}, {:.2f})", mouse_x, mouse_y, norm_x, norm_y);
   }
 }
 

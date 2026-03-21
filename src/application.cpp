@@ -91,6 +91,7 @@ std::expected<void, std::string> Application::Init() {
   glViewport(0, 0, 800, 600);
 
   glfwSetFramebufferSizeCallback(g_window, FrameBufferSizeCallback);
+  glfwSetMouseButtonCallback(g_window, MouseButtonCallback);
 
   unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
   auto* vs_source = kVertexShaderSource.c_str();
@@ -162,6 +163,20 @@ void Application::Cleanup() {
 
 void Application::FrameBufferSizeCallback(GLFWwindow* window, int width, int height) {
   glViewport(0, 0, width, height);
+}
+
+void Application::MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+    static double mouse_x, mouse_y;
+    static int window_width, window_height;
+
+    glfwGetCursorPos(window, &mouse_x, &mouse_y);
+    glfwGetWindowSize(window, &window_width, &window_height);
+
+    double norm_x = (mouse_x / window_width * 2.0) - 1.0;
+    double norm_y = -((mouse_y / window_height * 2.0) - 1.0);
+    std::println("Mouse click: screen(x={:.0f}, y={:.0f}), normalize=(x={:.2f}, y={:.2f})", mouse_x, mouse_y, norm_x, norm_y);
+  }
 }
 
 void Application::ProcessInput(GLFWwindow* window) {

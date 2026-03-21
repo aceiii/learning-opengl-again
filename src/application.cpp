@@ -5,13 +5,14 @@
 
 #include "application.hpp"
 
-
 namespace {
   const std::array kVertices{
-    0.5f, 0.5f, 0.0f,
-    0.5f, -0.5f, 0.0f,
-    -0.5f, -0.5f, 0.0f,
-    -0.5f, 0.5f, 0.0f,
+    -0.51f, 0.75f, 0.0f,
+    -0.21f, -0.02f, 0.0f,
+    -0.77f, -0.01f, 0.0f,
+    0.47f, 0.76f, 0.0f,
+    0.81f, -0.31f, 0.0f,
+    0.23f, -0.13f, 0.0f,
   };
 
   const std::array kIndices{
@@ -20,6 +21,14 @@ namespace {
   };
 
   const std::string kVertexShaderSource = R"(
+    #version 330 core
+    layout (location = 0) in vec3 aPos;
+    void main() {
+      gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+    }
+  )";
+
+  const std::string kVertexShaderSource2 = R"(
     #version 330 core
     layout (location = 0) in vec3 aPos;
     void main() {
@@ -36,9 +45,18 @@ namespace {
     }
   )";
 
-  unsigned int g_shader_program = 0;
-  unsigned int g_vao = 0;
-  unsigned int g_vbo = 0;
+  const std::string kFragmentShaderSource2 = R"(
+    #version 330 core
+    out vec4 FragColor;
+
+    void main() {
+      FragColor = vec4(0.3f, 0.9f, 0.5f, 1.0f);
+    }
+  )";
+
+  std::array<unsigned int, 2> g_shader_programs;
+  std::array<unsigned int, 2> g_vaos;
+  std::array<unsigned int, 2> g_vbos;
   unsigned int g_ebo = 0;
 
   GLFWwindow* g_window = nullptr;
@@ -68,6 +86,31 @@ static void CheckProgramLinkStatus(unsigned int program_id) {
   }
 }
 
+static unsigned int CreateShaderProgram(const std::string& vertex_shader_source, const std::string& fragment_shader_source) {
+  auto* vs_source = vertex_shader_source.c_str();
+  unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vertex_shader, 1, &vs_source, nullptr);
+  glCompileShader(vertex_shader);
+  CheckShaderCompilation("VERTEX", vertex_shader);
+
+  auto* fs_source = fragment_shader_source.c_str();
+  unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fragment_shader, 1, &fs_source, nullptr);
+  glCompileShader(fragment_shader);
+  CheckShaderCompilation("FRAGMENT", fragment_shader);
+
+  unsigned int program_id = glCreateProgram();
+  glAttachShader(program_id, vertex_shader);
+  glAttachShader(program_id, fragment_shader);
+  glLinkProgram(program_id);
+  CheckProgramLinkStatus(program_id);
+
+  glDeleteShader(vertex_shader);
+  glDeleteShader(fragment_shader);
+
+  return program_id;
+}
+
 std::expected<void, std::string> Application::Init() {
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -93,43 +136,27 @@ std::expected<void, std::string> Application::Init() {
   glfwSetFramebufferSizeCallback(g_window, FrameBufferSizeCallback);
   glfwSetMouseButtonCallback(g_window, MouseButtonCallback);
 
-  unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-  auto* vs_source = kVertexShaderSource.c_str();
-  glShaderSource(vertex_shader, 1, &vs_source, nullptr);
-  glCompileShader(vertex_shader);
-  CheckShaderCompilation("VERTEX", vertex_shader);
+  g_shader_programs[0] = CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource);
+  g_shader_programs[1] = CreateShaderProgram(kVertexShaderSource2, kFragmentShaderSource2);
 
-  unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-  auto* fs_source = kFragmentShaderSource.c_str();
-  glShaderSource(fragment_shader, 1, &fs_source, nullptr);
-  glCompileShader(fragment_shader);
-  CheckShaderCompilation("FRAGMENT", fragment_shader);
+  glGenVertexArrays(g_vaos.size(), g_vaos.data());
+  glGenBuffers(g_vbos.size(), g_vbos.data());
 
-  g_shader_program = glCreateProgram();
-  glAttachShader(g_shader_program, vertex_shader);
-  glAttachShader(g_shader_program, fragment_shader);
-  glLinkProgram(g_shader_program);
-  CheckProgramLinkStatus(g_shader_program);
-
-  glDeleteShader(vertex_shader);
-  glDeleteShader(fragment_shader);
-
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
-  glEnableVertexAttribArray(0);
-
-  glGenVertexArrays(1, &g_vao);
-  glBindVertexArray(g_vao);
-
-
-  glGenBuffers(1, &g_vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, g_vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(kVertices), kVertices.data(), GL_STATIC_DRAW);
+  glBindVertexArray(g_vaos[0]);
+  glBindBuffer(GL_ARRAY_BUFFER, g_vbos[0]);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * 3, kVertices.data(), GL_STATIC_DRAW);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
   glEnableVertexAttribArray(0);
 
-  glGenBuffers(1, &g_ebo);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_ebo);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(kIndices), kIndices.data(), GL_STATIC_DRAW);
+  glBindVertexArray(g_vaos[1]);
+  glBindBuffer(GL_ARRAY_BUFFER, g_vbos[1]);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * 3, kVertices.data() + 9, GL_STATIC_DRAW);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+  glEnableVertexAttribArray(0);
+
+  // glGenBuffers(1, &g_ebo);
+  // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_ebo);
+  // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(kIndices), kIndices.data(), GL_STATIC_DRAW);
 
   return {};
 }
@@ -137,15 +164,25 @@ std::expected<void, std::string> Application::Init() {
 void Application::Run() {
   while (!glfwWindowShouldClose(g_window)) {
     ProcessInput(g_window);
+    Update();
+    Render();
     glfwSwapBuffers(g_window);
     glfwPollEvents();
   }
 }
 
 void Application::Cleanup() {
-  glDeleteVertexArrays(1, &g_vao);
-  glDeleteBuffers(1, &g_vbo);
-  glDeleteProgram(g_shader_program);
+  glDeleteVertexArrays(g_vaos.size(), g_vaos.data());
+  g_vaos.fill(0);
+
+  glDeleteBuffers(g_vbos.size(), g_vbos.data());
+  g_vbos.fill(0);
+
+  for (const auto& program_id : g_shader_programs) {
+    glDeleteProgram(program_id);
+  }
+  g_shader_programs.fill(0);
+
   glfwTerminate();
 }
 
@@ -156,11 +193,15 @@ void Application::Render() {
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 
-  glUseProgram(g_shader_program);
-  glBindVertexArray(g_vao);
-  // glDrawArrays(GL_TRIANGLES, 0, 3);
+  glUseProgram(g_shader_programs[0]);
+  glBindVertexArray(g_vaos[0]);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
+
+  glUseProgram(g_shader_programs[1]);
+  glBindVertexArray(g_vaos[1]);
+  glDrawArrays(GL_TRIANGLES, 0, 3);
   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+  // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 void Application::FrameBufferSizeCallback(GLFWwindow* window, int width, int height) {
@@ -177,7 +218,7 @@ void Application::MouseButtonCallback(GLFWwindow* window, int button, int action
 
     double norm_x = (mouse_x / window_width * 2.0) - 1.0;
     double norm_y = -((mouse_y / window_height * 2.0) - 1.0);
-    std::println("Mouse click: screen(x={:.0f}, y={:.0f}), normalize=(x={:.2f}, y={:.2f})", mouse_x, mouse_y, norm_x, norm_y);
+    std::println("Mouse click: mouse(x={:.0f}, y={:.0f}), window(w={}, h={}), normalize=(x={:.2f}, y={:.2f})", mouse_x, mouse_y, window_width, window_height, norm_x, norm_y);
   }
 }
 

@@ -9,6 +9,8 @@ include(cmake/glad.cmake)
 
 set(SOURCE_FILES
     src/main.cpp
+    src/application.hpp
+    src/application.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})

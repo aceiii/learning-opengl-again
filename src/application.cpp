@@ -2,10 +2,13 @@
 #include <print>
 #include <string>
 #include <string_view>
-
+#include <quill/SimpleSetup.h>
+#include <quill/LogFunctions.h>
 #include "application.hpp"
 
 namespace {
+  quill::Logger* logger = quill::simple_logger();
+
   const std::array kVertices{
     -0.51f, 0.75f, 0.0f,
     -0.21f, -0.02f, 0.0f,
@@ -70,7 +73,7 @@ static void CheckShaderCompilation(std::string_view type, unsigned int shader_id
   glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
   if (!success) {
     glGetShaderInfoLog(shader_id, buffer.size() - 1, nullptr, buffer.data());
-    std::println(stderr, "ERROR: Shader compilation failed [{}]\n{}", type, buffer.data());
+    quill::warning(logger, "ERROR: Shader compilation failed [{}]\n{}", type, buffer.data());
   }
 }
 
@@ -82,7 +85,7 @@ static void CheckProgramLinkStatus(unsigned int program_id) {
   glGetProgramiv(program_id, GL_LINK_STATUS, &success);
   if (!success) {
     glGetProgramInfoLog(program_id, buffer.size() - 1, nullptr, buffer.data());
-    std::println(stderr, "ERROR: Program link failed\n{}", buffer.data());
+    quill::warning(logger, "ERROR: Program link failed\n{}", buffer.data());
   }
 }
 
@@ -112,6 +115,8 @@ static unsigned int CreateShaderProgram(const std::string& vertex_shader_source,
 }
 
 std::expected<void, std::string> Application::Init() {
+  quill::info(logger, "Initializing application");
+
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -172,6 +177,8 @@ void Application::Run() {
 }
 
 void Application::Cleanup() {
+  quill::info(logger, "Cleaning up application");
+
   glDeleteVertexArrays(g_vaos.size(), g_vaos.data());
   g_vaos.fill(0);
 
@@ -218,7 +225,7 @@ void Application::MouseButtonCallback(GLFWwindow* window, int button, int action
 
     double norm_x = (mouse_x / window_width * 2.0) - 1.0;
     double norm_y = -((mouse_y / window_height * 2.0) - 1.0);
-    std::println("Mouse click: mouse(x={:.0f}, y={:.0f}), window(w={}, h={}), normalize=(x={:.2f}, y={:.2f})", mouse_x, mouse_y, window_width, window_height, norm_x, norm_y);
+    quill::info(logger, "Mouse click: mouse(x={:.0f}, y={:.0f}), window(w={}, h={}), normalize=(x={:.2f}, y={:.2f})", mouse_x, mouse_y, window_width, window_height, norm_x, norm_y);
   }
 }
 

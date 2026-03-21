@@ -17,6 +17,7 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 add_subdirectory(external/glfw)
 add_subdirectory(external/glm)
+add_subdirectory(external/quill)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw glm::glm glad)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw glm::glm glad quill::quill)
 

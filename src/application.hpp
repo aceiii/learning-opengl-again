@@ -13,6 +13,9 @@ public:
   void Cleanup();
 
 private:
+  void Update();
+  void Render();
+
   static void FrameBufferSizeCallback(GLFWwindow* window, int width, int height);
   static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
   static void ProcessInput(GLFWwindow* window);

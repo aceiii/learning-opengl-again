@@ -137,18 +137,6 @@ std::expected<void, std::string> Application::Init() {
 void Application::Run() {
   while (!glfwWindowShouldClose(g_window)) {
     ProcessInput(g_window);
-
-    {
-      glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT);
-
-      glUseProgram(g_shader_program);
-      glBindVertexArray(g_vao);
-      // glDrawArrays(GL_TRIANGLES, 0, 3);
-      // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    }
-
     glfwSwapBuffers(g_window);
     glfwPollEvents();
   }
@@ -159,6 +147,20 @@ void Application::Cleanup() {
   glDeleteBuffers(1, &g_vbo);
   glDeleteProgram(g_shader_program);
   glfwTerminate();
+}
+
+void Application::Update() {
+}
+
+void Application::Render() {
+  glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  glUseProgram(g_shader_program);
+  glBindVertexArray(g_vao);
+  // glDrawArrays(GL_TRIANGLES, 0, 3);
+  // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 void Application::FrameBufferSizeCallback(GLFWwindow* window, int width, int height) {

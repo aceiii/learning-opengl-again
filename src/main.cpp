@@ -8,9 +8,15 @@
 
 namespace {
   const std::array vertices{
-    -0.5f, -0.5f, 0.0f,
+    0.5f, 0.5f, 0.0f,
     0.5f, -0.5f, 0.0f,
-    0.0f,  0.5f, 0.0f
+    -0.5f, -0.5f, 0.0f,
+    -0.5f, 0.5f, 0.0f,
+  };
+
+  const std::array indices{
+    0, 1, 3,
+    1, 2, 3,
   };
 
   const char* vertex_shader_source = R"(
@@ -116,17 +122,22 @@ auto main() -> int {
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
   glEnableVertexAttribArray(0);
 
-  unsigned int vbo;
-  glGenBuffers(1, &vbo);
-
   unsigned int vao;
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
 
+  unsigned int vbo;
+  glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices.data(), GL_STATIC_DRAW);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
   glEnableVertexAttribArray(0);
+
+  unsigned int ebo;
+  glGenBuffers(1, &ebo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices.data(), GL_STATIC_DRAW);
+
 
   while (!glfwWindowShouldClose(window)) {
     ProcessInput(window);
@@ -137,7 +148,9 @@ auto main() -> int {
 
       glUseProgram(shader_program);
       glBindVertexArray(vao);
-      glDrawArrays(GL_TRIANGLES, 0, 3);
+      // glDrawArrays(GL_TRIANGLES, 0, 3);
+      // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+      glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
 
     glfwSwapBuffers(window);

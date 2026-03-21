@@ -7,3 +7,6 @@
 [submodule "external/quill"]
 	path = external/quill
 	url = https://github.com/odygrd/quill.git
+[submodule "external/imgui"]
+	path = external/imgui
+	url = https://github.com/ocornut/imgui.git

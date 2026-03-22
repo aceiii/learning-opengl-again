@@ -6,7 +6,7 @@
 #include <imgui.h>
 
 #include "../scene.hpp"
-#include "../shader_util.hpp"
+#include "../shader.hpp"
 
 
 class ShadersScene final : public Scene {
@@ -16,9 +16,9 @@ public:
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &num_attributes);
     LogInfo("[SCENE] Maximum num of vertex attributes: {}", num_attributes);
 
-    shader_programs_.push_back(util::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource));
-    shader_programs_.push_back(util::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource2));
-    shader_programs_.push_back(util::CreateShaderProgram(kVertexShaderSource2, kFragmentShaderSource3));
+    shader_programs_.push_back(Shader::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource));
+    shader_programs_.push_back(Shader::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource2));
+    shader_programs_.push_back(Shader::CreateShaderProgram(kVertexShaderSource2, kFragmentShaderSource3));
 
     vaos_.resize(2);
     vbos_.resize(2);

@@ -6,15 +6,15 @@
 #include <imgui.h>
 
 #include "../scene.hpp"
-#include "../shader_util.hpp"
+#include "../shader.hpp"
 
 
 class HelloTriangle final : public Scene {
 public:
   Result Init() override {
 
-    shader_programs_.push_back(util::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource));
-    shader_programs_.push_back(util::CreateShaderProgram(kVertexShaderSource2, kFragmentShaderSource2));
+    shader_programs_.push_back(Shader::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource));
+    shader_programs_.push_back(Shader::CreateShaderProgram(kVertexShaderSource2, kFragmentShaderSource2));
 
     vaos_.resize(3);
     vbos_.resize(3);

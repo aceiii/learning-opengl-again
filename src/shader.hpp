@@ -1,16 +1,39 @@
 #pragma once
 
-#include <array>
 #include <string>
 #include <string_view>
-#include <GLFW/glfw3.h>
-
-#include "logger.hpp"
+#include <glad/glad.h>
 
 
-namespace util {
+class Shader {
+public:
+  unsigned int id = 0;
 
-  void CheckShaderCompilation(std::string_view type, unsigned int shader_id) {
+  Shader(std::string_view vs_path, std::string_view fs_path) {
+    std::string vs_source = "";
+    std::string fs_source = "";
+
+    id = CreateShaderProgram(vs_source, fs_source);
+  }
+
+  void Use() {
+    glUseProgram(id);
+  }
+
+  void SetBool(const std::string& name, bool value) const {
+    glUniform1i(glGetUniformLocation(id, name.data()), static_cast<int>(value));
+  }
+
+  void SetInt(const std::string& name, int value) const {
+    glUniform1i(glGetUniformLocation(id, name.data()), value);
+  }
+
+  void SetFloat(const std::string& name, float value) const {
+    glUniform1f(glGetUniformLocation(id, name.data()), value);
+  }
+
+public:
+  static void CheckShaderCompilation(std::string_view type, unsigned int shader_id) {
     static std::array<char, 512> buffer;
     buffer.fill(0);
 
@@ -23,7 +46,7 @@ namespace util {
     }
   }
 
-  void CheckProgramLinkStatus(unsigned int program_id) {
+  static void CheckProgramLinkStatus(unsigned int program_id) {
     static std::array<char, 512> buffer;
     buffer.fill(0);
 
@@ -32,11 +55,11 @@ namespace util {
     if (!success) {
       glGetProgramInfoLog(program_id, buffer.size() - 1, nullptr, buffer.data());
       auto* logger = Logger::GetRootLogger();
-      quill::warning(logger, "ERROR: Program link failed\n{}", buffer.data());
+      quill::warning(logger, "[SHADER]: Program link failed\n{}", buffer.data());
     }
   }
 
-  unsigned int CreateShaderProgram(const std::string& vertex_shader_source, const std::string& fragment_shader_source) {
+  static unsigned int CreateShaderProgram(const std::string& vertex_shader_source, const std::string& fragment_shader_source) {
     auto* vs_source = vertex_shader_source.c_str();
     unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex_shader, 1, &vs_source, nullptr);
@@ -61,4 +84,4 @@ namespace util {
     return program_id;
   }
 
-}
+};

@@ -21,7 +21,7 @@ set(SOURCE_FILES
     src/callback_sink.hpp
     src/scene.hpp
     src/scenes.hpp
-    src/shader_util.hpp
+    src/shader.hpp
 )
 
 file(GLOB SCENE_SOURCE_FILES "src/scenes/*")

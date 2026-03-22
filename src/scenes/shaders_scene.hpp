@@ -18,22 +18,33 @@ public:
 
     shader_programs_.push_back(util::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource));
     shader_programs_.push_back(util::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource2));
+    shader_programs_.push_back(util::CreateShaderProgram(kVertexShaderSource2, kFragmentShaderSource3));
 
-    vaos_.resize(1);
-    vbos_.resize(1);
+    vaos_.resize(2);
+    vbos_.resize(2);
 
     glGenVertexArrays(vaos_.size(), vaos_.data());
     glGenBuffers(vbos_.size(), vbos_.data());
 
-    glBindVertexArray(vaos_[0]);
-    glBindBuffer(GL_ARRAY_BUFFER, vbos_[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(kVertices), kVertices.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-    glEnableVertexAttribArray(0);
-
     glGenBuffers(1, &ebo_);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(kIndices), kIndices.data(), GL_STATIC_DRAW);
+
+    glBindVertexArray(vaos_[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, vbos_[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(kVertices), kVertices.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
+
+    glBindVertexArray(vaos_[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, vbos_[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(kVerticesWithColors), kVerticesWithColors.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
 
     return {};
   }
@@ -48,18 +59,25 @@ public:
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
-    if (use_uniform_shader_) {
-      float time_value = glfwGetTime();
-      float green_value = sin(time_value) / 2.0f + 0.5f;
+    if (use_vertex_colors_) {
+      glUseProgram(shader_programs_[2]);
+      glBindVertexArray(vaos_[1]);
+      glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 
-      glUseProgram(shader_programs_[1]);
-      int vertex_color_location = glGetUniformLocation(shader_programs_[1], "ourColor");
-      glUniform4f(vertex_color_location, 0.0f, green_value, 0.0f, 1.0f);
     } else {
-      glUseProgram(shader_programs_[0]);
+      if (use_uniform_shader_) {
+        float time_value = glfwGetTime();
+        float green_value = sin(time_value) / 2.0f + 0.5f;
+
+        glUseProgram(shader_programs_[1]);
+        int vertex_color_location = glGetUniformLocation(shader_programs_[1], "ourColor");
+        glUniform4f(vertex_color_location, 0.0f, green_value, 0.0f, 1.0f);
+      } else {
+        glUseProgram(shader_programs_[0]);
+      }
+      glBindVertexArray(vaos_[0]);
+      glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
     }
-    glBindVertexArray(vaos_[0]);
-    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -72,7 +90,7 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::Checkbox("Unform Shader", &use_uniform_shader_);
-      // ImGui::Checkbox("Draw Elements", &draw_elements_);
+      ImGui::Checkbox("Vertex Attribute Color", &use_vertex_colors_);
     }
     ImGui::End();
     ImGui::PopID();
@@ -105,7 +123,13 @@ private:
   inline static const std::array kVertices{
     -0.5f, -0.5f, 0.0f,
      0.5f, -0.5f, 0.0f,
-     0.0f,  0.5f, 0.0f
+     0.0f,  0.5f, 0.0f,
+  };
+
+  inline static const std::array kVerticesWithColors{
+     0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,
+    -0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,
+     0.0f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f,
   };
 
   inline static const std::array kIndices{
@@ -114,7 +138,6 @@ private:
 
   inline static const std::string kVertexShaderSource = R"(
     #version 330 core
-
     layout (location = 0) in vec3 aPos;
 
     out vec4 vertexColor;
@@ -122,6 +145,19 @@ private:
     void main() {
       gl_Position = vec4(aPos, 1.0);
       vertexColor = vec4(0.5, 0.0, 0.0, 1.0);
+    }
+  )";
+
+  inline static const std::string kVertexShaderSource2 = R"(
+    #version 330 core
+    layout (location = 0) in vec3 aPos;
+    layout (location = 1) in vec3 aColor;
+
+    out vec3 ourColor;
+
+    void main() {
+      gl_Position = vec4(aPos, 1.0);
+      ourColor = aColor;
     }
   )";
 
@@ -147,6 +183,17 @@ private:
     }
   )";
 
+
+  inline static const std::string kFragmentShaderSource3 = R"(
+    #version 330 core
+    out vec4 FragColor;
+    in vec3 ourColor;
+
+    void main() {
+      FragColor = vec4(ourColor, 1.0);
+    }
+  )";
+
   std::vector<unsigned int> shader_programs_;
   std::vector<unsigned int> vaos_;
   std::vector<unsigned int> vbos_;
@@ -154,4 +201,5 @@ private:
 
   bool wireframe_ = false;
   bool use_uniform_shader_ = false;
+  bool use_vertex_colors_ = false;
 };

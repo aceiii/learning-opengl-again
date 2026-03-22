@@ -1,4 +1,5 @@
 #pragma once
 
 #include "scenes/empty_scene.hpp"
-#include "scenes/hello_triangle.hpp"
+#include "scenes/hello_triangle_scene.hpp"
+#include "scenes/shaders_scene.hpp"

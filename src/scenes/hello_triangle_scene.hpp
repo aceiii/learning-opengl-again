@@ -10,39 +10,39 @@
 
 
 class HelloTriangle final : public Scene {
-  public:
+public:
   Result Init() override {
 
-  shader_programs_.push_back(util::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource));
-  shader_programs_.push_back(util::CreateShaderProgram(kVertexShaderSource2, kFragmentShaderSource2));
+    shader_programs_.push_back(util::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource));
+    shader_programs_.push_back(util::CreateShaderProgram(kVertexShaderSource2, kFragmentShaderSource2));
 
-  vaos_.resize(3);
-  vbos_.resize(3);
+    vaos_.resize(3);
+    vbos_.resize(3);
 
-  glGenVertexArrays(vaos_.size(), vaos_.data());
-  glGenBuffers(vbos_.size(), vbos_.data());
+    glGenVertexArrays(vaos_.size(), vaos_.data());
+    glGenBuffers(vbos_.size(), vbos_.data());
 
-  glBindVertexArray(vaos_[0]);
-  glBindBuffer(GL_ARRAY_BUFFER, vbos_[0]);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * 3, kVertices.data(), GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-  glEnableVertexAttribArray(0);
+    glBindVertexArray(vaos_[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, vbos_[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * 3, kVertices.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+    glEnableVertexAttribArray(0);
 
-  glBindVertexArray(vaos_[1]);
-  glBindBuffer(GL_ARRAY_BUFFER, vbos_[1]);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * 3, kVertices.data() + 9, GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-  glEnableVertexAttribArray(0);
+    glBindVertexArray(vaos_[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, vbos_[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * 3, kVertices.data() + 9, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+    glEnableVertexAttribArray(0);
 
-  glBindVertexArray(vaos_[2]);
-  glBindBuffer(GL_ARRAY_BUFFER, vbos_[2]);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(kRectVertices), kRectVertices.data(), GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-  glEnableVertexAttribArray(0);
+    glBindVertexArray(vaos_[2]);
+    glBindBuffer(GL_ARRAY_BUFFER, vbos_[2]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(kRectVertices), kRectVertices.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+    glEnableVertexAttribArray(0);
 
-  glGenBuffers(1, &ebo_);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(kIndices), kIndices.data(), GL_STATIC_DRAW);
+    glGenBuffers(1, &ebo_);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(kIndices), kIndices.data(), GL_STATIC_DRAW);
 
     return {};
   }
@@ -81,7 +81,7 @@ class HelloTriangle final : public Scene {
     ImGui::PushID("HelloTriangle");
     ImGui::SetNextWindowPos(ImVec2(window_width - padding, menu_bar_height - padding), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Select")) {
+    if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::Checkbox("Multple Shaders", &multiple_shaders_);
       ImGui::Checkbox("Draw Elements", &draw_elements_);

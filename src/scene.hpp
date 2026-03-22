@@ -3,6 +3,8 @@
 #include <expected>
 #include <string>
 
+#include "logger.hpp"
+
 
 class Scene {
 public:
@@ -16,4 +18,29 @@ public:
   virtual void RenderInterface(int window_width, int window_height) = 0;
   virtual void Cleanup() = 0;
   virtual std::string Name() const = 0;
+
+protected:
+  template<typename... Args>
+  void LogDebug(std::string_view format, Args&&... args) {
+    auto* logger = Logger::GetRootLogger();
+    quill::debug(logger, format.data(), std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  void LogInfo(std::string_view format, Args&&... args) {
+    auto* logger = Logger::GetRootLogger();
+    quill::info(logger, format.data(), std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  void LogWarning(std::string_view format, Args&&... args) {
+    auto* logger = Logger::GetRootLogger();
+    quill::warning(logger, format.data(), std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  void LogError(std::string_view format, Args&&... args) {
+    auto* logger = Logger::GetRootLogger();
+    quill::error(logger, format.data(), std::forward<Args>(args)...);
+  }
 };

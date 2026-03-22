@@ -1,11 +1,10 @@
 #include <print>
-#include <quill/SimpleSetup.h>
-#include <quill/LogFunctions.h>
+#include "logger.hpp"
 #include "application.hpp"
 
 
 auto main() -> int {
-  quill::Logger* logger = quill::simple_logger();
+  quill::Logger* logger = Logger::GetRootLogger();
   quill::info(logger, "[APPLICATION] Hello, world!");
 
   Application app;
@@ -14,7 +13,6 @@ auto main() -> int {
     app.Cleanup();
     return -1;
   }
-
   app.Run();
   app.Cleanup();
 

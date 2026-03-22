@@ -19,6 +19,8 @@ private:
   void Render();
   void RenderInterface();
 
+  void LogCallback(std::string_view message);
+
   static void ErrorCallback(int error_code, const char* description);
   static void FrameBufferSizeCallback(GLFWwindow* window, int width, int height);
   static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);

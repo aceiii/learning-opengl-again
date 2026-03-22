@@ -16,6 +16,9 @@ set(SOURCE_FILES
     src/imgui_impl.cpp
     src/applog.hpp
     src/applog.cpp
+    src/logger.hpp
+    src/logger.cpp
+    src/callback_sink.hpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})

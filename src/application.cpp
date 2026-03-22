@@ -6,9 +6,11 @@
 #include <quill/LogFunctions.h>
 #include "application.hpp"
 #include "imgui_impl.hpp"
+#include "logger.hpp"
+
 
 namespace {
-  quill::Logger* logger = quill::simple_logger();
+  quill::Logger* logger = nullptr;
 
   const std::array kVertices{
     -0.51f, 0.75f, 0.0f,
@@ -116,6 +118,9 @@ static unsigned int CreateShaderProgram(const std::string& vertex_shader_source,
 }
 
 std::expected<void, std::string> Application::Init() {
+  logger = Logger::GetRootLogger();
+  Logger::AddLogCallback(std::bind(&Application::LogCallback, this, std::placeholders::_1));
+
   quill::info(logger, "[APPLICATION] Initializing application");
 
   glfwSetErrorCallback(ErrorCallback);
@@ -199,6 +204,8 @@ void Application::Cleanup() {
   g_shader_programs.fill(0);
 
   glfwTerminate();
+
+  Logger::ClearCallbacks();
 }
 
 void Application::Update() {
@@ -248,11 +255,15 @@ void Application::RenderInterface() {
     ImGui::SetNextWindowSize(ImVec2(window_width - padding - padding, 180.0f - padding - padding), ImGuiCond_Always);
     if (ImGui::Begin("Logs", &show_logs, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove)) {
       app_log_.Draw();
-      ImGui::End();
     }
+    ImGui::End();
   }
 
   ImGui::Render();
+}
+
+void Application::LogCallback(std::string_view message) {
+  app_log_.AddLog(message);
 }
 
 void Application::ErrorCallback(int error_code, const char* description) {

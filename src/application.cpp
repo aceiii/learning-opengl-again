@@ -7,115 +7,14 @@
 #include "application.hpp"
 #include "imgui_impl.hpp"
 #include "logger.hpp"
+#include "scenes.hpp"
 
 
 namespace {
   quill::Logger* logger = nullptr;
-
-  const std::array kVertices{
-    -0.51f, 0.75f, 0.0f,
-    -0.21f, -0.02f, 0.0f,
-    -0.77f, -0.01f, 0.0f,
-    0.47f, 0.76f, 0.0f,
-    0.81f, -0.31f, 0.0f,
-    0.23f, -0.13f, 0.0f,
-  };
-
-  const std::array kIndices{
-    0, 1, 3,
-    1, 2, 3,
-  };
-
-  const std::string kVertexShaderSource = R"(
-    #version 330 core
-    layout (location = 0) in vec3 aPos;
-    void main() {
-      gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-    }
-  )";
-
-  const std::string kVertexShaderSource2 = R"(
-    #version 330 core
-    layout (location = 0) in vec3 aPos;
-    void main() {
-      gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-    }
-  )";
-
-  const std::string kFragmentShaderSource = R"(
-    #version 330 core
-    out vec4 FragColor;
-
-    void main() {
-      FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-    }
-  )";
-
-  const std::string kFragmentShaderSource2 = R"(
-    #version 330 core
-    out vec4 FragColor;
-
-    void main() {
-      FragColor = vec4(0.3f, 0.9f, 0.5f, 1.0f);
-    }
-  )";
-
-  std::array<unsigned int, 2> g_shader_programs;
-  std::array<unsigned int, 2> g_vaos;
-  std::array<unsigned int, 2> g_vbos;
-  unsigned int g_ebo = 0;
-
   GLFWwindow* g_window = nullptr;
 }
 
-static void CheckShaderCompilation(std::string_view type, unsigned int shader_id) {
-  static std::array<char, 512> buffer;
-  buffer.fill(0);
-
-  int success;
-  glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(shader_id, buffer.size() - 1, nullptr, buffer.data());
-    quill::warning(logger, "[SHADER] Shader compilation failed [{}]\n{}", type, buffer.data());
-  }
-}
-
-static void CheckProgramLinkStatus(unsigned int program_id) {
-  static std::array<char, 512> buffer;
-  buffer.fill(0);
-
-  int success;
-  glGetProgramiv(program_id, GL_LINK_STATUS, &success);
-  if (!success) {
-    glGetProgramInfoLog(program_id, buffer.size() - 1, nullptr, buffer.data());
-    quill::warning(logger, "ERROR: Program link failed\n{}", buffer.data());
-  }
-}
-
-static unsigned int CreateShaderProgram(const std::string& vertex_shader_source, const std::string& fragment_shader_source) {
-  auto* vs_source = vertex_shader_source.c_str();
-  unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vertex_shader, 1, &vs_source, nullptr);
-  glCompileShader(vertex_shader);
-  CheckShaderCompilation("vertex", vertex_shader);
-
-  auto* fs_source = fragment_shader_source.c_str();
-  unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragment_shader, 1, &fs_source, nullptr);
-  glCompileShader(fragment_shader);
-  CheckShaderCompilation("fragment", fragment_shader);
-
-  unsigned int program_id = glCreateProgram();
-  glAttachShader(program_id, vertex_shader);
-  glAttachShader(program_id, fragment_shader);
-  glLinkProgram(program_id);
-  CheckProgramLinkStatus(program_id);
-
-  glDeleteShader(vertex_shader);
-  glDeleteShader(fragment_shader);
-
-  return program_id;
-}
 
 std::expected<void, std::string> Application::Init() {
   logger = Logger::GetRootLogger();
@@ -151,35 +50,22 @@ std::expected<void, std::string> Application::Init() {
 
   glViewport(0, 0, 800, 600);
 
-  g_shader_programs[0] = CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource);
-  g_shader_programs[1] = CreateShaderProgram(kVertexShaderSource2, kFragmentShaderSource2);
-
-  glGenVertexArrays(g_vaos.size(), g_vaos.data());
-  glGenBuffers(g_vbos.size(), g_vbos.data());
-
-  glBindVertexArray(g_vaos[0]);
-  glBindBuffer(GL_ARRAY_BUFFER, g_vbos[0]);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * 3, kVertices.data(), GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-  glEnableVertexAttribArray(0);
-
-  glBindVertexArray(g_vaos[1]);
-  glBindBuffer(GL_ARRAY_BUFFER, g_vbos[1]);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * 3, kVertices.data() + 9, GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-  glEnableVertexAttribArray(0);
-
-  // glGenBuffers(1, &g_ebo);
-  // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_ebo);
-  // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(kIndices), kIndices.data(), GL_STATIC_DRAW);
+  scenes_.push_back(EmptyScene::Get());
+  scenes_.push_back(std::make_shared<HelloTriangle>());
 
   return {};
 }
 
 void Application::Run() {
+  double last_frame_time = glfwGetTime();
+
   while (!glfwWindowShouldClose(g_window)) {
+    double current_time = glfwGetTime();
+    double delta_time = current_time - last_frame_time;
+    last_frame_time = current_time;
+
     ProcessInput(g_window);
-    Update();
+    Update(delta_time);
     Render();
     RenderInterface();
 
@@ -192,38 +78,28 @@ void Application::Run() {
 void Application::Cleanup() {
   quill::info(logger, "[APPLICATION] Cleaning up application");
 
-  glDeleteVertexArrays(g_vaos.size(), g_vaos.data());
-  g_vaos.fill(0);
-
-  glDeleteBuffers(g_vbos.size(), g_vbos.data());
-  g_vbos.fill(0);
-
-  for (const auto& program_id : g_shader_programs) {
-    glDeleteProgram(program_id);
+  for (auto& scene : scenes_) {
+    scene->Cleanup();
   }
-  g_shader_programs.fill(0);
 
   glfwTerminate();
 
   Logger::ClearCallbacks();
 }
 
-void Application::Update() {
+void Application::Update(float dt) {
+  if (selected_scene_) {
+    selected_scene_->Update(dt);
+  }
 }
 
 void Application::Render() {
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 
-  glUseProgram(g_shader_programs[0]);
-  glBindVertexArray(g_vaos[0]);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
-
-  glUseProgram(g_shader_programs[1]);
-  glBindVertexArray(g_vaos[1]);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
-  // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+  if (selected_scene_) {
+    selected_scene_->Render();
+  }
 }
 
 void Application::RenderInterface() {
@@ -234,31 +110,60 @@ void Application::RenderInterface() {
   glfwGetWindowSize(g_window, &window_width, &window_height);
 
   ImGuiImpl::NewFrame();
-
-  ImGui::BeginMainMenuBar();
   {
-    if (ImGui::BeginMenu("View")) {
-      ImGui::MenuItem("Demo Window", nullptr, &show_demo_window);
-      ImGui::MenuItem("Logs", nullptr, &show_logs);
-      ImGui::EndMenu();
+    ImGui::BeginMainMenuBar();
+    {
+      if (ImGui::BeginMenu("View")) {
+        ImGui::MenuItem("Demo Window", nullptr, &show_demo_window);
+        ImGui::MenuItem("Logs", nullptr, &show_logs);
+        ImGui::EndMenu();
+      }
+    }
+    ImGui::EndMainMenuBar();
+
+    if (show_demo_window) {
+      ImGui::ShowDemoWindow(&show_demo_window);
+    }
+
+    if (show_logs) {
+      constexpr auto padding = 5.0f;
+      ImGui::SetNextWindowPos(ImVec2(padding, window_height - padding), ImGuiCond_Always, ImVec2(0.0f, 1.0f));
+      ImGui::SetNextWindowSize(ImVec2(window_width - padding - padding, 180.0f - padding - padding), ImGuiCond_Always);
+      if (ImGui::Begin("Logs", &show_logs, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDocking)) {
+        app_log_.Draw();
+      }
+      ImGui::End();
+    }
+
+    {
+      constexpr auto menu_bar_height = 24.0f;
+      constexpr auto padding = 5.0f;
+      ImGui::SetNextWindowPos(ImVec2(padding, menu_bar_height + padding), ImGuiCond_Always, ImVec2(0.0f, 0.0f));
+      ImGui::SetNextWindowSize(ImVec2(220.0f, 0.0f), ImGuiCond_Always);
+      if (ImGui::Begin("Scene", &show_logs, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoDecoration)) {
+        if (ImGui::BeginCombo("Scene", selected_scene_->Name().c_str())) {
+          for (const auto& scene : scenes_) {
+            const bool is_selected = scene == selected_scene_;
+            if (ImGui::Selectable(scene->Name().c_str(), is_selected)) {
+              quill::info(logger, "[APPLICATION] Selected scene: {}", scene->Name());
+
+              if (!is_selected) {
+                selected_scene_->Cleanup();
+                selected_scene_ = scene;
+                selected_scene_->Init();
+              }
+            }
+          }
+          ImGui::EndCombo();
+        }
+      }
+      ImGui::End();
+    }
+
+    if (selected_scene_) {
+      selected_scene_->RenderInterface(window_width, window_height);
     }
   }
-  ImGui::EndMainMenuBar();
-
-  if (show_demo_window) {
-    ImGui::ShowDemoWindow(&show_demo_window);
-  }
-
-  if (show_logs) {
-    constexpr auto padding = 5.0f;
-    ImGui::SetNextWindowPos(ImVec2(padding, window_height - padding), ImGuiCond_Always, ImVec2(0.0f, 1.0f));
-    ImGui::SetNextWindowSize(ImVec2(window_width - padding - padding, 180.0f - padding - padding), ImGuiCond_Always);
-    if (ImGui::Begin("Logs", &show_logs, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove)) {
-      app_log_.Draw();
-    }
-    ImGui::End();
-  }
-
   ImGui::Render();
 }
 

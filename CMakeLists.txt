@@ -19,9 +19,14 @@ set(SOURCE_FILES
     src/logger.hpp
     src/logger.cpp
     src/callback_sink.hpp
+    src/scene.hpp
+    src/scenes.hpp
+    src/shader_util.hpp
 )
 
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+file(GLOB SCENE_SOURCE_FILES "src/scenes/*")
+
+add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${SCENE_SOURCE_FILES})
 
 add_subdirectory(external/glfw)
 add_subdirectory(external/glm)

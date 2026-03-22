@@ -2,10 +2,14 @@
 
 #include <expected>
 #include <string>
+#include <memory>
+#include <vector>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include "applog.hpp"
+#include "scene.hpp"
+#include "scenes/empty_scene.hpp"
 
 
 class Application {
@@ -15,7 +19,7 @@ public:
   void Cleanup();
 
 private:
-  void Update();
+  void Update(float dt);
   void Render();
   void RenderInterface();
 
@@ -27,4 +31,6 @@ private:
   static void ProcessInput(GLFWwindow* window);
 
   AppLog app_log_;
+  std::vector<std::shared_ptr<Scene>> scenes_;
+  std::shared_ptr<Scene> selected_scene_ = EmptyScene::Get();
 };

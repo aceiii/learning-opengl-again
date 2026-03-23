@@ -4,7 +4,9 @@
 #include <vector>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
+#include <stb_image.h>
 
+#include "../image.hpp"
 #include "../scene.hpp"
 #include "../shader.hpp"
 
@@ -12,6 +14,20 @@
 class TexturesScene final : public Scene {
 public:
   void Init() override {
+
+    glGenTextures(1, &texture_);
+    glBindTexture(GL_TEXTURE_2D, texture_);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    Image image = Image::Load("resources/textures/container.jpg");
+    if (image.data) {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data.get());
+      glGenerateMipmap(GL_TEXTURE_2D);
+    }
+
     shader_ = Shader::FromFiles("resources/shaders/textures_scene/main.vs", "resources/shaders/textures_scene/main.fs");
 
     glGenVertexArrays(1, &vao_);
@@ -24,10 +40,12 @@ public:
     glBindVertexArray(vao_);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferData(GL_ARRAY_BUFFER, sizeof(kVertices), kVertices.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
   }
 
@@ -40,8 +58,10 @@ public:
     shader_.Use();
     shader_.SetFloat("xOffset", horizontal_offset_);
     shader_.SetFloat("yOffset", vertical_offset_);
+    shader_.SetFloat("textureBlend", show_texture_ ? 1.0f : 0.0f);
+    glBindTexture(GL_TEXTURE_2D, texture_);
     glBindVertexArray(vao_);
-    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -53,6 +73,7 @@ public:
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
+      ImGui::Checkbox("Texture", &show_texture_);
       ImGui::DragFloat("X Offset", &horizontal_offset_, 0.01f, -2.0f, 2.0f);
       ImGui::DragFloat("Y Offset", &vertical_offset_, 0.01f, -2.0f, 2.0f);
     }
@@ -80,27 +101,25 @@ public:
 
 private:
   inline static const std::array kVertices{
-     0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,
-    -0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,
-     0.0f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f,
-  };
-
-  inline static const std::array kTexCoords{
-    0.0f, 0.0f,
-    1.0f, 0.0f,
-    0.5f, 1.0f,
+     0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
+     0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+    -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
+    -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f,
   };
 
   inline static const std::array kIndices{
-    0, 1, 2,
+    0, 1, 3,
+    1, 2, 3,
   };
 
   Shader shader_;
   unsigned int vao_ = 0;
   unsigned int vbo_ = 0;
   unsigned int ebo_ = 0;
+  unsigned int texture_ = 0;
 
   bool wireframe_ = false;
+  bool show_texture_ = true;
   float vertical_offset_ = 0.0f;
   float horizontal_offset_ = 0.0f;
 

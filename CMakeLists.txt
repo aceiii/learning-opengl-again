@@ -7,6 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(cmake/glad.cmake)
 include(cmake/imgui.cmake)
+include(cmake/stb.cmake)
 
 set(SOURCE_FILES
     src/main.cpp
@@ -23,6 +24,8 @@ set(SOURCE_FILES
     src/scenes.hpp
     src/shader.hpp
     src/file.hpp
+    src/image.hpp
+    src/stb_impl.cpp
 )
 
 file(GLOB SCENE_SOURCE_FILES "src/scenes/*")

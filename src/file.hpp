@@ -21,4 +21,5 @@ namespace File {
     ss << file.rdbuf();
     return ss.str();
   }
+
 }

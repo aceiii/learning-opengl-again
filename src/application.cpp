@@ -53,6 +53,7 @@ std::expected<void, std::string> Application::Init() {
   scenes_.push_back(EmptyScene::Get());
   scenes_.push_back(std::make_shared<HelloTriangle>());
   scenes_.push_back(std::make_shared<ShadersScene>());
+  scenes_.push_back(std::make_shared<TexturesScene>());
 
   return {};
 }

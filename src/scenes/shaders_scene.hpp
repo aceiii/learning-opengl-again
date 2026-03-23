@@ -11,7 +11,7 @@
 
 class ShadersScene final : public Scene {
 public:
-  Result Init() override {
+  void Init() override {
     int num_attributes;
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &num_attributes);
     LogInfo("[SCENE] Maximum num of vertex attributes: {}", num_attributes);
@@ -46,8 +46,6 @@ public:
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
-
-    return {};
   }
 
   void Update(float dt) override {

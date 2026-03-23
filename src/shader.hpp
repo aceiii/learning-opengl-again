@@ -24,9 +24,12 @@ public:
     return Shader(vs_source, fs_source);
   }
 
+  Shader() : id_{0} {}
+
   void Destroy() {
     if (id_) {
       glDeleteShader(id_);
+      id_ = 0;
     }
   }
 

@@ -5,9 +5,7 @@
 
 class EmptyScene final : public Scene {
 public:
-  Result Init() override {
-    return {};
-  }
+  void Init() override {}
 
   void Update(float dt) override {}
 

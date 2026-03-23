@@ -11,7 +11,7 @@
 
 class HelloTriangle final : public Scene {
 public:
-  Result Init() override {
+  void Init() override {
 
     shader_programs_.push_back(Shader::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource));
     shader_programs_.push_back(Shader::CreateShaderProgram(kVertexShaderSource2, kFragmentShaderSource2));
@@ -43,8 +43,6 @@ public:
     glGenBuffers(1, &ebo_);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(kIndices), kIndices.data(), GL_STATIC_DRAW);
-
-    return {};
   }
 
   void Update(float dt) override {

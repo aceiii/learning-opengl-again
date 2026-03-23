@@ -1,35 +1,57 @@
 #pragma once
 
+#include <fstream>
 #include <string>
 #include <string_view>
 #include <glad/glad.h>
 
+#include "file.hpp"
+
 
 class Shader {
 public:
-  unsigned int id = 0;
+  unsigned int ID() {
+    return id_;
+  }
 
-  Shader(std::string_view vs_path, std::string_view fs_path) {
-    std::string vs_source = "";
-    std::string fs_source = "";
+  static Shader FromFiles(std::string_view vs_path, std::string_view fs_path) {
+    std::string vs_source = File::ReadContents(std::string{vs_path});
+    std::string fs_source = File::ReadContents(std::string{fs_path});
+    return Shader(vs_source, fs_source);
+  }
 
-    id = CreateShaderProgram(vs_source, fs_source);
+  static Shader FromSource(const std::string& vs_source, const std::string& fs_source) {
+    return Shader(vs_source, fs_source);
+  }
+
+  void Destroy() {
+    if (id_) {
+      glDeleteShader(id_);
+    }
   }
 
   void Use() {
-    glUseProgram(id);
+    glUseProgram(id_);
   }
 
   void SetBool(const std::string& name, bool value) const {
-    glUniform1i(glGetUniformLocation(id, name.data()), static_cast<int>(value));
+    glUniform1i(glGetUniformLocation(id_, name.data()), static_cast<int>(value));
   }
 
   void SetInt(const std::string& name, int value) const {
-    glUniform1i(glGetUniformLocation(id, name.data()), value);
+    glUniform1i(glGetUniformLocation(id_, name.data()), value);
   }
 
   void SetFloat(const std::string& name, float value) const {
-    glUniform1f(glGetUniformLocation(id, name.data()), value);
+    glUniform1f(glGetUniformLocation(id_, name.data()), value);
+  }
+
+  void SetFloat4(const std::string& name, std::array<float, 4> arr) const {
+    glUniform4f(glGetUniformLocation(id_, name.data()), arr[0], arr[1], arr[2], arr[3]);
+  }
+
+  void SetFloat4(const std::string& name, float x, float y, float z, float w) const {
+    glUniform4f(glGetUniformLocation(id_, name.data()), x, y, z, w);
   }
 
 public:
@@ -84,4 +106,10 @@ public:
     return program_id;
   }
 
+protected:
+  Shader(const std::string& vs_source, const std::string& fs_source) {
+    id_ = CreateShaderProgram(vs_source, fs_source);
+  }
+
+  unsigned int id_ = 0;
 };

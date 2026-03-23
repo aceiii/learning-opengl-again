@@ -16,9 +16,10 @@ public:
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &num_attributes);
     LogInfo("[SCENE] Maximum num of vertex attributes: {}", num_attributes);
 
-    shader_programs_.push_back(Shader::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource));
-    shader_programs_.push_back(Shader::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource2));
-    shader_programs_.push_back(Shader::CreateShaderProgram(kVertexShaderSource2, kFragmentShaderSource3));
+    shaders_.push_back(Shader::FromSource(kVertexShaderSource, kFragmentShaderSource));
+    shaders_.push_back(Shader::FromSource(kVertexShaderSource, kFragmentShaderSource2));
+    shaders_.push_back(Shader::FromSource(kVertexShaderSource2, kFragmentShaderSource3));
+    shaders_.push_back(Shader::FromFiles("resources/shaders/shaders_scene/main.vs", "resources/shaders/shaders_scene/main.fs"));
 
     vaos_.resize(2);
     vbos_.resize(2);
@@ -59,25 +60,33 @@ public:
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
-    if (use_vertex_colors_) {
-      glUseProgram(shader_programs_[2]);
-      glBindVertexArray(vaos_[1]);
-      glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+    float time_value = glfwGetTime();
+    float green_value = sin(time_value) / 2.0f + 0.5f;
 
-    } else {
-      if (use_uniform_shader_) {
-        float time_value = glfwGetTime();
-        float green_value = sin(time_value) / 2.0f + 0.5f;
-
-        glUseProgram(shader_programs_[1]);
-        int vertex_color_location = glGetUniformLocation(shader_programs_[1], "ourColor");
-        glUniform4f(vertex_color_location, 0.0f, green_value, 0.0f, 1.0f);
-      } else {
-        glUseProgram(shader_programs_[0]);
-      }
+    switch (mode_) {
+    case 0:
+      shaders_[0].Use();
       glBindVertexArray(vaos_[0]);
-      glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+      break;
+    case 1:
+      shaders_[1].Use();
+      shaders_[1].SetFloat4("ourColor", {0.0f, green_value, 0.0f, 1.0f});
+      glBindVertexArray(vaos_[0]);
+      break;
+    case 2:
+      shaders_[2].Use();
+      glBindVertexArray(vaos_[1]);
+      break;
+    case 3:
+      shaders_[3].Use();
+      shaders_[3].SetFloat("yScale", flip_y_ ? -1.0f : 1.0f);
+      shaders_[3].SetFloat("xOffset", horizontal_offset_);
+      shaders_[3].SetFloat("colorMix", vert_pos_color_ ? 1.0f : 0.0f);
+      glBindVertexArray(vaos_[1]);
+      break;
     }
+
+    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -89,8 +98,23 @@ public:
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
-      ImGui::Checkbox("Unform Shader", &use_uniform_shader_);
-      ImGui::Checkbox("Vertex Attribute Color", &use_vertex_colors_);
+
+      if (ImGui::BeginCombo("Mode", kModeNames[mode_])) {
+        for (int i = 0; i < kModeNames.size(); i++) {
+          if (ImGui::Selectable(kModeNames[i], i == mode_)) {
+            mode_ = i;
+          }
+        }
+        ImGui::EndCombo();
+      }
+
+      ImGui::NewLine();
+
+      if (mode_ == 3) {
+        ImGui::Checkbox("Flip Y", &flip_y_);
+        ImGui::DragFloat("X Offset", &horizontal_offset_, 0.01f, -2.0f, 2.0f);
+        ImGui::Checkbox("Vertex Position Color", &vert_pos_color_);
+      }
     }
     ImGui::End();
     ImGui::PopID();
@@ -107,12 +131,10 @@ public:
       vbos_.clear();
     }
 
-    if (!shader_programs_.empty()) {
-      for (const auto& program_id : shader_programs_) {
-        glDeleteProgram(program_id);
-      }
-      shader_programs_.clear();
+    for (auto& shader : shaders_) {
+      shader.Destroy();
     }
+    shaders_.clear();
   }
 
   virtual std::string Name() const override {
@@ -194,12 +216,24 @@ private:
     }
   )";
 
-  std::vector<unsigned int> shader_programs_;
+  std::vector<Shader> shaders_;
   std::vector<unsigned int> vaos_;
   std::vector<unsigned int> vbos_;
   unsigned int ebo_ = 0;
 
   bool wireframe_ = false;
-  bool use_uniform_shader_ = false;
-  bool use_vertex_colors_ = false;
+
+  inline static const std::array kModeNames{
+    "Vertex shader color",
+    "Unform shader",
+    "Vertex colors",
+    "Shaders from file",
+  };
+
+  int mode_ = 0;
+
+  bool flip_y_ = false;
+  float horizontal_offset_ = 0.0f;
+  bool vert_pos_color_ = false;
+
 };

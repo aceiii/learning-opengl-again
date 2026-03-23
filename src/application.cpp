@@ -82,6 +82,7 @@ void Application::Cleanup() {
   for (auto& scene : scenes_) {
     scene->Cleanup();
   }
+  scenes_.clear();
 
   glfwTerminate();
 

@@ -22,6 +22,7 @@ set(SOURCE_FILES
     src/scene.hpp
     src/scenes.hpp
     src/shader.hpp
+    src/file.hpp
 )
 
 file(GLOB SCENE_SOURCE_FILES "src/scenes/*")

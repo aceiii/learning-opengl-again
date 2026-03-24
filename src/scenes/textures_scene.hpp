@@ -14,19 +14,8 @@
 class TexturesScene final : public Scene {
 public:
   void Init() override {
-
-    glGenTextures(1, &texture_);
-    glBindTexture(GL_TEXTURE_2D, texture_);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    Image image = Image::Load("resources/textures/container.jpg");
-    if (image.data) {
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data.get());
-      glGenerateMipmap(GL_TEXTURE_2D);
-    }
+    textures_.push_back(LoadTexture(GL_TEXTURE0, "resources/textures/container.jpg"));
+    textures_.push_back(LoadTexture(GL_TEXTURE1, "resources/textures/awesomeface.png"));
 
     shader_ = Shader::FromFiles("resources/shaders/textures_scene/main.vs", "resources/shaders/textures_scene/main.fs");
 
@@ -58,9 +47,12 @@ public:
     shader_.Use();
     shader_.SetFloat("xOffset", horizontal_offset_);
     shader_.SetFloat("yOffset", vertical_offset_);
-    shader_.SetFloat("textureBlend", show_texture_ ? 1.0f : 0.0f);
+    shader_.SetFloat("outputMix", show_texture_ ? 1.0f : 0.0f);
     shader_.SetFloat("vertexBlend", blend_vertex_color_ ? 1.0f : 0.0f);
-    glBindTexture(GL_TEXTURE_2D, texture_);
+    shader_.SetFloat("textureBlend", texture_blend_);
+    shader_.SetInt("texture1", 0);
+    shader_.SetInt("texture2", 1);
+
     glBindVertexArray(vao_);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
   }
@@ -75,6 +67,7 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::Checkbox("Texture", &show_texture_);
+      ImGui::DragFloat("Texture Blend", &texture_blend_, 0.01f, 0.0f, 1.0f);
       ImGui::Checkbox("Blend Vertex Color", &blend_vertex_color_);
       ImGui::DragFloat("X Offset", &horizontal_offset_, 0.01f, -2.0f, 2.0f);
       ImGui::DragFloat("Y Offset", &vertical_offset_, 0.01f, -2.0f, 2.0f);
@@ -95,6 +88,11 @@ public:
     }
 
     shader_.Destroy();
+
+    if (!textures_.empty()) {
+      glDeleteTextures(textures_.size(), textures_.data());
+    }
+    textures_.clear();
   }
 
   virtual std::string Name() const override {
@@ -102,6 +100,26 @@ public:
   }
 
 private:
+  unsigned int LoadTexture(GLenum texture, std::string_view path) {
+    unsigned texture_id;
+    glGenTextures(1, &texture_id);
+
+    glActiveTexture(texture);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    Image image = Image::Load(path);
+    if (image.data) {
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data.get());
+      glGenerateMipmap(GL_TEXTURE_2D);
+    }
+
+    return texture_id;
+  }
+
   inline static const std::array kVertices{
      0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
      0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
@@ -118,11 +136,12 @@ private:
   unsigned int vao_ = 0;
   unsigned int vbo_ = 0;
   unsigned int ebo_ = 0;
-  unsigned int texture_ = 0;
+  std::vector<unsigned int> textures_;
 
   bool wireframe_ = false;
   bool show_texture_ = true;
   bool blend_vertex_color_ = false;
+  float texture_blend_ = 0.2f;
   float vertical_offset_ = 0.0f;
   float horizontal_offset_ = 0.0f;
 };

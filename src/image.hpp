@@ -16,6 +16,9 @@ public:
   static Image Load(std::string_view path) {
     const int num_channels = 4;
     int width, height;
+
+    stbi_set_flip_vertically_on_load(true);
+
     unsigned char* bytes = stbi_load(path.data(), &width, &height, nullptr, num_channels);
     if (!bytes) {
       auto* logger = Logger::GetRootLogger();

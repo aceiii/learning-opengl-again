@@ -50,6 +50,7 @@ public:
     shader_.SetFloat("outputMix", show_texture_ ? 1.0f : 0.0f);
     shader_.SetFloat("vertexBlend", blend_vertex_color_ ? 1.0f : 0.0f);
     shader_.SetFloat("textureBlend", texture_blend_);
+    shader_.SetBool("mirrorFace", mirror_happy_face_);
     shader_.SetInt("texture1", 0);
     shader_.SetInt("texture2", 1);
 
@@ -69,6 +70,7 @@ public:
       ImGui::Checkbox("Texture", &show_texture_);
       ImGui::DragFloat("Texture Blend", &texture_blend_, 0.01f, 0.0f, 1.0f);
       ImGui::Checkbox("Blend Vertex Color", &blend_vertex_color_);
+      ImGui::Checkbox("Mirror Happy Face", &mirror_happy_face_);
       ImGui::DragFloat("X Offset", &horizontal_offset_, 0.01f, -2.0f, 2.0f);
       ImGui::DragFloat("Y Offset", &vertical_offset_, 0.01f, -2.0f, 2.0f);
     }
@@ -141,6 +143,7 @@ private:
   bool wireframe_ = false;
   bool show_texture_ = true;
   bool blend_vertex_color_ = false;
+  bool mirror_happy_face_ = false;
   float texture_blend_ = 0.2f;
   float vertical_offset_ = 0.0f;
   float horizontal_offset_ = 0.0f;

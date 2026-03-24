@@ -59,6 +59,7 @@ public:
     shader_.SetFloat("xOffset", horizontal_offset_);
     shader_.SetFloat("yOffset", vertical_offset_);
     shader_.SetFloat("textureBlend", show_texture_ ? 1.0f : 0.0f);
+    shader_.SetFloat("vertexBlend", blend_vertex_color_ ? 1.0f : 0.0f);
     glBindTexture(GL_TEXTURE_2D, texture_);
     glBindVertexArray(vao_);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -74,6 +75,7 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::Checkbox("Texture", &show_texture_);
+      ImGui::Checkbox("Blend Vertex Color", &blend_vertex_color_);
       ImGui::DragFloat("X Offset", &horizontal_offset_, 0.01f, -2.0f, 2.0f);
       ImGui::DragFloat("Y Offset", &vertical_offset_, 0.01f, -2.0f, 2.0f);
     }
@@ -120,7 +122,7 @@ private:
 
   bool wireframe_ = false;
   bool show_texture_ = true;
+  bool blend_vertex_color_ = false;
   float vertical_offset_ = 0.0f;
   float horizontal_offset_ = 0.0f;
-
 };

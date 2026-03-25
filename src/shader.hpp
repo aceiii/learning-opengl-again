@@ -1,9 +1,12 @@
 #pragma once
 
 #include <fstream>
+#include <span>
 #include <string>
 #include <string_view>
 #include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "file.hpp"
 
@@ -55,6 +58,10 @@ public:
 
   void SetFloat4(const std::string& name, float x, float y, float z, float w) const {
     glUniform4f(glGetUniformLocation(id_, name.data()), x, y, z, w);
+  }
+
+  void SetMat4(const std::string& name, const glm::mat4& matrix) {
+    glUniformMatrix4fv(glGetUniformLocation(id_, name.data()), 1, GL_FALSE, glm::value_ptr(matrix));
   }
 
 public:

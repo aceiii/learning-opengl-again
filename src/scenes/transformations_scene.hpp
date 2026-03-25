@@ -46,10 +46,13 @@ public:
 
     transform_ = glm::mat4(1.0f);
     transform_ = glm::rotate(transform_, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
-    transform_ = glm::scale(transform_, glm::vec3(0.5, 0.5, 0.5));
+    transform_ = glm::scale(transform_, glm::vec3(0.5f, 0.5f, 0.5f));
   }
 
   void Update(float dt) override {
+    transform_ = glm::mat4(1.0f);
+    transform_ = glm::translate(transform_, glm::vec3(0.5f, -0.5f, 0.0f));
+    transform_ = glm::rotate(transform_, GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
   }
 
   void Render() override {

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <string_view>
+#include <GLFW/glfw3.h>
 
 #include "logger.hpp"
 
@@ -18,6 +19,10 @@ public:
   virtual std::string Name() const = 0;
 
 protected:
+  float GetTime() const {
+    return static_cast<float>(glfwGetTime());
+  }
+
   template<typename... Args>
   void LogDebug(std::string_view format, Args&&... args) {
     auto* logger = Logger::GetRootLogger();

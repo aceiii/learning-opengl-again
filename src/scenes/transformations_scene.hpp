@@ -47,8 +47,13 @@ public:
 
   void Update(float dt) override {
     transform_ = glm::mat4(1.0f);
-    transform_ = glm::translate(transform_, glm::vec3(0.5f, -0.5f, 0.0f));
-    transform_ = glm::rotate(transform_, GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+    if (reverse_transform_) {
+      transform_ = glm::rotate(transform_, GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+      transform_ = glm::translate(transform_, glm::vec3(horizontal_offset_, vertical_offset_, 0.0f));
+    } else {
+      transform_ = glm::translate(transform_, glm::vec3(horizontal_offset_, vertical_offset_, 0.0f));
+      transform_ = glm::rotate(transform_, GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+    }
 
     transform2_ = glm::mat4(1.0f);
     transform2_ = glm::translate(transform2_, glm::vec3(-0.5f, 0.5f, 0.f));
@@ -86,6 +91,7 @@ public:
       ImGui::DragFloat("Texture Blend", &texture_blend_, 0.01f, 0.0f, 1.0f);
       ImGui::DragFloat("X Offset", &horizontal_offset_, 0.01f, -2.0f, 2.0f);
       ImGui::DragFloat("Y Offset", &vertical_offset_, 0.01f, -2.0f, 2.0f);
+      ImGui::Checkbox("Reverse transformation", &reverse_transform_);
     }
     ImGui::End();
     ImGui::PopID();
@@ -155,10 +161,11 @@ private:
 
   bool wireframe_ = false;
   bool second_container_ = false;
+  bool reverse_transform_ = false;
 
   float texture_blend_ = 0.2f;
-  float vertical_offset_ = 0.0f;
-  float horizontal_offset_ = 0.0f;
+  float vertical_offset_ = -0.5f;
+  float horizontal_offset_ = 0.5f;
 
   glm::mat4 transform_;
   glm::mat4 transform2_;

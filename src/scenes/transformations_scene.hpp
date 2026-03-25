@@ -43,16 +43,16 @@ public:
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
-
-    transform_ = glm::mat4(1.0f);
-    transform_ = glm::rotate(transform_, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
-    transform_ = glm::scale(transform_, glm::vec3(0.5f, 0.5f, 0.5f));
   }
 
   void Update(float dt) override {
     transform_ = glm::mat4(1.0f);
     transform_ = glm::translate(transform_, glm::vec3(0.5f, -0.5f, 0.0f));
     transform_ = glm::rotate(transform_, GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    transform2_ = glm::mat4(1.0f);
+    transform2_ = glm::translate(transform2_, glm::vec3(-0.5f, 0.5f, 0.f));
+    transform2_ = glm::scale(transform2_, glm::vec3(sinf(GetTime())));
   }
 
   void Render() override {
@@ -66,6 +66,11 @@ public:
 
     glBindVertexArray(vaos_[0]);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    if (second_container_) {
+      shader_.SetMat4("transform", transform2_);
+      glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    }
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -77,6 +82,7 @@ public:
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
+      ImGui::Checkbox("Show 2nd container", &second_container_);
       ImGui::DragFloat("Texture Blend", &texture_blend_, 0.01f, 0.0f, 1.0f);
       ImGui::DragFloat("X Offset", &horizontal_offset_, 0.01f, -2.0f, 2.0f);
       ImGui::DragFloat("Y Offset", &vertical_offset_, 0.01f, -2.0f, 2.0f);
@@ -148,9 +154,12 @@ private:
   unsigned int ebo_ = 0;
 
   bool wireframe_ = false;
+  bool second_container_ = false;
+
   float texture_blend_ = 0.2f;
   float vertical_offset_ = 0.0f;
   float horizontal_offset_ = 0.0f;
 
   glm::mat4 transform_;
+  glm::mat4 transform2_;
 };

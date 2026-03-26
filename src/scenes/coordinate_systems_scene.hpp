@@ -41,10 +41,11 @@ public:
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
+
+    glEnable(GL_DEPTH_TEST);
   }
 
   void Update(float dt) override {
-    model_ = glm::rotate(glm::mat4(1.0f), GetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
     view_ =  glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
     projection_ = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
   }
@@ -55,12 +56,19 @@ public:
     shader_.Use();
     shader_.SetInt("texture1", 0);
     shader_.SetInt("texture2", 1);
-    shader_.SetMat4("model", model_);
     shader_.SetMat4("view", view_);
     shader_.SetMat4("projection", projection_);
 
     glBindVertexArray(vaos_[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    for (unsigned int i = 0; i < 10; i++) {
+      glm::mat4 model = glm::mat4(1.0f);
+      model = glm::translate(model, kCubePositions[i]);
+      float angle = 20.0f * i;
+      model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+      shader_.SetMat4("model", model);
+
+      glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -166,6 +174,19 @@ private:
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
   };
 
+  inline static const std::array kCubePositions{
+    glm::vec3( 0.0f,  0.0f,  0.0f),
+    glm::vec3( 2.0f,  5.0f, -15.0f),
+    glm::vec3(-1.5f, -2.2f, -2.5f),
+    glm::vec3(-3.8f, -2.0f, -12.3f),
+    glm::vec3( 2.4f, -0.4f, -3.5f),
+    glm::vec3(-1.7f,  3.0f, -7.5f),
+    glm::vec3( 1.3f, -2.0f, -2.5f),
+    glm::vec3( 1.5f,  2.0f, -2.5f),
+    glm::vec3( 1.5f,  0.2f, -1.5f),
+    glm::vec3(-1.3f,  1.0f, -1.5f),
+  };
+
   Shader shader_;
   std::vector<unsigned int> vaos_;
   std::vector<unsigned int> vbos_;
@@ -174,7 +195,6 @@ private:
 
   bool wireframe_ = false;
 
-  glm::mat4 model_;
   glm::mat4 view_;
   glm::mat4 projection_;
 };

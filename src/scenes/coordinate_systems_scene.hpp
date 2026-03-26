@@ -15,13 +15,13 @@
 #include "../shader.hpp"
 
 
-class TransformationsScene final : public Scene {
+class CoordinateSystemsScene final : public Scene {
 public:
   void Init() override {
     textures_.push_back(LoadTexture(GL_TEXTURE0, "resources/textures/container.jpg"));
     textures_.push_back(LoadTexture(GL_TEXTURE1, "resources/textures/awesomeface.png"));
 
-    shader_ = Shader::FromFiles("resources/shaders/coordinate_systems_scene/main.vs", "resources/shaders/transformations_scene/main.fs");
+    shader_ = Shader::FromFiles("resources/shaders/coordinate_systems_scene/main.vs", "resources/shaders/coordinate_systems_scene/main.fs");
 
     vaos_.resize(1);
     vbos_.resize(1);
@@ -46,36 +46,23 @@ public:
   }
 
   void Update(float dt) override {
-    transform_ = glm::mat4(1.0f);
-    if (reverse_transform_) {
-      transform_ = glm::rotate(transform_, GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-      transform_ = glm::translate(transform_, glm::vec3(horizontal_offset_, vertical_offset_, 0.0f));
-    } else {
-      transform_ = glm::translate(transform_, glm::vec3(horizontal_offset_, vertical_offset_, 0.0f));
-      transform_ = glm::rotate(transform_, GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-    }
-
-    transform2_ = glm::mat4(1.0f);
-    transform2_ = glm::translate(transform2_, glm::vec3(-0.5f, 0.5f, 0.f));
-    transform2_ = glm::scale(transform2_, glm::vec3(sinf(GetTime())));
+    model_ = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    view_ =  glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+    projection_ = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
   }
 
   void Render() override {
     glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
 
     shader_.Use();
-    shader_.SetFloat("textureBlend", texture_blend_);
     shader_.SetInt("texture1", 0);
     shader_.SetInt("texture2", 1);
-    shader_.SetMat4("transform", transform_);
+    shader_.SetMat4("model", model_);
+    shader_.SetMat4("view", view_);
+    shader_.SetMat4("projection", projection_);
 
     glBindVertexArray(vaos_[0]);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-    if (second_container_) {
-      shader_.SetMat4("transform", transform2_);
-      glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    }
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -87,11 +74,6 @@ public:
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
-      ImGui::Checkbox("Show 2nd container", &second_container_);
-      ImGui::DragFloat("Texture Blend", &texture_blend_, 0.01f, 0.0f, 1.0f);
-      ImGui::DragFloat("X Offset", &horizontal_offset_, 0.01f, -2.0f, 2.0f);
-      ImGui::DragFloat("Y Offset", &vertical_offset_, 0.01f, -2.0f, 2.0f);
-      ImGui::Checkbox("Reverse transformation", &reverse_transform_);
     }
     ImGui::End();
     ImGui::PopID();
@@ -117,7 +99,7 @@ public:
   }
 
   virtual std::string Name() const override {
-    return "Transformations";
+    return "Coordinate System";
   }
 
 private:
@@ -160,13 +142,8 @@ private:
   unsigned int ebo_ = 0;
 
   bool wireframe_ = false;
-  bool second_container_ = false;
-  bool reverse_transform_ = false;
 
-  float texture_blend_ = 0.2f;
-  float vertical_offset_ = -0.5f;
-  float horizontal_offset_ = 0.5f;
-
-  glm::mat4 transform_;
-  glm::mat4 transform2_;
+  glm::mat4 model_;
+  glm::mat4 view_;
+  glm::mat4 projection_;
 };

@@ -5,3 +5,4 @@
 #include "scenes/shaders_scene.hpp"
 #include "scenes/textures_scene.hpp"
 #include "scenes/transformations_scene.hpp"
+#include "scenes/coordinate_systems_scene.hpp"

@@ -55,6 +55,7 @@ std::expected<void, std::string> Application::Init() {
   scenes_.push_back(std::make_shared<ShadersScene>());
   scenes_.push_back(std::make_shared<TexturesScene>());
   scenes_.push_back(std::make_shared<TransformationsScene>());
+  scenes_.push_back(std::make_shared<CoordinateSystemsScene>());
 
   return {};
 }

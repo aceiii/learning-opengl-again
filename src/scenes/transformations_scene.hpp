@@ -21,7 +21,7 @@ public:
     textures_.push_back(LoadTexture(GL_TEXTURE0, "resources/textures/container.jpg"));
     textures_.push_back(LoadTexture(GL_TEXTURE1, "resources/textures/awesomeface.png"));
 
-    shader_ = Shader::FromFiles("resources/shaders/coordinate_systems_scene/main.vs", "resources/shaders/transformations_scene/main.fs");
+    shader_ = Shader::FromFiles("resources/shaders/transformations_scene/main.vs", "resources/shaders/transformations_scene/main.fs");
 
     vaos_.resize(1);
     vbos_.resize(1);
@@ -91,7 +91,7 @@ public:
       ImGui::DragFloat("Texture Blend", &texture_blend_, 0.01f, 0.0f, 1.0f);
       ImGui::DragFloat("X Offset", &horizontal_offset_, 0.01f, -2.0f, 2.0f);
       ImGui::DragFloat("Y Offset", &vertical_offset_, 0.01f, -2.0f, 2.0f);
-      ImGui::Checkbox("Reverse transformation", &reverse_transform_);
+      ImGui::Checkbox("Reverse transformation order", &reverse_transform_);
     }
     ImGui::End();
     ImGui::PopID();

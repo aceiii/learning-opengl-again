@@ -47,7 +47,7 @@ public:
 
   void Update(float dt) override {
     view_ =  glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
-    projection_ = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+    projection_ = glm::perspective(glm::radians(fov_), aspect_ratio_, 0.1f, 100.0f);
   }
 
   void Render() override {
@@ -80,6 +80,8 @@ public:
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
+      ImGui::DragFloat("FOV", &fov_, 1.0f, 5.0f, 170.0f, "%.0f");
+      ImGui::DragFloat("Aspect Ratio", &aspect_ratio_, 0.01f, 0.1f, 4.0f);
     }
     ImGui::End();
     ImGui::PopID();
@@ -207,6 +209,9 @@ private:
   unsigned int ebo_ = 0;
 
   bool wireframe_ = false;
+
+  float fov_ = 45.0f;
+  float aspect_ratio_ = 800.0f / 600.0f;
 
   glm::mat4 view_;
   glm::mat4 projection_;

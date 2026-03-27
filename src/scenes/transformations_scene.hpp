@@ -60,6 +60,9 @@ public:
     transform2_ = glm::scale(transform2_, glm::vec3(sinf(GetTime())));
   }
 
+  void ProcessInput(float dt, const SceneInputState& input) override {
+  }
+
   void Render() override {
     glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
 

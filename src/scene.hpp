@@ -7,12 +7,20 @@
 #include "logger.hpp"
 
 
+struct SceneInputState {
+  bool key_up;
+  bool key_down;
+  bool key_left;
+  bool key_right;
+};
+
 class Scene {
 public:
   virtual ~Scene() = default;
 
   virtual void Init() = 0;
   virtual void Update(float dt) = 0;
+  virtual void ProcessInput(float dt, const SceneInputState& state) = 0;
   virtual void Render() = 0;
   virtual void RenderInterface(int window_width, int window_height) = 0;
   virtual void Cleanup() = 0;

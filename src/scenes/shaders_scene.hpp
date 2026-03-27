@@ -51,6 +51,9 @@ public:
   void Update(float dt) override {
   }
 
+  void ProcessInput(float dt, const SceneInputState& input) override {
+  }
+
   void Render() override {
     if (wireframe_) {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

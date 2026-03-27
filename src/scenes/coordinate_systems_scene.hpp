@@ -50,6 +50,9 @@ public:
     projection_ = glm::perspective(glm::radians(fov_), aspect_ratio_, 0.1f, 100.0f);
   }
 
+  void ProcessInput(float dt, const SceneInputState& input) override {
+  }
+
   void Render() override {
     glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
 

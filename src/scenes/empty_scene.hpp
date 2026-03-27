@@ -13,6 +13,8 @@ public:
 
   void RenderInterface(int, int) override {}
 
+  void ProcessInput(float dt, const SceneInputState& input) override {}
+
   void Cleanup() override {}
 
   virtual std::string Name() const override {

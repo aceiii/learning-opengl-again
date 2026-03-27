@@ -69,7 +69,7 @@ void Application::Run() {
     double delta_time = current_time - last_frame_time;
     last_frame_time = current_time;
 
-    ProcessInput(g_window);
+    ProcessInput(g_window, delta_time);
     Update(delta_time);
     Render();
     RenderInterface();
@@ -204,8 +204,24 @@ void Application::MouseButtonCallback(GLFWwindow* window, int button, int action
   }
 }
 
-void Application::ProcessInput(GLFWwindow* window) {
+void Application::ProcessInput(GLFWwindow* window, float dt) {
+  const auto& io = ImGui::GetIO();
+  if (io.WantCaptureKeyboard) {
+    return;
+  }
+
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, true);
+    return;
+  }
+
+  if (selected_scene_) {
+    static SceneInputState state{};
+
+    state.key_up = glfwGetKey(g_window, GLFW_KEY_UP) == GLFW_PRESS || glfwGetKey(g_window, GLFW_KEY_W) == GLFW_PRESS;
+    state.key_down = glfwGetKey(g_window, GLFW_KEY_DOWN) == GLFW_PRESS || glfwGetKey(g_window, GLFW_KEY_S) == GLFW_PRESS;;
+    state.key_left = glfwGetKey(g_window, GLFW_KEY_LEFT) == GLFW_PRESS || glfwGetKey(g_window, GLFW_KEY_A) == GLFW_PRESS;;
+    state.key_right = glfwGetKey(g_window, GLFW_KEY_RIGHT) == GLFW_PRESS || glfwGetKey(g_window, GLFW_KEY_D) == GLFW_PRESS;;
+    selected_scene_->ProcessInput(dt, state);
   }
 }

@@ -22,13 +22,12 @@ private:
   void Update(float dt);
   void Render();
   void RenderInterface();
-
+  void ProcessInput(GLFWwindow* window, float dt);
   void LogCallback(std::string_view message);
 
   static void ErrorCallback(int error_code, const char* description);
   static void FrameBufferSizeCallback(GLFWwindow* window, int width, int height);
   static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
-  static void ProcessInput(GLFWwindow* window);
 
   AppLog app_log_;
   std::vector<std::shared_ptr<Scene>> scenes_;

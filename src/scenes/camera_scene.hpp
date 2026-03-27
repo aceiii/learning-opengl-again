@@ -45,6 +45,8 @@ public:
     glEnable(GL_DEPTH_TEST);
 
     camera_pos_ = glm::vec3(0.0f, 0.0f, 3.0f);
+    camera_front_ = glm::vec3(0.0f, 0.0f, -1.0f);
+    camera_up_ = glm::vec3(0.0f, 1.0f, 0.f);
     camera_target_ = glm::vec3(0.0f, 0.0f, 0.0f);
   }
 
@@ -54,10 +56,31 @@ public:
     // glm::vec3 camera_right = glm::normalize(glm::cross(up, camera_direction));
     // glm::vec3 camera_up = glm::cross(camera_direction, camera_right);
 
-    float cam_x = sin(GetTime()) * camera_radius_;
-    float cam_z = cos(GetTime()) * camera_radius_;
-    view_ = glm::lookAt(glm::vec3(cam_x, 0.0f, cam_z), camera_target_, glm::vec3(0.0f, 1.0f, 0.0f));
+    if (auto_rotate_camera_) {
+      float cam_z = cos(GetTime()) * camera_radius_;
+      float cam_x = sin(GetTime()) * camera_radius_;
+      view_ = glm::lookAt(glm::vec3(cam_x, 0.0f, cam_z), camera_target_, glm::vec3(0.0f, 1.0f, 0.0f));
+    } else {
+      view_ = glm::lookAt(camera_pos_, camera_pos_ + camera_front_, camera_up_);
+    }
+
     projection_ = glm::perspective(glm::radians(fov_), aspect_ratio_, 0.1f, 100.0f);
+  }
+
+  void ProcessInput(float dt, const SceneInputState& input) override {
+    float camera_speed = camera_speed_ * dt;
+    if (input.key_up) {
+      camera_pos_ += camera_speed * camera_front_;
+    }
+    if (input.key_down) {
+      camera_pos_ -= camera_speed * camera_front_;
+    }
+    if (input.key_left) {
+      camera_pos_ -= glm::normalize(glm::cross(camera_front_, camera_up_)) * camera_speed;
+    }
+    if (input.key_right) {
+      camera_pos_ += glm::normalize(glm::cross(camera_front_, camera_up_)) * camera_speed;
+    }
   }
 
   void Render() override {
@@ -90,9 +113,14 @@ public:
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
-      // ImGui::DragFloat3("Camera Pos", &camera_pos_.r, 0.1f, -10.0f, 10.f);
-      ImGui::DragFloat3("Camera Target", &camera_target_[0], 0.1f, -10.0f, 10.f);
-      ImGui::DragFloat("Camera Radius", &camera_radius_, 0.0f, 0.5f, 100.0f);
+      ImGui::Checkbox("Auto-Rotate Camera", &auto_rotate_camera_);
+      if (auto_rotate_camera_) {
+        ImGui::DragFloat3("Camera Target", &camera_target_[0], 0.1f, -10.0f, 10.f);
+        ImGui::DragFloat("Camera Radius", &camera_radius_, 0.0f, 0.5f, 100.0f);
+      } else {
+        ImGui::DragFloat("Camera Speed", &camera_speed_, 0.01f, 0.01f, 50.0f);
+        ImGui::DragFloat3("Camera Pos", &camera_pos_.r, 0.1f, -10.0f, 10.f);
+      }
     }
     ImGui::End();
     ImGui::PopID();
@@ -219,14 +247,18 @@ private:
   unsigned int ebo_ = 0;
 
   bool wireframe_ = false;
+  bool auto_rotate_camera_ = false;
 
   float fov_ = 45.0f;
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;
+  float camera_speed_ = 2.5f;
 
   glm::mat4 view_;
   glm::mat4 projection_;
 
   glm::vec3 camera_pos_;
+  glm::vec3 camera_front_;
+  glm::vec3 camera_up_;
   glm::vec3 camera_target_;
 };

@@ -11,7 +11,7 @@
 
 class ShadersScene final : public Scene {
 public:
-  void Init() override {
+  void Init(IAppContext* ctx) override {
     int num_attributes;
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &num_attributes);
     LogInfo("[SCENE] Maximum num of vertex attributes: {}", num_attributes);
@@ -49,9 +49,6 @@ public:
   }
 
   void Update(float dt) override {
-  }
-
-  void ProcessInput(float dt, const SceneInputState& input) override {
   }
 
   void Render() override {

@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 
 #include "logger.hpp"
+#include "app_context.hpp"
 
 
 struct SceneInputState {
@@ -18,13 +19,16 @@ class Scene {
 public:
   virtual ~Scene() = default;
 
-  virtual void Init() = 0;
+  virtual void Init(IAppContext* ctx) = 0;
   virtual void Update(float dt) = 0;
-  virtual void ProcessInput(float dt, const SceneInputState& state) = 0;
   virtual void Render() = 0;
   virtual void RenderInterface(int window_width, int window_height) = 0;
   virtual void Cleanup() = 0;
   virtual std::string Name() const = 0;
+
+  virtual void OnMouseMoveEvent(float x, float y) {};
+  virtual void OnMouseButtonEvent(Mouse mouse, bool pressed) {};
+  virtual void OnKeyboardEvent(Key key, bool pressed) {}
 
 protected:
   float GetTime() const {

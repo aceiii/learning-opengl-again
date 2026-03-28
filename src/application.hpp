@@ -12,11 +12,24 @@
 #include "scenes/empty_scene.hpp"
 
 
-class Application {
+class Application final : public IAppContext {
 public:
+  ~Application() = default;
+
   std::expected<void, std::string> Init();
   void Run();
   void Cleanup();
+
+public:
+  float GetFrameTime() const override;
+  std::pair<int, int> GetWindowSize() const override;
+  virtual std::pair<float, float> GetMousePosition() const override;
+  bool IsKeyDown(Key key) const override;
+  bool IsMouseButtonDown(Mouse mouse) const override;
+
+  void RequestQuit() override;
+  void CaptureCursor(bool enabled) override;
+  void ToggleUI(bool enabled) override;
 
 private:
   void Update(float dt);
@@ -25,11 +38,23 @@ private:
   void ProcessInput(GLFWwindow* window, float dt);
   void LogCallback(std::string_view message);
 
+  static Key FromGlfwKey(int key);
+  static int ToGlfwKey(Key key);
+
+  static Mouse FromGlfwMouse(int mouse);
+  static int ToGlfwMouse(Mouse mouse);
+
   static void ErrorCallback(int error_code, const char* description);
   static void FrameBufferSizeCallback(GLFWwindow* window, int width, int height);
   static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+  static void MouseCursorCallback(GLFWwindow* window, double x_pos, double y_pos);
+  static void KeyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
   AppLog app_log_;
   std::vector<std::shared_ptr<Scene>> scenes_;
-  std::shared_ptr<Scene> selected_scene_ = EmptyScene::Get();
+
+  bool enable_interface_ = true;
+  float delta_time_ = 0;
+  int window_width_ = 0;
+  int window_height_ = 0;
 };

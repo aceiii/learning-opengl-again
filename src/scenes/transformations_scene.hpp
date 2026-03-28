@@ -17,7 +17,7 @@
 
 class TransformationsScene final : public Scene {
 public:
-  void Init() override {
+  void Init(IAppContext* ctx) override {
     textures_.push_back(LoadTexture(GL_TEXTURE0, "resources/textures/container.jpg"));
     textures_.push_back(LoadTexture(GL_TEXTURE1, "resources/textures/awesomeface.png"));
 
@@ -58,9 +58,6 @@ public:
     transform2_ = glm::mat4(1.0f);
     transform2_ = glm::translate(transform2_, glm::vec3(-0.5f, 0.5f, 0.f));
     transform2_ = glm::scale(transform2_, glm::vec3(sinf(GetTime())));
-  }
-
-  void ProcessInput(float dt, const SceneInputState& input) override {
   }
 
   void Render() override {

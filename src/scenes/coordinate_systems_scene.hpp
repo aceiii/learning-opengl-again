@@ -17,7 +17,7 @@
 
 class CoordinateSystemsScene final : public Scene {
 public:
-  void Init() override {
+  void Init(IAppContext* ctx) override {
     textures_.push_back(LoadTexture(GL_TEXTURE0, "resources/textures/container.jpg"));
     textures_.push_back(LoadTexture(GL_TEXTURE1, "resources/textures/awesomeface.png"));
 
@@ -48,9 +48,6 @@ public:
   void Update(float dt) override {
     view_ =  glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
     projection_ = glm::perspective(glm::radians(fov_), aspect_ratio_, 0.1f, 100.0f);
-  }
-
-  void ProcessInput(float dt, const SceneInputState& input) override {
   }
 
   void Render() override {

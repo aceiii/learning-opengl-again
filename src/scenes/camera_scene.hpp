@@ -17,7 +17,9 @@
 
 class CameraScene final : public Scene {
 public:
-  void Init() override {
+  void Init(IAppContext* ctx) override {
+    ctx_ = ctx;
+
     textures_.push_back(LoadTexture(GL_TEXTURE0, "resources/textures/container.jpg"));
     textures_.push_back(LoadTexture(GL_TEXTURE1, "resources/textures/awesomeface.png"));
 
@@ -51,10 +53,19 @@ public:
   }
 
   void Update(float dt) override {
-    // glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-    // glm::vec3 camera_direction = glm::normalize(camera_pos_ - camera_target_);
-    // glm::vec3 camera_right = glm::normalize(glm::cross(up, camera_direction));
-    // glm::vec3 camera_up = glm::cross(camera_direction, camera_right);
+    float camera_speed = camera_speed_ * dt;
+    if (ctx_->IsKeyDown(Key::kKeyUp) || ctx_->IsKeyDown(Key::kKeyW)) {
+      camera_pos_ += camera_speed * camera_front_;
+    }
+    if (ctx_->IsKeyDown(Key::kKeyDown) || ctx_->IsKeyDown(Key::kKeyS)) {
+      camera_pos_ -= camera_speed * camera_front_;
+    }
+    if (ctx_->IsKeyDown(Key::kKeyLeft) || ctx_->IsKeyDown(Key::kKeyA)) {
+      camera_pos_ -= glm::normalize(glm::cross(camera_front_, camera_up_)) * camera_speed;
+    }
+    if (ctx_->IsKeyDown(Key::kKeyRight) || ctx_->IsKeyDown(Key::kKeyD)) {
+      camera_pos_ += glm::normalize(glm::cross(camera_front_, camera_up_)) * camera_speed;
+    }
 
     if (auto_rotate_camera_) {
       float cam_z = cos(GetTime()) * camera_radius_;
@@ -65,22 +76,6 @@ public:
     }
 
     projection_ = glm::perspective(glm::radians(fov_), aspect_ratio_, 0.1f, 100.0f);
-  }
-
-  void ProcessInput(float dt, const SceneInputState& input) override {
-    float camera_speed = camera_speed_ * dt;
-    if (input.key_up) {
-      camera_pos_ += camera_speed * camera_front_;
-    }
-    if (input.key_down) {
-      camera_pos_ -= camera_speed * camera_front_;
-    }
-    if (input.key_left) {
-      camera_pos_ -= glm::normalize(glm::cross(camera_front_, camera_up_)) * camera_speed;
-    }
-    if (input.key_right) {
-      camera_pos_ += glm::normalize(glm::cross(camera_front_, camera_up_)) * camera_speed;
-    }
   }
 
   void Render() override {
@@ -127,6 +122,8 @@ public:
   }
 
   void Cleanup() override {
+    ctx_ = nullptr;
+
     if (!vaos_.empty()) {
       glDeleteVertexArrays(vaos_.size(), vaos_.data());
       vaos_.clear();
@@ -239,6 +236,8 @@ private:
     -14.9f,
      7.55f,
   };
+
+  IAppContext* ctx_ = nullptr;
 
   Shader shader_;
   std::vector<unsigned int> vaos_;

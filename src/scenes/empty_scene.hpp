@@ -5,15 +5,13 @@
 
 class EmptyScene final : public Scene {
 public:
-  void Init() override {}
+  void Init(IAppContext* ctx) override {}
 
   void Update(float dt) override {}
 
   void Render() override {}
 
   void RenderInterface(int, int) override {}
-
-  void ProcessInput(float dt, const SceneInputState& input) override {}
 
   void Cleanup() override {}
 

@@ -11,7 +11,7 @@
 
 class HelloTriangle final : public Scene {
 public:
-  void Init() override {
+  void Init(IAppContext* ctx) override {
 
     shader_programs_.push_back(Shader::CreateShaderProgram(kVertexShaderSource, kFragmentShaderSource));
     shader_programs_.push_back(Shader::CreateShaderProgram(kVertexShaderSource2, kFragmentShaderSource2));
@@ -46,9 +46,6 @@ public:
   }
 
   void Update(float dt) override {
-  }
-
-  void ProcessInput(float dt, const SceneInputState& input) override {
   }
 
   void Render() override {

@@ -14,7 +14,7 @@
 
 class TexturesScene final : public Scene {
 public:
-  void Init() override {
+  void Init(IAppContext* ctx) override {
     textures_.push_back(LoadTexture(GL_TEXTURE0, "resources/textures/container.jpg"));
     textures_.push_back(LoadTexture(GL_TEXTURE1, "resources/textures/awesomeface.png"));
 
@@ -54,9 +54,6 @@ public:
   }
 
   void Update(float dt) override {
-  }
-
-  void ProcessInput(float dt, const SceneInputState& input) override {
   }
 
   void Render() override {

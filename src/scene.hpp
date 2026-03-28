@@ -8,13 +8,6 @@
 #include "app_context.hpp"
 
 
-struct SceneInputState {
-  bool key_up;
-  bool key_down;
-  bool key_left;
-  bool key_right;
-};
-
 class Scene {
 public:
   virtual ~Scene() = default;
@@ -26,8 +19,8 @@ public:
   virtual void Cleanup() = 0;
   virtual std::string Name() const = 0;
 
-  virtual void OnMouseMoveEvent(float x, float y) {};
-  virtual void OnMouseButtonEvent(Mouse mouse, bool pressed) {};
+  virtual void OnMouseMoveEvent(float x, float y) {}
+  virtual void OnMouseButtonEvent(Mouse mouse, bool pressed) {}
   virtual void OnKeyboardEvent(Key key, bool pressed) {}
 
 protected:

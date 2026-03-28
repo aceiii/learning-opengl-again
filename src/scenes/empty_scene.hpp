@@ -15,7 +15,7 @@ public:
 
   void Cleanup() override {}
 
-  virtual std::string Name() const override {
+  std::string Name() const override {
     return "<None>";
   }
 

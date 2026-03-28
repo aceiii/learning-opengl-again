@@ -170,7 +170,7 @@ public:
     textures_.clear();
   }
 
-  virtual std::string Name() const override {
+  std::string Name() const override {
     return "Textures";
   }
 

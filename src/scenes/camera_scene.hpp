@@ -142,9 +142,59 @@ public:
     textures_.clear();
   }
 
-  virtual std::string Name() const override {
+  std::string Name() const override {
     return "Camera System";
   }
+
+  void OnMouseMoveEvent(float x, float y) override {
+    static float last_x = x, last_y = y;
+
+    if (first_mouse_) {
+      last_x = x;
+      last_y = y;
+      first_mouse_ = false;
+    }
+
+    float x_offset = x - last_x;
+    float y_offset = y - last_y;
+
+    last_x = x;
+    last_y = y;
+
+    if (!capture_mouse_) {
+      return;
+    }
+
+    LogInfo("Mouse move dx={}, dy={}", x_offset, y_offset);
+
+    float sensitivity = 0.1f;
+
+    x_offset *= sensitivity;
+    y_offset *= sensitivity;
+
+    yaw_ += x_offset;
+    pitch_ = std::clamp(pitch_ + y_offset, -89.0f, 89.0f);
+
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(yaw_)) * cos(glm::radians(pitch_));
+    direction.y = sin(glm::radians(pitch_));
+    direction.z = sin(glm::radians(yaw_)) * cos(glm::radians(pitch_));
+
+    camera_front_ = glm::normalize(direction);
+  }
+
+  void OnMouseButtonEvent(Mouse mouse, bool pressed) override {
+    if (mouse == Mouse::kMouseLeft) {
+      ctx_->CaptureCursor(pressed);
+      // ctx_->ToggleUI(!pressed);
+      capture_mouse_ = pressed;
+      first_mouse_ = pressed;
+    }
+  }
+
+  // void OnKeyboardEvent(Key key, bool pressed) override {
+  //   LogInfo("Keyboard event key={}, pressed={}", std::to_underlying(key), pressed);
+  // }
 
 private:
   unsigned int LoadTexture(GLenum texture, std::string_view path) {
@@ -247,11 +297,15 @@ private:
 
   bool wireframe_ = false;
   bool auto_rotate_camera_ = false;
+  bool capture_mouse_ = false;
+  bool first_mouse_ = true;
 
   float fov_ = 45.0f;
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;
   float camera_speed_ = 2.5f;
+  float yaw_ = 0.0f;
+  float pitch_ = 0.0f;
 
   glm::mat4 view_;
   glm::mat4 projection_;

@@ -150,12 +150,8 @@ void Application::RenderInterface() {
   static bool show_logs = true;
   static bool show_demo_window = false;
 
-  if (!enable_interface_) {
-    return;
-  }
-
   ImGuiImpl::NewFrame();
-  {
+  if (enable_interface_) {
     ImGui::BeginMainMenuBar();
     {
       if (ImGui::BeginMenu("File")) {
@@ -319,7 +315,7 @@ int Application::ToGlfwKey(Key key) {
 
 Mouse Application::FromGlfwMouse(int mouse) {
   switch (mouse) {
-  case GLFW_MOUSE_BUTTON_LAST: return Mouse::kMouseLeft;
+  case GLFW_MOUSE_BUTTON_LEFT: return Mouse::kMouseLeft;
   case GLFW_MOUSE_BUTTON_RIGHT: return Mouse::kMouseRight;
   case GLFW_MOUSE_BUTTON_MIDDLE: return Mouse::kMouseMiddle;
   }
@@ -328,7 +324,7 @@ Mouse Application::FromGlfwMouse(int mouse) {
 
 int Application::ToGlfwMouse(Mouse mouse) {
   switch (mouse) {
-  case Mouse::kMouseLeft: return GLFW_MOUSE_BUTTON_LAST;
+  case Mouse::kMouseLeft: return GLFW_MOUSE_BUTTON_LEFT;
   case Mouse::kMouseRight: return GLFW_MOUSE_BUTTON_RIGHT;
   case Mouse::kMouseMiddle: return GLFW_MOUSE_BUTTON_MIDDLE;
   }
@@ -372,11 +368,6 @@ void Application::MouseButtonCallback(GLFWwindow* window, int button, int action
 }
 
 void Application::MouseCursorCallback(GLFWwindow* window, double x_pos, double y_pos) {
-  ImGuiIO& io = ImGui::GetIO();
-  if (io.WantCaptureMouse) {
-    return;
-  }
-
   if (g_selected_scene_) {
     g_selected_scene_->OnMouseMoveEvent(x_pos, y_pos);
   }

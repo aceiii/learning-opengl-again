@@ -71,6 +71,16 @@ public:
   void Render() override {
     glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
 
+    glm::vec3 light_pos;
+    if (animate_light_pos_) {
+      glm::mat4 light_transform = glm::mat4(1.0f);
+      light_transform = glm::rotate(light_transform, ctx_->GetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+      light_transform = glm::translate(light_transform, glm::vec3(1.0f, 1.0f, 3.0f));
+      light_pos = light_transform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    } else {
+      light_pos = light_pos_;
+    }
+
     glm::mat4 view = camera_.GetViewMatrix();
 
     lighting_shader_.Use();
@@ -79,7 +89,7 @@ public:
     lighting_shader_.SetMat4("model", glm::mat4(1.0f));
     lighting_shader_.SetVec3("objectColor", object_color_);
     lighting_shader_.SetVec3("lightColor", light_color_);
-    lighting_shader_.SetVec3("lightPos", light_pos_);
+    lighting_shader_.SetVec3("lightPos", light_pos);
     lighting_shader_.SetVec3("viewPos", camera_.position);
     lighting_shader_.SetFloat("specularStrength", specular_strength_);
 
@@ -87,7 +97,7 @@ public:
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, light_pos_);
+    model = glm::translate(model, light_pos);
     model = glm::scale(model, glm::vec3(0.2f));
 
     light_cube_shader_.Use();
@@ -111,9 +121,12 @@ public:
       ImGui::NewLine();
       if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::ColorEdit3("Object color", &object_color_[0]);
-        ImGui::ColorEdit3("Light color", &light_color_[0]);
-        ImGui::DragFloat3("Light position", &light_pos_[0], 0.1f);
         ImGui::DragFloat("Specular strength", &specular_strength_, 0.5f, 0.0f, 1024.0f);
+        ImGui::ColorEdit3("Light color", &light_color_[0]);
+        ImGui::Checkbox("Animate light position", &animate_light_pos_);
+        // if (!animate_light_pos_) {
+          ImGui::DragFloat3("Light position", &light_pos_[0], 0.1f);
+        // }
       }
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -272,6 +285,7 @@ private:
   bool capture_hold_ = false;
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
+  bool animate_light_pos_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;

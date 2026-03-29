@@ -10,6 +10,7 @@ class IAppContext {
 public:
   virtual ~IAppContext() = default;
 
+  virtual float GetTime() const = 0;
   virtual float GetFrameTime() const = 0;
   virtual std::pair<int, int> GetWindowSize() const = 0;
   virtual std::pair<float, float> GetMousePosition() const = 0;

@@ -2,7 +2,6 @@
 
 #include <string>
 #include <vector>
-#include <GLFW/glfw3.h>
 #include <imgui.h>
 
 #include "../scene.hpp"
@@ -12,6 +11,7 @@
 class ShadersScene final : public Scene {
 public:
   void Init(IAppContext* ctx) override {
+    ctx_ = ctx;
     int num_attributes;
     glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &num_attributes);
     LogInfo("[SCENE] Maximum num of vertex attributes: {}", num_attributes);
@@ -58,7 +58,7 @@ public:
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
-    float time_value = glfwGetTime();
+    float time_value = ctx_->GetTime();
     float green_value = sin(time_value) / 2.0f + 0.5f;
 
     switch (mode_) {
@@ -227,6 +227,8 @@ private:
     "Vertex colors",
     "Shaders from file",
   };
+
+  IAppContext* ctx_ = nullptr;
 
   int mode_ = 0;
 

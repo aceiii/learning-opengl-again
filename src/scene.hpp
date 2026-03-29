@@ -25,10 +25,6 @@ public:
   virtual void OnKeyboardEvent(Key key, bool pressed) {}
 
 protected:
-  float GetTime() const {
-    return static_cast<float>(glfwGetTime());
-  }
-
   template<typename... Args>
   void LogDebug(std::string_view format, Args&&... args) {
     auto* logger = Logger::GetRootLogger();

@@ -18,6 +18,8 @@
 class TransformationsScene final : public Scene {
 public:
   void Init(IAppContext* ctx) override {
+    ctx_ = ctx;
+
     textures_.push_back(LoadTexture(GL_TEXTURE0, "resources/textures/container.jpg"));
     textures_.push_back(LoadTexture(GL_TEXTURE1, "resources/textures/awesomeface.png"));
 
@@ -48,16 +50,16 @@ public:
   void Update(float dt) override {
     transform_ = glm::mat4(1.0f);
     if (reverse_transform_) {
-      transform_ = glm::rotate(transform_, GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+      transform_ = glm::rotate(transform_, ctx_->GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
       transform_ = glm::translate(transform_, glm::vec3(horizontal_offset_, vertical_offset_, 0.0f));
     } else {
       transform_ = glm::translate(transform_, glm::vec3(horizontal_offset_, vertical_offset_, 0.0f));
-      transform_ = glm::rotate(transform_, GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+      transform_ = glm::rotate(transform_, ctx_->GetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
     }
 
     transform2_ = glm::mat4(1.0f);
     transform2_ = glm::translate(transform2_, glm::vec3(-0.5f, 0.5f, 0.f));
-    transform2_ = glm::scale(transform2_, glm::vec3(sinf(GetTime())));
+    transform2_ = glm::scale(transform2_, glm::vec3(sinf(ctx_->GetTime())));
   }
 
   void Render() override {
@@ -152,6 +154,8 @@ private:
     0, 1, 3,
     1, 2, 3,
   };
+
+  IAppContext* ctx_ = nullptr;
 
   Shader shader_;
   std::vector<unsigned int> vaos_;

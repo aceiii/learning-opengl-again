@@ -47,8 +47,8 @@ public:
 
   void Update(float dt) override {
     if (auto_rotate_camera_) {
-      float cam_z = cos(GetTime()) * camera_radius_;
-      float cam_x = sin(GetTime()) * camera_radius_;
+      float cam_z = cos(ctx_->GetTime()) * camera_radius_;
+      float cam_x = sin(ctx_->GetTime()) * camera_radius_;
       view_ = glm::lookAt(glm::vec3(cam_x, 0.0f, cam_z), camera_target_, glm::vec3(0.0f, 1.0f, 0.0f));
     } else {
       if (ctx_->IsKeyDown(Key::kKeyUp) || ctx_->IsKeyDown(Key::kKeyW)) {
@@ -83,7 +83,7 @@ public:
       const float angle = 20.0f * i;
       glm::mat4 model = glm::mat4(1.0f);
       model = glm::translate(model, kCubePositions[i]);
-      model = glm::rotate(model, glm::radians(angle + GetTime() * kCubeRotationMultpliers[i]), glm::vec3(1.0f, 0.3f, 0.5f));
+      model = glm::rotate(model, glm::radians(angle + ctx_->GetTime() * kCubeRotationMultpliers[i]), glm::vec3(1.0f, 0.3f, 0.5f));
       shader_.SetMat4("model", model);
 
       glDrawArrays(GL_TRIANGLES, 0, 36);

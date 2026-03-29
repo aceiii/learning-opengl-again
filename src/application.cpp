@@ -106,6 +106,10 @@ void Application::Cleanup() {
   Logger::ClearCallbacks();
 }
 
+float Application::GetTime() const {
+  return glfwGetTime();
+}
+
 float Application::GetFrameTime() const {
   return delta_time_;
 }

@@ -18,6 +18,8 @@
 class CoordinateSystemsScene final : public Scene {
 public:
   void Init(IAppContext* ctx) override {
+    ctx_ = ctx;
+
     textures_.push_back(LoadTexture(GL_TEXTURE0, "resources/textures/container.jpg"));
     textures_.push_back(LoadTexture(GL_TEXTURE1, "resources/textures/awesomeface.png"));
 
@@ -64,7 +66,7 @@ public:
       const float angle = 20.0f * i;
       glm::mat4 model = glm::mat4(1.0f);
       model = glm::translate(model, kCubePositions[i]);
-      model = glm::rotate(model, glm::radians(angle + GetTime() * kCubeRotationMultpliers[i]), glm::vec3(1.0f, 0.3f, 0.5f));
+      model = glm::rotate(model, glm::radians(angle + ctx_->GetTime() * kCubeRotationMultpliers[i]), glm::vec3(1.0f, 0.3f, 0.5f));
       shader_.SetMat4("model", model);
 
       glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -201,6 +203,8 @@ private:
     -14.9f,
      7.55f,
   };
+
+  IAppContext* ctx_ = nullptr;
 
   Shader shader_;
   std::vector<unsigned int> vaos_;

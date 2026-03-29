@@ -21,6 +21,7 @@ public:
   void Cleanup();
 
 public:
+  float GetTime() const override;
   float GetFrameTime() const override;
   std::pair<int, int> GetWindowSize() const override;
   virtual std::pair<float, float> GetMousePosition() const override;

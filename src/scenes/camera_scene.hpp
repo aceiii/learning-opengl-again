@@ -103,25 +103,27 @@ public:
     constexpr auto padding = 5.0f;
     constexpr auto menu_bar_height = 32.0f;
 
-    ImGui::PushID("ShadersScene");
+    ImGui::PushID("Camera");
     ImGui::SetNextWindowPos(ImVec2(window_width - padding, menu_bar_height - padding), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::Checkbox("Auto-Rotate Camera", &auto_rotate_camera_);
       if (auto_rotate_camera_) {
+        ImGui::DragFloat("Field of View", &fov_, 0.1f, kMinFov, kMaxFov);
         ImGui::DragFloat3("Camera Target", &camera_target_[0], 0.1f, -10.0f, 10.f);
         ImGui::DragFloat("Camera Radius", &camera_radius_, 0.0f, 0.5f, 100.0f);
       } else {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
         ImGui::Checkbox("Hold Capture on mouse press", &capture_hold_);
+        ImGui::DragFloat("Field of View", &fov_, 0.1f, kMinFov, kMaxFov);
         ImGui::DragFloat("Camera Speed", &camera_speed_, 0.01f, 0.01f, 50.0f);
         ImGui::DragFloat3("Camera Pos", &camera_pos_[0], 0.1f, -10.0f, 10.f);
         ImGui::DragFloat3("Camera Front", &camera_front_[0], 0.01f, -1.0f, 1.0f);
-        if (ImGui::DragFloat("Yaw", &yaw_, 0.01f, -360.0f, 360.0f)) {
+        if (ImGui::DragFloat("Yaw", &yaw_, 0.01f, kMinYaw, kMaxYaw)) {
           UpdateCameraFront();
         }
-        if (ImGui::DragFloat("Pitch", &pitch_, 0.01f, -89.0f, 89.0f)) {
+        if (ImGui::DragFloat("Pitch", &pitch_, 0.01f, kMinPitch, kMaxPitch)) {
           UpdateCameraFront();
         }
       }
@@ -186,6 +188,10 @@ public:
     } else if (!capture_hold_ && mouse == Mouse::kMouseLeft && !pressed && capture_mouse_) {
       ToggleCaptureMouse(false);
     }
+  }
+
+  void OnScrollEvent(float x, float y) override {
+    fov_ = std::clamp(fov_ - y, kMinFov, kMaxFov);
   }
 
   void OnKeyboardEvent(Key key, bool pressed) override {
@@ -311,6 +317,17 @@ private:
 
   IAppContext* ctx_ = nullptr;
 
+  inline static const float kDefaultFov = 45.0f;
+  inline static const float kDefaultYaw = -90.0f;
+  inline static const float kDefaultPitch = 0.0f;
+  inline static const float kMinFov = 1.0f;
+  inline static const float kMaxFov = 90.0f;
+  inline static const float kMinYaw = -360.0f;
+  inline static const float kMaxYaw = 360.0f;
+  inline static const float kMinPitch = -89.0f;
+  inline static const float kMaxPitch = 89.0f;
+
+
   Shader shader_;
   std::vector<unsigned int> vaos_;
   std::vector<unsigned int> vbos_;
@@ -324,12 +341,12 @@ private:
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
 
-  float fov_ = 45.0f;
+  float fov_ = kDefaultFov;
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;
   float camera_speed_ = 2.5f;
-  float yaw_ = -90.0f;
-  float pitch_ = 0.0f;
+  float yaw_ = kDefaultYaw;
+  float pitch_ = kDefaultPitch;
 
 
   glm::mat4 view_;

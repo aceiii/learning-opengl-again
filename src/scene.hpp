@@ -21,6 +21,7 @@ public:
 
   virtual void OnMouseMoveEvent(float x, float y) {}
   virtual void OnMouseButtonEvent(Mouse mouse, bool pressed) {}
+  virtual void OnScrollEvent(float x, float y) {}
   virtual void OnKeyboardEvent(Key key, bool pressed) {}
 
 protected:

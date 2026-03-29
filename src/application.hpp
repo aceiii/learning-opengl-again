@@ -50,6 +50,7 @@ private:
   static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
   static void MouseCursorCallback(GLFWwindow* window, double x_pos, double y_pos);
   static void KeyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+  static void ScrollCallback(GLFWwindow* window, double x_offset, double y_offset);
 
   AppLog app_log_;
   std::vector<std::shared_ptr<Scene>> scenes_;

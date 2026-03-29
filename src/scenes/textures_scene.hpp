@@ -77,7 +77,7 @@ public:
     constexpr auto padding = 5.0f;
     constexpr auto menu_bar_height = 32.0f;
 
-    ImGui::PushID("ShadersScene");
+    ImGui::PushID("Textures");
     ImGui::SetNextWindowPos(ImVec2(window_width - padding, menu_bar_height - padding), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {

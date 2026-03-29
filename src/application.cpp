@@ -52,6 +52,7 @@ std::expected<void, std::string> Application::Init() {
   glfwSetFramebufferSizeCallback(g_window, FrameBufferSizeCallback);
   glfwSetMouseButtonCallback(g_window, MouseButtonCallback);
   glfwSetCursorPosCallback(g_window, MouseCursorCallback);
+  glfwSetScrollCallback(g_window, ScrollCallback);
   glfwSetKeyCallback(g_window, KeyboardCallback);
 
   ImGuiImpl::Init(g_window);
@@ -377,6 +378,11 @@ void Application::MouseButtonCallback(GLFWwindow* window, int button, int action
 }
 
 void Application::MouseCursorCallback(GLFWwindow* window, double x_pos, double y_pos) {
+  ImGuiIO& io = ImGui::GetIO();
+  if (io.WantCaptureMouse) {
+    return;
+  }
+
   if (g_selected_scene_) {
     g_selected_scene_->OnMouseMoveEvent(x_pos, y_pos);
   }
@@ -395,5 +401,16 @@ void Application::KeyboardCallback(GLFWwindow* window, int key, int scancode, in
     } else if (action == GLFW_RELEASE) {
       g_selected_scene_->OnKeyboardEvent(our_key, false);
     }
+  }
+}
+
+void Application::ScrollCallback(GLFWwindow* window, double x_offset, double y_offset) {
+  ImGuiIO& io = ImGui::GetIO();
+  if (io.WantCaptureMouse) {
+    return;
+  }
+
+  if (g_selected_scene_) {
+    g_selected_scene_->OnScrollEvent(x_offset, y_offset);
   }
 }

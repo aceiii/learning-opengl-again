@@ -8,6 +8,7 @@ uniform vec3 objectColor;
 uniform vec3 lightColor;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
+uniform float ambientStrength;
 uniform float specularStrength;
 
 
@@ -23,7 +24,6 @@ void main() {
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = diff * lightColor;
 
-    float ambientStrength = 0.1;
     vec3 ambient = ambientStrength * lightColor;
     
     vec3 result = (ambient + diffuse + specular) * objectColor;

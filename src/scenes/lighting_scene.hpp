@@ -93,6 +93,7 @@ public:
     lighting_shader_.SetVec3("viewPos", camera_.position);
     lighting_shader_.SetFloat("specularStrength", specular_strength_);
     lighting_shader_.SetFloat("ambientStrength", ambient_strength_);
+    lighting_shader_.SetBool("useViewSpace", view_space_shading_);
 
     glBindVertexArray(vaos_[0]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -129,6 +130,7 @@ public:
         if (!animate_light_pos_) {
           ImGui::DragFloat3("Light position", &light_pos_[0], 0.1f);
         }
+        ImGui::Checkbox("View space shading", &view_space_shading_);
       }
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -288,6 +290,7 @@ private:
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
   bool animate_light_pos_ = false;
+  bool view_space_shading_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;

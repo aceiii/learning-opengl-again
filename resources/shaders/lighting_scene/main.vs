@@ -8,13 +8,21 @@ out vec3 LightPos;
 
 uniform vec3 lightPos;
 
+uniform bool useViewSpace;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
 void main() {
-    gl_Position = projection * view * model * vec4(aPos, 1.0f);
-    FragPos = vec3(view * model * vec4(aPos, 1.0));
-    Normal = mat3(transpose(inverse(view * model))) * aNormal;
-    LightPos = vec3(view * vec4(lightPos, 1.0));
+    if (useViewSpace) {
+        gl_Position = projection * view * model * vec4(aPos, 1.0f);
+        FragPos = vec3(view * model * vec4(aPos, 1.0));
+        Normal = mat3(transpose(inverse(view * model))) * aNormal;
+        LightPos = vec3(view * vec4(lightPos, 1.0));
+    } else {
+        gl_Position = projection * view * model * vec4(aPos, 1.0f);
+        FragPos = vec3(model * vec4(aPos, 1.0));
+        Normal = aNormal;
+        LightPos = lightPos;
+    }
 }

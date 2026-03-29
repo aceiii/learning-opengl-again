@@ -13,6 +13,7 @@
 #include "../image.hpp"
 #include "../scene.hpp"
 #include "../shader.hpp"
+#include "../camera.hpp"
 
 
 class CameraScene final : public Scene {
@@ -31,10 +32,6 @@ public:
     glGenVertexArrays(vaos_.size(), vaos_.data());
     glGenBuffers(vbos_.size(), vbos_.data());
 
-    // glGenBuffers(1, &ebo_);
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(kIndices), kIndices.data(), GL_STATIC_DRAW);
-
     glBindVertexArray(vaos_[0]);
     glBindBuffer(GL_ARRAY_BUFFER, vbos_[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(kVertices), kVertices.data(), GL_STATIC_DRAW);
@@ -42,40 +39,34 @@ public:
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
 
     glEnable(GL_DEPTH_TEST);
 
-    camera_pos_ = glm::vec3(0.0f, 0.0f, 3.0f);
-    camera_front_ = glm::vec3(0.0f, 0.0f, -1.0f);
-    camera_up_ = glm::vec3(0.0f, 1.0f, 0.f);
     camera_target_ = glm::vec3(0.0f, 0.0f, 0.0f);
   }
 
   void Update(float dt) override {
-    float camera_speed = camera_speed_ * dt;
-    if (ctx_->IsKeyDown(Key::kKeyUp) || ctx_->IsKeyDown(Key::kKeyW)) {
-      camera_pos_ += camera_speed * camera_front_;
-    }
-    if (ctx_->IsKeyDown(Key::kKeyDown) || ctx_->IsKeyDown(Key::kKeyS)) {
-      camera_pos_ -= camera_speed * camera_front_;
-    }
-    if (ctx_->IsKeyDown(Key::kKeyLeft) || ctx_->IsKeyDown(Key::kKeyA)) {
-      camera_pos_ -= glm::normalize(glm::cross(camera_front_, camera_up_)) * camera_speed;
-    }
-    if (ctx_->IsKeyDown(Key::kKeyRight) || ctx_->IsKeyDown(Key::kKeyD)) {
-      camera_pos_ += glm::normalize(glm::cross(camera_front_, camera_up_)) * camera_speed;
-    }
-
     if (auto_rotate_camera_) {
       float cam_z = cos(GetTime()) * camera_radius_;
       float cam_x = sin(GetTime()) * camera_radius_;
       view_ = glm::lookAt(glm::vec3(cam_x, 0.0f, cam_z), camera_target_, glm::vec3(0.0f, 1.0f, 0.0f));
     } else {
-      view_ = glm::lookAt(camera_pos_, camera_pos_ + camera_front_, camera_up_);
+      if (ctx_->IsKeyDown(Key::kKeyUp) || ctx_->IsKeyDown(Key::kKeyW)) {
+        camera_.ProcessKeyboard(CameraMovement::kMoveForward, dt);
+      }
+      if (ctx_->IsKeyDown(Key::kKeyDown) || ctx_->IsKeyDown(Key::kKeyS)) {
+        camera_.ProcessKeyboard(CameraMovement::kMoveBackward, dt);
+      }
+      if (ctx_->IsKeyDown(Key::kKeyLeft) || ctx_->IsKeyDown(Key::kKeyA)) {
+        camera_.ProcessKeyboard(CameraMovement::kMoveLeft, dt);
+      }
+      if (ctx_->IsKeyDown(Key::kKeyRight) || ctx_->IsKeyDown(Key::kKeyD)) {
+        camera_.ProcessKeyboard(CameraMovement::kMoveRight, dt);
+      }
+      view_ = camera_.GetViewMatrix();
     }
 
-    projection_ = glm::perspective(glm::radians(fov_), aspect_ratio_, 0.1f, 100.0f);
+    projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
   }
 
   void Render() override {
@@ -110,21 +101,21 @@ public:
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::Checkbox("Auto-Rotate Camera", &auto_rotate_camera_);
       if (auto_rotate_camera_) {
-        ImGui::DragFloat("Field of View", &fov_, 0.1f, kMinFov, kMaxFov);
+        ImGui::DragFloat("Field of View", &camera_.fov, 0.1f, Camera::kMinFov, Camera::kMaxFov);
         ImGui::DragFloat3("Camera Target", &camera_target_[0], 0.1f, -10.0f, 10.f);
         ImGui::DragFloat("Camera Radius", &camera_radius_, 0.0f, 0.5f, 100.0f);
       } else {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
         ImGui::Checkbox("Hold Capture on mouse press", &capture_hold_);
-        ImGui::DragFloat("Field of View", &fov_, 0.1f, kMinFov, kMaxFov);
-        ImGui::DragFloat("Camera Speed", &camera_speed_, 0.01f, 0.01f, 50.0f);
-        ImGui::DragFloat3("Camera Pos", &camera_pos_[0], 0.1f, -10.0f, 10.f);
-        ImGui::DragFloat3("Camera Front", &camera_front_[0], 0.01f, -1.0f, 1.0f);
-        if (ImGui::DragFloat("Yaw", &yaw_, 0.01f, kMinYaw, kMaxYaw)) {
-          UpdateCameraFront();
+        ImGui::DragFloat("Field of View", &camera_.fov, 0.1f, Camera::kMinFov, Camera::kMaxFov);
+        ImGui::DragFloat("Camera Speed", &camera_.movement_speed, 0.01f, Camera::kMinSpeed, Camera::kMaxSpeed);
+        ImGui::DragFloat3("Camera Pos", &camera_.position[0], 0.1f, -10.0f, 10.f);
+        ImGui::DragFloat3("Camera Front", &camera_.front[0], 0.01f, -1.0f, 1.0f);
+        if (ImGui::DragFloat("Yaw", &camera_.yaw, 0.01f, Camera::kMinYaw, Camera::kMaxYaw)) {
+          camera_.UpdateCameraVectors();
         }
-        if (ImGui::DragFloat("Pitch", &pitch_, 0.01f, kMinPitch, kMaxPitch)) {
-          UpdateCameraFront();
+        if (ImGui::DragFloat("Pitch", &camera_.pitch, 0.01f, Camera::kMinPitch, Camera::kMaxPitch)) {
+          camera_.UpdateCameraVectors();
         }
       }
     }
@@ -171,14 +162,7 @@ public:
     last_mouse_.y = y;
 
     if (capture_mouse_) {
-      const float sensitivity = 0.1f;
-      const float x_offset = offset_x * sensitivity;
-      const float y_offset = offset_y * sensitivity;
-
-      yaw_ += x_offset;
-      pitch_ = std::clamp(pitch_ + y_offset, -89.0f, 89.0f);
-
-      UpdateCameraFront();
+      camera_.ProcessMouseMovement(offset_x, offset_y);
     }
   }
 
@@ -191,7 +175,7 @@ public:
   }
 
   void OnScrollEvent(float x, float y) override {
-    fov_ = std::clamp(fov_ - y, kMinFov, kMaxFov);
+    camera_.ProcessMouseScroll(y);
   }
 
   void OnKeyboardEvent(Key key, bool pressed) override {
@@ -201,14 +185,6 @@ public:
   }
 
 private:
-  void UpdateCameraFront() {
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(yaw_)) * cos(glm::radians(pitch_));
-    direction.y = sin(glm::radians(pitch_));
-    direction.z = sin(glm::radians(yaw_)) * cos(glm::radians(pitch_));
-    camera_front_= glm::normalize(direction);
-  }
-
   void ToggleCaptureMouse(bool capture) {
     if (capture) {
       ctx_->CaptureMouse(true);
@@ -317,13 +293,8 @@ private:
 
   IAppContext* ctx_ = nullptr;
 
-  inline static const float kDefaultFov = 45.0f;
   inline static const float kDefaultYaw = -90.0f;
   inline static const float kDefaultPitch = 0.0f;
-  inline static const float kMinFov = 1.0f;
-  inline static const float kMaxFov = 90.0f;
-  inline static const float kMinYaw = -360.0f;
-  inline static const float kMaxYaw = 360.0f;
   inline static const float kMinPitch = -89.0f;
   inline static const float kMaxPitch = 89.0f;
 
@@ -332,7 +303,6 @@ private:
   std::vector<unsigned int> vaos_;
   std::vector<unsigned int> vbos_;
   std::vector<unsigned int> textures_;
-  unsigned int ebo_ = 0;
 
   bool wireframe_ = false;
   bool auto_rotate_camera_ = false;
@@ -341,20 +311,14 @@ private:
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
 
-  float fov_ = kDefaultFov;
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;
-  float camera_speed_ = 2.5f;
-  float yaw_ = kDefaultYaw;
-  float pitch_ = kDefaultPitch;
 
+  Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
 
   glm::mat4 view_;
   glm::mat4 projection_;
 
-  glm::vec3 camera_pos_;
-  glm::vec3 camera_front_;
-  glm::vec3 camera_up_;
   glm::vec3 camera_target_;
 
   glm::vec2 last_mouse_;

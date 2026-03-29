@@ -29,6 +29,7 @@ set(SOURCE_FILES
     src/key.hpp
     src/mouse.hpp
     src/app_context.hpp
+    src/camera.hpp
 )
 
 file(GLOB SCENE_SOURCE_FILES "src/scenes/*")

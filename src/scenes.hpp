@@ -7,3 +7,4 @@
 #include "scenes/transformations_scene.hpp"
 #include "scenes/coordinate_systems_scene.hpp"
 #include "scenes/camera_scene.hpp"
+#include "scenes/colors_scene.hpp"

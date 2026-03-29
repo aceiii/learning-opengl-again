@@ -57,7 +57,9 @@ std::expected<void, std::string> Application::Init() {
 
   ImGuiImpl::Init(g_window);
 
-  glViewport(0, 0, 800, 600);
+  int framebuffer_width, framebuffer_height;
+  glfwGetFramebufferSize(g_window, &framebuffer_width, &framebuffer_height);
+  glViewport(0, 0, framebuffer_width, framebuffer_height);
 
   scenes_.push_back(EmptyScene::Get());
   scenes_.push_back(std::make_shared<HelloTriangle>());
@@ -347,6 +349,7 @@ void Application::ErrorCallback(int error_code, const char* description) {
 }
 
 void Application::FrameBufferSizeCallback(GLFWwindow* window, int width, int height) {
+  quill::info(logger, "[GLFW] Frame buffer resize width={}, height={}", width, height);
   glViewport(0, 0, width, height);
 }
 

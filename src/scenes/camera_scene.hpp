@@ -113,8 +113,17 @@ public:
         ImGui::DragFloat3("Camera Target", &camera_target_[0], 0.1f, -10.0f, 10.f);
         ImGui::DragFloat("Camera Radius", &camera_radius_, 0.0f, 0.5f, 100.0f);
       } else {
+        ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
+        ImGui::Checkbox("Hold Capture on mouse press", &capture_hold_);
         ImGui::DragFloat("Camera Speed", &camera_speed_, 0.01f, 0.01f, 50.0f);
-        ImGui::DragFloat3("Camera Pos", &camera_pos_.r, 0.1f, -10.0f, 10.f);
+        ImGui::DragFloat3("Camera Pos", &camera_pos_[0], 0.1f, -10.0f, 10.f);
+        ImGui::DragFloat3("Camera Front", &camera_front_[0], 0.01f, -1.0f, 1.0f);
+        if (ImGui::DragFloat("Yaw", &yaw_, 0.01f, -360.0f, 360.0f)) {
+          UpdateCameraFront();
+        }
+        if (ImGui::DragFloat("Pitch", &pitch_, 0.01f, -89.0f, 89.0f)) {
+          UpdateCameraFront();
+        }
       }
     }
     ImGui::End();
@@ -147,56 +156,69 @@ public:
   }
 
   void OnMouseMoveEvent(float x, float y) override {
-    static float last_x = x, last_y = y;
-
-    if (first_mouse_) {
-      last_x = x;
-      last_y = y;
-      first_mouse_ = false;
+    if (reset_mouse_) {
+      last_mouse_.x = x;
+      last_mouse_.y = y;
+      reset_mouse_ = false;
     }
 
-    float x_offset = x - last_x;
-    float y_offset = y - last_y;
+    float offset_x = x - last_mouse_.x;
+    float offset_y = y - last_mouse_.y;
 
-    last_x = x;
-    last_y = y;
+    last_mouse_.x = x;
+    last_mouse_.y = y;
 
-    if (!capture_mouse_) {
-      return;
+    if (capture_mouse_) {
+      const float sensitivity = 0.1f;
+      const float x_offset = offset_x * sensitivity;
+      const float y_offset = offset_y * sensitivity;
+
+      yaw_ += x_offset;
+      pitch_ = std::clamp(pitch_ + y_offset, -89.0f, 89.0f);
+
+      UpdateCameraFront();
     }
+  }
 
-    LogInfo("Mouse move dx={}, dy={}", x_offset, y_offset);
+  void OnMouseButtonEvent(Mouse mouse, bool pressed) override {
+    if (mouse == Mouse::kMouseLeft && pressed && !capture_mouse_) {
+      ToggleCaptureMouse(true);
+    } else if (!capture_hold_ && mouse == Mouse::kMouseLeft && !pressed && capture_mouse_) {
+      ToggleCaptureMouse(false);
+    }
+  }
 
-    float sensitivity = 0.1f;
+  void OnKeyboardEvent(Key key, bool pressed) override {
+    if (key == Key::kKeyEscape && pressed) {
+      ToggleCaptureMouse(false);
+    }
+  }
 
-    x_offset *= sensitivity;
-    y_offset *= sensitivity;
-
-    yaw_ += x_offset;
-    pitch_ = std::clamp(pitch_ + y_offset, -89.0f, 89.0f);
-
+private:
+  void UpdateCameraFront() {
     glm::vec3 direction;
     direction.x = cos(glm::radians(yaw_)) * cos(glm::radians(pitch_));
     direction.y = sin(glm::radians(pitch_));
     direction.z = sin(glm::radians(yaw_)) * cos(glm::radians(pitch_));
-
-    camera_front_ = glm::normalize(direction);
+    camera_front_= glm::normalize(direction);
   }
 
-  void OnMouseButtonEvent(Mouse mouse, bool pressed) override {
-    if (mouse == Mouse::kMouseLeft) {
-      ctx_->CaptureCursor(pressed);
-      // ctx_->ToggleUI(!pressed);
-      capture_mouse_ = pressed;
-      first_mouse_ = pressed;
+  void ToggleCaptureMouse(bool capture) {
+    if (capture) {
+      ctx_->CaptureMouse(true);
+      if (hide_interface_) {
+        ctx_->ToggleUI(false);
+      }
+      capture_mouse_ = true;
+      reset_mouse_ = true;
+    } else {
+      ctx_->CaptureMouse(false);
+      ctx_->ToggleUI(true);
+      capture_mouse_ = false;
+      reset_mouse_ = true;
     }
   }
 
-  // void OnKeyboardEvent(Key key, bool pressed) override {
-  //   LogInfo("Keyboard event key={}, pressed={}", std::to_underlying(key), pressed);
-  // }
-
-private:
   unsigned int LoadTexture(GLenum texture, std::string_view path) {
     unsigned texture_id;
     glGenTextures(1, &texture_id);
@@ -298,14 +320,17 @@ private:
   bool wireframe_ = false;
   bool auto_rotate_camera_ = false;
   bool capture_mouse_ = false;
-  bool first_mouse_ = true;
+  bool capture_hold_ = false;
+  bool reset_mouse_ = true;
+  bool hide_interface_ = true;
 
   float fov_ = 45.0f;
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;
   float camera_speed_ = 2.5f;
-  float yaw_ = 0.0f;
+  float yaw_ = -90.0f;
   float pitch_ = 0.0f;
+
 
   glm::mat4 view_;
   glm::mat4 projection_;
@@ -314,4 +339,6 @@ private:
   glm::vec3 camera_front_;
   glm::vec3 camera_up_;
   glm::vec3 camera_target_;
+
+  glm::vec2 last_mouse_;
 };

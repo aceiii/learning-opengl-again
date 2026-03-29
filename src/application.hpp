@@ -28,8 +28,9 @@ public:
   bool IsMouseButtonDown(Mouse mouse) const override;
 
   void RequestQuit() override;
-  void CaptureCursor(bool enabled) override;
   void ToggleUI(bool enabled) override;
+  void CaptureMouse(bool enabled) override;
+  void SetMousePosition(float x, float y) override;
 
 private:
   void Update(float dt);

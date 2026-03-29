@@ -44,6 +44,11 @@ std::expected<void, std::string> Application::Init() {
     return std::unexpected{"Failed to initialize GLAD"};
   }
 
+  if (glfwRawMouseMotionSupported()) {
+    quill::info(logger, "[APPLICATION] Enabling raw mouse motion");
+    glfwSetInputMode(g_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+  }
+
   glfwSetFramebufferSizeCallback(g_window, FrameBufferSizeCallback);
   glfwSetMouseButtonCallback(g_window, MouseButtonCallback);
   glfwSetCursorPosCallback(g_window, MouseCursorCallback);
@@ -123,12 +128,16 @@ void Application::RequestQuit() {
   glfwSetWindowShouldClose(g_window, true);
 }
 
-void Application::CaptureCursor(bool enabled) {
+void Application::ToggleUI(bool enabled) {
+  enable_interface_ = enabled;
+}
+
+void Application::CaptureMouse(bool enabled) {
   glfwSetInputMode(g_window, GLFW_CURSOR, enabled ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 }
 
-void Application::ToggleUI(bool enabled) {
-  enable_interface_ = enabled;
+void Application::SetMousePosition(float x, float y) {
+  glfwSetCursorPos(g_window, x, y);
 }
 
 void Application::Update(float dt) {

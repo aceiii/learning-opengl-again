@@ -17,7 +17,7 @@ public:
   virtual bool IsMouseButtonDown(Mouse mouse) const = 0;
 
   virtual void RequestQuit() = 0;
-  virtual void CaptureCursor(bool enabled) = 0;
   virtual void ToggleUI(bool enabled) = 0;
-
+  virtual void CaptureMouse(bool enabled) = 0;
+  virtual void SetMousePosition(float x, float y) = 0;
 };

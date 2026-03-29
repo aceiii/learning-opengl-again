@@ -16,13 +16,13 @@
 #include "../camera.hpp"
 
 
-class ColorsScene final : public Scene {
+class LightingScene final : public Scene {
 public:
   void Init(IAppContext* ctx) override {
     ctx_ = ctx;
 
-    lighting_shader_ = Shader::FromFiles("resources/shaders/colors_scene/main.vs", "resources/shaders/colors_scene/main.fs");
-    light_cube_shader_ = Shader::FromFiles("resources/shaders/colors_scene/light.vs", "resources/shaders/colors_scene/light.fs");
+    lighting_shader_ = Shader::FromFiles("resources/shaders/lighting_scene/main.vs", "resources/shaders/lighting_scene/main.fs");
+    light_cube_shader_ = Shader::FromFiles("resources/shaders/lighting_scene/light.vs", "resources/shaders/lighting_scene/light.fs");
 
     vaos_.resize(2);
     vbos_.resize(1);
@@ -98,7 +98,7 @@ public:
     constexpr auto padding = 5.0f;
     constexpr auto menu_bar_height = 32.0f;
 
-    ImGui::PushID("Colors");
+    ImGui::PushID("Lighting");
     ImGui::SetNextWindowPos(ImVec2(window_width - padding, menu_bar_height - padding), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
@@ -138,7 +138,7 @@ public:
   }
 
   std::string Name() const override {
-    return "Colors";
+    return "Lighting";
   }
 
   void OnMouseMoveEvent(float x, float y) override {

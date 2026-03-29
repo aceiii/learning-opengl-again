@@ -69,7 +69,7 @@ public:
   }
 
   void SetVec3(const std::string& name, const glm::vec3& vec) {
-    glUniform3fv(glGetUniformLocation(id_, name.data()), 3, glm::value_ptr(vec));
+    glUniform3fv(glGetUniformLocation(id_, name.data()), 1, glm::value_ptr(vec));
   }
 
 public:

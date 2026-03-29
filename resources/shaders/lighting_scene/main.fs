@@ -3,10 +3,10 @@ out vec4 FragColor;
 
 in vec3 FragPos;
 in vec3 Normal;
+in vec3 LightPos;
 
 uniform vec3 objectColor;
 uniform vec3 lightColor;
-uniform vec3 lightPos;
 uniform vec3 viewPos;
 uniform float ambientStrength;
 uniform float specularStrength;
@@ -14,7 +14,7 @@ uniform float specularStrength;
 
 void main() {
     vec3 norm = normalize(Normal);
-    vec3 lightDir = normalize(lightPos - FragPos);  
+    vec3 lightDir = normalize(LightPos - FragPos);
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
 

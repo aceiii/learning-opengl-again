@@ -93,6 +93,7 @@ public:
     lighting_shader_.SetVec3("viewPos", camera_.position);
     lighting_shader_.SetFloat("specularStrength", specular_strength_);
     lighting_shader_.SetFloat("ambientStrength", ambient_strength_);
+    lighting_shader_.SetFloat("diffuseStrength", diffuse_strength_);
     lighting_shader_.SetBool("useViewSpace", view_space_shading_);
 
     glBindVertexArray(vaos_[0]);
@@ -125,6 +126,7 @@ public:
         ImGui::ColorEdit3("Object color", &object_color_[0]);
         ImGui::DragFloat("Specular strength", &specular_strength_, 0.5f, 0.0f, 1024.0f);
         ImGui::ColorEdit3("Light color", &light_color_[0]);
+        ImGui::DragFloat("Diffuse strength", &diffuse_strength_, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat("Ambient strength", &ambient_strength_, 0.01f, 0.0f, 1.0f);
         ImGui::Checkbox("Animate light position", &animate_light_pos_);
         if (!animate_light_pos_) {
@@ -307,4 +309,5 @@ private:
 
   float specular_strength_ = 0.5f;
   float ambient_strength_ = 0.1f;
+  float diffuse_strength_ = 1.0f;
 };

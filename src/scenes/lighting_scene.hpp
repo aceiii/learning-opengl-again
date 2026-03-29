@@ -45,7 +45,6 @@ public:
 
     glEnable(GL_DEPTH_TEST);
 
-    light_pos_ = glm::vec3(1.0f, 1.0f, 2.0f);
     camera_.position = glm::vec3(0.82, 0.85f, 4.1f);
     camera_.yaw = -100.0f;
     camera_.pitch = -10.0f;
@@ -78,10 +77,11 @@ public:
     lighting_shader_.SetMat4("view", view);
     lighting_shader_.SetMat4("projection", projection_);
     lighting_shader_.SetMat4("model", glm::mat4(1.0f));
-    lighting_shader_.SetVec3("objectColor", 1.0f, 0.5f, 0.31f);
-    lighting_shader_.SetVec3("lightColor", 1.0f, 1.0f, 1.0f);
+    lighting_shader_.SetVec3("objectColor", object_color_);
+    lighting_shader_.SetVec3("lightColor", light_color_);
     lighting_shader_.SetVec3("lightPos", light_pos_);
     lighting_shader_.SetVec3("viewPos", camera_.position);
+    lighting_shader_.SetFloat("specularStrength", specular_strength_);
 
     glBindVertexArray(vaos_[0]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -109,17 +109,25 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
-      ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
-      ImGui::Checkbox("Hold Capture on mouse press", &capture_hold_);
-      ImGui::DragFloat("Field of View", &camera_.fov, 0.1f, Camera::kMinFov, Camera::kMaxFov);
-      ImGui::DragFloat("Camera Speed", &camera_.movement_speed, 0.01f, Camera::kMinSpeed, Camera::kMaxSpeed);
-      ImGui::DragFloat3("Camera Pos", &camera_.position[0], 0.1f, -10.0f, 10.f);
-      ImGui::DragFloat3("Camera Front", &camera_.front[0], 0.01f, -1.0f, 1.0f);
-      if (ImGui::DragFloat("Yaw", &camera_.yaw, 0.01f, Camera::kMinYaw, Camera::kMaxYaw)) {
-        camera_.UpdateCameraVectors();
+      if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::ColorEdit3("Object color", &object_color_[0]);
+        ImGui::ColorEdit3("Light color", &light_color_[0]);
+        ImGui::DragFloat3("Light position", &light_pos_[0], 0.1f);
+        ImGui::DragFloat("Specular strength", &specular_strength_, 0.5f, 0.0f, 1024.0f);
       }
-      if (ImGui::DragFloat("Pitch", &camera_.pitch, 0.01f, Camera::kMinPitch, Camera::kMaxPitch)) {
-        camera_.UpdateCameraVectors();
+      if (ImGui::CollapsingHeader("Camera")) {
+        ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
+        ImGui::Checkbox("Hold Capture on mouse press", &capture_hold_);
+        ImGui::DragFloat("Field of View", &camera_.fov, 0.1f, Camera::kMinFov, Camera::kMaxFov);
+        ImGui::DragFloat("Camera Speed", &camera_.movement_speed, 0.01f, Camera::kMinSpeed, Camera::kMaxSpeed);
+        ImGui::DragFloat3("Camera Pos", &camera_.position[0], 0.1f, -10.0f, 10.f);
+        ImGui::DragFloat3("Camera Front", &camera_.front[0], 0.01f, -1.0f, 1.0f);
+        if (ImGui::DragFloat("Yaw", &camera_.yaw, 0.01f, Camera::kMinYaw, Camera::kMaxYaw)) {
+          camera_.UpdateCameraVectors();
+        }
+        if (ImGui::DragFloat("Pitch", &camera_.pitch, 0.01f, Camera::kMinPitch, Camera::kMaxPitch)) {
+          camera_.UpdateCameraVectors();
+        }
       }
     }
     ImGui::End();
@@ -272,7 +280,11 @@ private:
 
   glm::mat4 projection_;
 
-  glm::vec3 light_pos_;
+  glm::vec3 object_color_ = glm::vec3(1.0f, 0.5f, 0.31f);
+  glm::vec3 light_color_ = glm::vec3(1.0f, 1.0f, 1.0f);
+  glm::vec3 light_pos_ = glm::vec3(1.0f, 1.0f, 2.0f);
+
   glm::vec2 last_mouse_;
 
+  float specular_strength_ = 0.5f;
 };

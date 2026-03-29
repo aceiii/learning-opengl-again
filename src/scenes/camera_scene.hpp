@@ -23,7 +23,7 @@ public:
     textures_.push_back(LoadTexture(GL_TEXTURE0, "resources/textures/container.jpg"));
     textures_.push_back(LoadTexture(GL_TEXTURE1, "resources/textures/awesomeface.png"));
 
-    shader_ = Shader::FromFiles("resources/shaders/coordinate_systems_scene/main.vs", "resources/shaders/coordinate_systems_scene/main.fs");
+    shader_ = Shader::FromFiles("resources/shaders/camera_scene/main.vs", "resources/shaders/camera_scene/main.fs");
 
     vaos_.resize(1);
     vbos_.resize(1);

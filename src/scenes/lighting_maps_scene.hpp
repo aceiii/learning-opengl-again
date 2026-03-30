@@ -24,6 +24,7 @@ public:
     textures_.push_back(LoadTexture(GL_TEXTURE0, "resources/textures/container2.png"));
     textures_.push_back(LoadTexture(GL_TEXTURE1, "resources/textures/container2_specular.png"));
     textures_.push_back(LoadTexture(GL_TEXTURE2, "resources/textures/lighting_maps_specular_color.png"));
+    textures_.push_back(LoadTexture(GL_TEXTURE3, "resources/textures/matrix.jpg"));
 
     lighting_shader_ = Shader::FromFiles("resources/shaders/lighting_maps_scene/main.vs", "resources/shaders/lighting_maps_scene/main.fs");
     light_cube_shader_ = Shader::FromFiles("resources/shaders/lighting_maps_scene/light.vs", "resources/shaders/lighting_maps_scene/light.fs");
@@ -107,6 +108,7 @@ public:
     lighting_shader_.SetVec3("light.specular", light_.specular);
     lighting_shader_.SetInt("material.diffuse", material_.diffuse);
     lighting_shader_.SetInt("material.specular", material_.specular);
+    lighting_shader_.SetInt("material.emission", material_.emission);
     lighting_shader_.SetFloat("material.shininess", material_.shininess);
 
     glActiveTexture(GL_TEXTURE0);
@@ -115,6 +117,8 @@ public:
     glBindTexture(GL_TEXTURE_2D, textures_[1]);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, textures_[2]);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, textures_[3]);
     glBindVertexArray(vaos_[0]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -158,6 +162,7 @@ public:
         ImGui::PushID("Material");
         ImGui::DragInt("Diffuse", &material_.diffuse, 1, 0, 8);
         ImGui::DragInt("Specular", &material_.specular, 1, 0, 8);
+        ImGui::DragInt("Emission", &material_.emission, 1, 0, 8);
         ImGui::DragFloat("Shininess", &material_.shininess, 0.01f, 0.01f, 10.0f);
         ImGui::PopID();
       }
@@ -276,6 +281,7 @@ private:
   struct Material {
     int diffuse;
     int specular;
+    int emission;
     float shininess;
   };
 
@@ -362,6 +368,7 @@ private:
   Material material_{
     .diffuse = 0,
     .specular = 1,
+    .emission = 3,
     .shininess = 32.0f,
   };
   Light light_{

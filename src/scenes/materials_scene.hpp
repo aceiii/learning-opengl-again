@@ -78,7 +78,7 @@ public:
       light_transform = glm::translate(light_transform, glm::vec3(1.0f, 1.0f, 3.0f));
       light_pos = light_transform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     } else {
-      light_pos = light_pos_;
+      light_pos = light_.position;
     }
 
     glm::mat4 view = camera_.GetViewMatrix();
@@ -88,12 +88,14 @@ public:
     lighting_shader_.SetMat4("projection", projection_);
     lighting_shader_.SetMat4("model", glm::mat4(1.0f));
     lighting_shader_.SetVec3("viewPos", camera_.position);
-    lighting_shader_.SetVec3("lightPos", light_pos);
-    lighting_shader_.SetVec3("lightColor", light_color_);
-    lighting_shader_.SetVec3("material.ambient", material.ambient);
-    lighting_shader_.SetVec3("material.diffuse", material.diffuse);
-    lighting_shader_.SetVec3("material.specular", material.specular);
-    lighting_shader_.SetFloat("material.shininess", material.shininess);
+    lighting_shader_.SetVec3("light.position", light_pos);
+    lighting_shader_.SetVec3("light.ambient", light_.ambient);
+    lighting_shader_.SetVec3("light.diffuse", light_.diffuse);
+    lighting_shader_.SetVec3("light.specular", light_.specular);
+    lighting_shader_.SetVec3("material.ambient", material_.ambient);
+    lighting_shader_.SetVec3("material.diffuse", material_.diffuse);
+    lighting_shader_.SetVec3("material.specular", material_.specular);
+    lighting_shader_.SetFloat("material.shininess", material_.shininess);
 
     glBindVertexArray(vaos_[0]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -122,17 +124,23 @@ public:
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
       if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::ColorEdit3("Light color", &light_color_[0]);
+        ImGui::PushID("Lighting");
+        ImGui::ColorEdit3("Ambient", &light_.ambient[0]);
+        ImGui::ColorEdit3("Diffuse", &light_.diffuse[0]);
+        ImGui::ColorEdit3("Specular", &light_.specular[0]);
         ImGui::Checkbox("Animate light position", &animate_light_pos_);
         if (!animate_light_pos_) {
-          ImGui::DragFloat3("Light position", &light_pos_[0], 0.1f);
+          ImGui::DragFloat3("Light position", &light_.position[0], 0.1f);
         }
+        ImGui::PopID();
       }
       if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::ColorEdit3("Ambient", &material.ambient[0]);
-        ImGui::ColorEdit3("Diffuse", &material.diffuse[0]);
-        ImGui::ColorEdit3("Specular", &material.specular[0]);
-        ImGui::DragFloat("Shininess", &material.shininess, 0.01f, 0.01f, 10.0f);
+        ImGui::PushID("Material");
+        ImGui::ColorEdit3("Ambient", &material_.ambient[0]);
+        ImGui::ColorEdit3("Diffuse", &material_.diffuse[0]);
+        ImGui::ColorEdit3("Specular", &material_.specular[0]);
+        ImGui::DragFloat("Shininess", &material_.shininess, 0.01f, 0.01f, 10.0f);
+        ImGui::PopID();
       }
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -233,6 +241,13 @@ private:
     float shininess;
   };
 
+  struct Light {
+    glm::vec3 position;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+  };
+
   inline static const std::array kVertices{
 
     -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
@@ -304,17 +319,20 @@ private:
   float camera_radius_ = 10.0f;
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
-  Material material{
+  Material material_{
     .ambient = glm::vec3(1.0f, 0.5f, 0.31f),
     .diffuse = glm::vec3(1.0f, 0.5f, 0.31f),
     .specular = glm::vec3(0.5f, 0.5f, 0.5f),
     .shininess = 32.0f,
   };
+  Light light_{
+    .position = glm::vec3(1.0f, 1.0f, 2.0f),
+    .ambient = glm::vec3(0.2f, 0.2f, 0.2f),
+    .diffuse = glm::vec3(0.5f, 0.5f, 0.5f),
+    .specular = glm::vec3(1.0f, 1.0f, 1.0f),
+  };
 
   glm::mat4 projection_;
-
-  glm::vec3 light_color_ = glm::vec3(1.0f, 1.0f, 1.0f);
-  glm::vec3 light_pos_ = glm::vec3(1.0f, 1.0f, 2.0f);
 
   glm::vec2 last_mouse_;
 };

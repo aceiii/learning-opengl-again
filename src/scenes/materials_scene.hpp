@@ -16,13 +16,13 @@
 #include "../camera.hpp"
 
 
-class BasicLightingScene final : public Scene {
+class MaterialsScene final : public Scene {
 public:
   void Init(IAppContext* ctx) override {
     ctx_ = ctx;
 
-    lighting_shader_ = Shader::FromFiles("resources/shaders/basic_lighting_scene/main.vs", "resources/shaders/basic_lighting_scene/main.fs");
-    light_cube_shader_ = Shader::FromFiles("resources/shaders/basic_lighting_scene/light.vs", "resources/shaders/basic_lighting_scene/light.fs");
+    lighting_shader_ = Shader::FromFiles("resources/shaders/materials_scene/main.vs", "resources/shaders/materials_scene/main.fs");
+    light_cube_shader_ = Shader::FromFiles("resources/shaders/materials_scene/light.vs", "resources/shaders/materials_scene/light.fs");
 
     vaos_.resize(2);
     vbos_.resize(1);
@@ -87,15 +87,13 @@ public:
     lighting_shader_.SetMat4("view", view);
     lighting_shader_.SetMat4("projection", projection_);
     lighting_shader_.SetMat4("model", glm::mat4(1.0f));
-    lighting_shader_.SetVec3("objectColor", object_color_);
-    lighting_shader_.SetVec3("lightColor", light_color_);
-    lighting_shader_.SetVec3("lightPos", light_pos);
     lighting_shader_.SetVec3("viewPos", camera_.position);
-    lighting_shader_.SetFloat("specularStrength", specular_strength_);
-    lighting_shader_.SetFloat("ambientStrength", ambient_strength_);
-    lighting_shader_.SetFloat("diffuseStrength", diffuse_strength_);
-    lighting_shader_.SetBool("useViewSpace", view_space_shading_);
-    lighting_shader_.SetBool("useGouraudShading", use_gouraud_shading_);
+    lighting_shader_.SetVec3("lightPos", light_pos);
+    lighting_shader_.SetVec3("lightColor", light_color_);
+    lighting_shader_.SetVec3("material.ambient", material.ambient);
+    lighting_shader_.SetVec3("material.diffuse", material.diffuse);
+    lighting_shader_.SetVec3("material.specular", material.specular);
+    lighting_shader_.SetFloat("material.shininess", material.shininess);
 
     glBindVertexArray(vaos_[0]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -117,24 +115,24 @@ public:
     constexpr auto padding = 5.0f;
     constexpr auto menu_bar_height = 32.0f;
 
-    ImGui::PushID("BasicLighting");
+    ImGui::PushID("Materials");
     ImGui::SetNextWindowPos(ImVec2(window_width - padding, menu_bar_height - padding), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
       if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::ColorEdit3("Object color", &object_color_[0]);
-        ImGui::DragFloat("Specular strength", &specular_strength_, 0.5f, 0.0f, 1024.0f);
         ImGui::ColorEdit3("Light color", &light_color_[0]);
-        ImGui::DragFloat("Diffuse strength", &diffuse_strength_, 0.01f, 0.0f, 1.0f);
-        ImGui::DragFloat("Ambient strength", &ambient_strength_, 0.01f, 0.0f, 1.0f);
         ImGui::Checkbox("Animate light position", &animate_light_pos_);
         if (!animate_light_pos_) {
           ImGui::DragFloat3("Light position", &light_pos_[0], 0.1f);
         }
-        ImGui::Checkbox("View space shading", &view_space_shading_);
-        ImGui::Checkbox("Use Gouraud shading", &use_gouraud_shading_);
+      }
+      if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::ColorEdit3("Ambient", &material.ambient[0]);
+        ImGui::ColorEdit3("Diffuse", &material.diffuse[0]);
+        ImGui::ColorEdit3("Specular", &material.specular[0]);
+        ImGui::DragFloat("Shininess", &material.shininess, 0.01f, 0.01f, 10.0f);
       }
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -172,7 +170,7 @@ public:
   }
 
   std::string Name() const override {
-    return "Basic Lighting";
+    return "Materials";
   }
 
   void OnMouseMoveEvent(float x, float y) override {
@@ -227,6 +225,13 @@ private:
       reset_mouse_ = true;
     }
   }
+
+  struct Material {
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+    float shininess;
+  };
 
   inline static const std::array kVertices{
 
@@ -294,23 +299,22 @@ private:
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
   bool animate_light_pos_ = false;
-  bool view_space_shading_ = true;
-  bool use_gouraud_shading_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
+  Material material{
+    .ambient = glm::vec3(1.0f, 0.5f, 0.31f),
+    .diffuse = glm::vec3(1.0f, 0.5f, 0.31f),
+    .specular = glm::vec3(0.5f, 0.5f, 0.5f),
+    .shininess = 32.0f,
+  };
 
   glm::mat4 projection_;
 
-  glm::vec3 object_color_ = glm::vec3(1.0f, 0.5f, 0.31f);
   glm::vec3 light_color_ = glm::vec3(1.0f, 1.0f, 1.0f);
   glm::vec3 light_pos_ = glm::vec3(1.0f, 1.0f, 2.0f);
 
   glm::vec2 last_mouse_;
-
-  float specular_strength_ = 0.5f;
-  float ambient_strength_ = 0.1f;
-  float diffuse_strength_ = 1.0f;
 };

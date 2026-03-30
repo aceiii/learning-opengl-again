@@ -8,3 +8,4 @@
 #include "scenes/coordinate_systems_scene.hpp"
 #include "scenes/camera_scene.hpp"
 #include "scenes/basic_lighting_scene.hpp"
+#include "scenes/materials_scene.hpp"

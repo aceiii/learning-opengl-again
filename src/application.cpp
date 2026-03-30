@@ -69,6 +69,7 @@ std::expected<void, std::string> Application::Init() {
   scenes_.push_back(std::make_shared<CoordinateSystemsScene>());
   scenes_.push_back(std::make_shared<CameraScene>());
   scenes_.push_back(std::make_shared<BasicLightingScene>());
+  scenes_.push_back(std::make_shared<MaterialsScene>());
 
   return {};
 }

@@ -66,19 +66,26 @@ public:
     }
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
+
+    if (animate_light_color_) {
+      glm::vec3 lightColor;
+      lightColor.x = sin(ctx_->GetTime() * 2.0f);
+      lightColor.y = sin(ctx_->GetTime() * 0.7f);
+      lightColor.z = sin(ctx_->GetTime() * 1.3f);
+
+      light_.diffuse = lightColor * glm::vec3(0.5f);
+      light_.ambient = light_.diffuse * 0.2f;
+    }
   }
 
   void Render() override {
     glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
 
-    glm::vec3 light_pos;
     if (animate_light_pos_) {
       glm::mat4 light_transform = glm::mat4(1.0f);
       light_transform = glm::rotate(light_transform, ctx_->GetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
       light_transform = glm::translate(light_transform, glm::vec3(1.0f, 1.0f, 3.0f));
-      light_pos = light_transform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    } else {
-      light_pos = light_.position;
+      light_.position = light_transform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     }
 
     glm::mat4 view = camera_.GetViewMatrix();
@@ -88,7 +95,7 @@ public:
     lighting_shader_.SetMat4("projection", projection_);
     lighting_shader_.SetMat4("model", glm::mat4(1.0f));
     lighting_shader_.SetVec3("viewPos", camera_.position);
-    lighting_shader_.SetVec3("light.position", light_pos);
+    lighting_shader_.SetVec3("light.position", light_.position);
     lighting_shader_.SetVec3("light.ambient", light_.ambient);
     lighting_shader_.SetVec3("light.diffuse", light_.diffuse);
     lighting_shader_.SetVec3("light.specular", light_.specular);
@@ -101,7 +108,7 @@ public:
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, light_pos);
+    model = glm::translate(model, light_.position);
     model = glm::scale(model, glm::vec3(0.2f));
 
     light_cube_shader_.Use();
@@ -125,6 +132,7 @@ public:
       ImGui::NewLine();
       if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushID("Lighting");
+        ImGui::Checkbox("Animate light color", &animate_light_color_);
         ImGui::ColorEdit3("Ambient", &light_.ambient[0]);
         ImGui::ColorEdit3("Diffuse", &light_.diffuse[0]);
         ImGui::ColorEdit3("Specular", &light_.specular[0]);
@@ -314,6 +322,7 @@ private:
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
   bool animate_light_pos_ = false;
+  bool animate_light_color_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;

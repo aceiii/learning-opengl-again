@@ -16,7 +16,7 @@
 #include "../camera.hpp"
 
 
-class LightingScene final : public Scene {
+class BasicLightingScene final : public Scene {
 public:
   void Init(IAppContext* ctx) override {
     ctx_ = ctx;
@@ -117,7 +117,7 @@ public:
     constexpr auto padding = 5.0f;
     constexpr auto menu_bar_height = 32.0f;
 
-    ImGui::PushID("Lighting");
+    ImGui::PushID("BasicLighting");
     ImGui::SetNextWindowPos(ImVec2(window_width - padding, menu_bar_height - padding), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
@@ -172,7 +172,7 @@ public:
   }
 
   std::string Name() const override {
-    return "Lighting";
+    return "Basic Lighting";
   }
 
   void OnMouseMoveEvent(float x, float y) override {

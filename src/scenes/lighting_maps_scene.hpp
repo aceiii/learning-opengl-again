@@ -22,6 +22,8 @@ public:
     ctx_ = ctx;
 
     textures_.push_back(LoadTexture(GL_TEXTURE0, "resources/textures/container2.png"));
+    textures_.push_back(LoadTexture(GL_TEXTURE1, "resources/textures/container2_specular.png"));
+    textures_.push_back(LoadTexture(GL_TEXTURE2, "resources/textures/lighting_maps_specular_color.png"));
 
     lighting_shader_ = Shader::FromFiles("resources/shaders/lighting_maps_scene/main.vs", "resources/shaders/lighting_maps_scene/main.fs");
     light_cube_shader_ = Shader::FromFiles("resources/shaders/lighting_maps_scene/light.vs", "resources/shaders/lighting_maps_scene/light.fs");
@@ -104,11 +106,15 @@ public:
     lighting_shader_.SetVec3("light.diffuse", light_.diffuse);
     lighting_shader_.SetVec3("light.specular", light_.specular);
     lighting_shader_.SetInt("material.diffuse", material_.diffuse);
-    lighting_shader_.SetVec3("material.specular", material_.specular);
+    lighting_shader_.SetInt("material.specular", material_.specular);
     lighting_shader_.SetFloat("material.shininess", material_.shininess);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textures_[0]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, textures_[1]);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, textures_[2]);
     glBindVertexArray(vaos_[0]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -151,7 +157,7 @@ public:
       if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushID("Material");
         ImGui::DragInt("Diffuse", &material_.diffuse, 1, 0, 8);
-        ImGui::ColorEdit3("Specular", &material_.specular[0]);
+        ImGui::DragInt("Specular", &material_.specular, 1, 0, 8);
         ImGui::DragFloat("Shininess", &material_.shininess, 0.01f, 0.01f, 10.0f);
         ImGui::PopID();
       }
@@ -269,7 +275,7 @@ private:
 
   struct Material {
     int diffuse;
-    glm::vec3 specular;
+    int specular;
     float shininess;
   };
 
@@ -355,7 +361,7 @@ private:
   Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
   Material material_{
     .diffuse = 0,
-    .specular = glm::vec3(0.5f, 0.5f, 0.5f),
+    .specular = 1,
     .shininess = 32.0f,
   };
   Light light_{

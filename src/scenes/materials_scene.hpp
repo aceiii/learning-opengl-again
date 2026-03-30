@@ -115,6 +115,7 @@ public:
     light_cube_shader_.SetMat4("view", view);
     light_cube_shader_.SetMat4("projection", projection_);
     light_cube_shader_.SetMat4("model", model);
+    light_cube_shader_.SetVec3("lightColor", light_.diffuse);
 
     glBindVertexArray(vaos_[0]);
     glDrawArrays(GL_TRIANGLES, 0, 36);

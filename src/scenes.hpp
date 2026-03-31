@@ -10,3 +10,4 @@
 #include "scenes/basic_lighting_scene.hpp"
 #include "scenes/materials_scene.hpp"
 #include "scenes/lighting_maps_scene.hpp"
+#include "scenes/light_casters_scene.hpp"

@@ -284,8 +284,8 @@ Key Application::FromGlfwKey(int key) {
   case GLFW_KEY_X: return Key::kKeyX; break;
   case GLFW_KEY_Y: return Key::kKeyY; break;
   case GLFW_KEY_Z: return Key::kKeyZ; break;
+  default: return Key::kKeyUnknown;
   }
-  std::unreachable();
 }
 
 int Application::ToGlfwKey(Key key) {

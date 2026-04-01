@@ -2,6 +2,7 @@
 
 
 enum class Key {
+  kKeyUnknown,
   kKeyEscape,
   kKeyUp,
   kKeyDown,

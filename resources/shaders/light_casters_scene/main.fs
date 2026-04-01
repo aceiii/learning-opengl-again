@@ -8,9 +8,13 @@ struct Material {
 
 struct Light {
     vec3 position;
+    vec3 direction;
+    float cutOff;
+
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+
     float constant;
     float linear;
     float quadratic;
@@ -47,6 +51,11 @@ void main() {
     diffuse *= attenuation;
     specular *= attenuation;
 
-    vec3 result = ambient + diffuse + specular;
-    FragColor = vec4(result, 1.0);
+    float theta = dot(lightDir, normalize(-light.direction));
+    if (theta > light.cutOff) {
+        vec3 result = ambient + diffuse + specular;
+        FragColor = vec4(result, 1.0);
+    } else {
+        FragColor = vec4(light.ambient * vec3(texture(material.diffuse, TexCoords)), 1.0);
+    }
 }

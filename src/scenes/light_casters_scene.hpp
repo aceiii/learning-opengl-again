@@ -94,10 +94,13 @@ public:
     lighting_shader_.SetMat4("view", view);
     lighting_shader_.SetMat4("projection", projection_);
     lighting_shader_.SetVec3("viewPos", camera_.position);
-    lighting_shader_.SetVec3("light.direction", light_.direction);
+    lighting_shader_.SetVec3("light.position", light_.position);
     lighting_shader_.SetVec3("light.ambient", light_.ambient);
     lighting_shader_.SetVec3("light.diffuse", light_.diffuse);
     lighting_shader_.SetVec3("light.specular", light_.specular);
+    lighting_shader_.SetFloat("light.constant", light_.constant);
+    lighting_shader_.SetFloat("light.linear", light_.linear);
+    lighting_shader_.SetFloat("light.quadratic", light_.quadratic);
     lighting_shader_.SetInt("material.diffuse", material_.diffuse);
     lighting_shader_.SetInt("material.specular", material_.specular);
     lighting_shader_.SetFloat("material.shininess", material_.shininess);
@@ -123,18 +126,18 @@ public:
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
-    // glm::mat4 model = glm::mat4(1.0f);
-    // model = glm::translate(model, light_.position);
-    // model = glm::scale(model, glm::vec3(0.2f));
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, light_.position);
+    model = glm::scale(model, glm::vec3(0.2f));
 
-    // light_cube_shader_.Use();
-    // light_cube_shader_.SetMat4("view", view);
-    // light_cube_shader_.SetMat4("projection", projection_);
-    // light_cube_shader_.SetMat4("model", model);
-    // light_cube_shader_.SetVec3("lightColor", light_.diffuse);
+    light_cube_shader_.Use();
+    light_cube_shader_.SetMat4("view", view);
+    light_cube_shader_.SetMat4("projection", projection_);
+    light_cube_shader_.SetMat4("model", model);
+    light_cube_shader_.SetVec3("lightColor", light_.diffuse);
 
-    // glBindVertexArray(vaos_[0]);
-    // glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(vaos_[0]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -150,10 +153,13 @@ public:
       if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushID("Lighting");
         ImGui::Checkbox("Animate light color", &animate_light_color_);
-        ImGui::DragFloat3("Direction", &light_.direction[0], 0.1f);
+        ImGui::DragFloat3("Position", &light_.position[0], 0.1f);
         ImGui::ColorEdit3("Ambient", &light_.ambient[0]);
         ImGui::ColorEdit3("Diffuse", &light_.diffuse[0]);
         ImGui::ColorEdit3("Specular", &light_.specular[0]);
+        ImGui::DragFloat("Constant", &light_.constant, 0.1f, 1.0f, 10.0f);
+        ImGui::DragFloat("Linear", &light_.linear, 0.005f, 0.0f, 1.0f);
+        ImGui::DragFloat("Quadratic", &light_.quadratic, 0.0001f, 0.0f, 1.0f);
         ImGui::PopID();
       }
       if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -282,10 +288,13 @@ private:
   };
 
   struct Light {
-    glm::vec3 direction;
+    glm::vec3 position;
     glm::vec3 ambient;
     glm::vec3 diffuse;
     glm::vec3 specular;
+    float constant;
+    float linear;
+    float quadratic;
   };
 
   inline static const std::array kVertices{
@@ -378,10 +387,13 @@ private:
     .shininess = 32.0f,
   };
   Light light_{
-    .direction = glm::vec3(-0.2f, -1.0f, -0.3f),
+    .position = glm::vec3(1.0f, 1.0f, 2.0f),
     .ambient = glm::vec3(0.2f, 0.2f, 0.2f),
     .diffuse = glm::vec3(0.5f, 0.5f, 0.5f),
     .specular = glm::vec3(1.0f, 1.0f, 1.0f),
+    .constant = 1.0f,
+    .linear = 0.09f,
+    .quadratic = 0.032f,
   };
 
   glm::mat4 projection_;

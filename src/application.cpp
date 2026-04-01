@@ -128,11 +128,13 @@ std::pair<float, float> Application::GetMousePosition() const {
 }
 
 bool Application::IsKeyDown(Key key) const {
-  return glfwGetKey(g_window, ToGlfwKey(key)) == GLFW_PRESS;
+  ImGuiIO& io = ImGui::GetIO();
+  return !io.WantCaptureKeyboard && glfwGetKey(g_window, ToGlfwKey(key)) == GLFW_PRESS;
 }
 
 bool Application::IsMouseButtonDown(Mouse mouse) const {
-  return glfwGetMouseButton(g_window, ToGlfwMouse(mouse)) == GLFW_PRESS;
+  ImGuiIO& io = ImGui::GetIO();
+  return !io.WantCaptureMouse && glfwGetMouseButton(g_window, ToGlfwMouse(mouse)) == GLFW_PRESS;
 }
 
 void Application::RequestQuit() {

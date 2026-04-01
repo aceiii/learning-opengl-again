@@ -21,6 +21,9 @@ public:
   void Init(IAppContext* ctx) override {
     ctx_ = ctx;
 
+    orig_bgcolor_ = ctx_->GetBackgroundColor();
+    ctx_->SetBackgroundColor(bgcolor_);
+
     textures_.push_back(LoadTexture(GL_TEXTURE0, "resources/textures/container2.png"));
     textures_.push_back(LoadTexture(GL_TEXTURE1, "resources/textures/container2_specular.png"));
     textures_.push_back(LoadTexture(GL_TEXTURE2, "resources/textures/lighting_maps_specular_color.png"));
@@ -154,6 +157,9 @@ public:
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
+      if (ImGui::ColorEdit3("Background Color", &bgcolor_[0])) {
+        ctx_->SetBackgroundColor(bgcolor_);
+      }
       ImGui::NewLine();
       if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushID("Lighting");
@@ -194,6 +200,7 @@ public:
   }
 
   void Cleanup() override {
+    ctx_->SetBackgroundColor(orig_bgcolor_);
     ctx_ = nullptr;
 
     if (!vaos_.empty()) {
@@ -406,6 +413,9 @@ private:
   };
 
   glm::mat4 projection_;
+
+  glm::vec3 orig_bgcolor_;
+  glm::vec3 bgcolor_ = glm::vec3(0.074509f, 0.070588f, 0.078431f);
 
   glm::vec2 last_mouse_;
 };

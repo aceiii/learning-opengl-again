@@ -153,6 +153,14 @@ void Application::SetMousePosition(float x, float y) {
   glfwSetCursorPos(g_window, x, y);
 }
 
+glm::vec3 Application::GetBackgroundColor() const {
+  return bgcolor_;
+}
+
+void Application::SetBackgroundColor(const glm::vec3& color) {
+  bgcolor_ = color;
+}
+
 void Application::Update(float dt) {
   if (g_selected_scene_) {
     g_selected_scene_->Update(dt);
@@ -160,7 +168,7 @@ void Application::Update(float dt) {
 }
 
 void Application::Render() {
-  glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+  glClearColor(bgcolor_.r, bgcolor_.g, bgcolor_.b, 1.0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   if (g_selected_scene_) {

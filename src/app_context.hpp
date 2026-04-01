@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utility>
+#include <glm/glm.hpp>
 
 #include "key.hpp"
 #include "mouse.hpp"
@@ -21,4 +22,7 @@ public:
   virtual void ToggleUI(bool enabled) = 0;
   virtual void CaptureMouse(bool enabled) = 0;
   virtual void SetMousePosition(float x, float y) = 0;
+
+  virtual glm::vec3 GetBackgroundColor() const = 0;
+  virtual void SetBackgroundColor(const glm::vec3& color) = 0;
 };

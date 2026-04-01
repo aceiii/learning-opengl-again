@@ -33,6 +33,9 @@ public:
   void CaptureMouse(bool enabled) override;
   void SetMousePosition(float x, float y) override;
 
+  glm::vec3 GetBackgroundColor() const override;
+  void SetBackgroundColor(const glm::vec3& color) override;
+
 private:
   void Update(float dt);
   void Render();
@@ -60,4 +63,6 @@ private:
   float delta_time_ = 0;
   int window_width_ = 0;
   int window_height_ = 0;
+
+  glm::vec3 bgcolor_ = glm::vec3(0.2f, 0.3f, 0.3f);
 };

@@ -100,9 +100,11 @@ public:
     // lighting_shader_.SetVec3("light.position", light_.position);
     // lighting_shader_.SetVec3("light.direction", light_.direction);
     // lighting_shader_.SetFloat("light.cutOff", light_.cutOff);
+    // lighting_shader_.SetFloat("light.outerCutOff", light_.outerCutOff);
     lighting_shader_.SetVec3("light.position", camera_.position);
     lighting_shader_.SetVec3("light.direction", camera_.front);
     lighting_shader_.SetFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
+    lighting_shader_.SetFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
     lighting_shader_.SetVec3("light.ambient", light_.ambient);
     lighting_shader_.SetVec3("light.diffuse", light_.diffuse);
     lighting_shader_.SetVec3("light.specular", light_.specular);
@@ -303,6 +305,7 @@ private:
     glm::vec3 position;
     glm::vec3 direction;
     float cutOff;
+    float outerCutOff;
 
     glm::vec3 ambient;
     glm::vec3 diffuse;

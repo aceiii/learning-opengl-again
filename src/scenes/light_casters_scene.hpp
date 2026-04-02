@@ -75,17 +75,12 @@ public:
       camera_.ProcessKeyboard(CameraMovement::kMoveRight, dt);
     }
 
-    projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
-
-    if (animate_light_color_) {
-      glm::vec3 lightColor;
-      lightColor.x = sin(ctx_->GetTime() * 2.0f);
-      lightColor.y = sin(ctx_->GetTime() * 0.7f);
-      lightColor.z = sin(ctx_->GetTime() * 1.3f);
-
-      light_.diffuse = lightColor * glm::vec3(0.5f);
-      light_.ambient = light_.diffuse * 0.2f;
+    if (light_.type == Light::kLightSpot && flashlight_mode_) {
+      light_.position = camera_.position;
+      light_.direction = camera_.front;
     }
+
+    projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
   }
 
   void Render() override {
@@ -97,14 +92,11 @@ public:
     lighting_shader_.SetMat4("view", view);
     lighting_shader_.SetMat4("projection", projection_);
     lighting_shader_.SetVec3("viewPos", camera_.position);
-    // lighting_shader_.SetVec3("light.position", light_.position);
-    // lighting_shader_.SetVec3("light.direction", light_.direction);
-    // lighting_shader_.SetFloat("light.cutOff", light_.cutOff);
-    // lighting_shader_.SetFloat("light.outerCutOff", light_.outerCutOff);
-    lighting_shader_.SetVec3("light.position", camera_.position);
-    lighting_shader_.SetVec3("light.direction", camera_.front);
-    lighting_shader_.SetFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
-    lighting_shader_.SetFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
+    lighting_shader_.SetInt("light.type", light_.type);
+    lighting_shader_.SetVec3("light.position", light_.position);
+    lighting_shader_.SetVec3("light.direction", light_.direction);
+    lighting_shader_.SetFloat("light.cutOff", light_.cutOff);
+    lighting_shader_.SetFloat("light.outerCutOff", light_.outerCutOff);
     lighting_shader_.SetVec3("light.ambient", light_.ambient);
     lighting_shader_.SetVec3("light.diffuse", light_.diffuse);
     lighting_shader_.SetVec3("light.specular", light_.specular);
@@ -136,25 +128,27 @@ public:
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, light_.position);
-    model = glm::scale(model, glm::vec3(0.2f));
+    if (!flashlight_mode_) {
+      glm::mat4 model = glm::mat4(1.0f);
+      model = glm::translate(model, light_.position);
+      model = glm::scale(model, glm::vec3(0.2f));
 
-    light_cube_shader_.Use();
-    light_cube_shader_.SetMat4("view", view);
-    light_cube_shader_.SetMat4("projection", projection_);
-    light_cube_shader_.SetMat4("model", model);
-    light_cube_shader_.SetVec3("lightColor", light_.diffuse);
+      light_cube_shader_.Use();
+      light_cube_shader_.SetMat4("view", view);
+      light_cube_shader_.SetMat4("projection", projection_);
+      light_cube_shader_.SetMat4("model", model);
+      light_cube_shader_.SetVec3("lightColor", light_.diffuse);
 
-    glBindVertexArray(vaos_[0]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+      glBindVertexArray(vaos_[0]);
+      glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
   }
 
   void RenderInterface(int window_width, int window_height) override {
     constexpr auto padding = 5.0f;
     constexpr auto menu_bar_height = 32.0f;
 
-    ImGui::PushID("LightingMaps");
+    ImGui::PushID("LightCasters");
     ImGui::SetNextWindowPos(ImVec2(window_width - padding, menu_bar_height - padding), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
@@ -165,11 +159,43 @@ public:
       ImGui::NewLine();
       if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushID("Lighting");
-        ImGui::Checkbox("Animate light color", &animate_light_color_);
-        ImGui::DragFloat3("Position", &light_.position[0], 0.1f);
+
+        if (ImGui::BeginCombo("Type", Light::GetName(light_.type).data())) {
+          if (ImGui::Selectable("Point", light_.type == Light::kLightPoint)) {
+            light_.type = Light::kLightPoint;
+          }
+          if (ImGui::Selectable("Spot", light_.type == Light::kLightSpot)) {
+            light_.type = Light::kLightSpot;
+          }
+          if (ImGui::Selectable("Directional", light_.type == Light::kLightDirectional)) {
+            light_.type = Light::kLightDirectional;
+          }
+          ImGui::EndCombo();
+        }
+
+        if (light_.type == Light::kLightSpot) {
+          ImGui::Checkbox("Flashlight mode", &flashlight_mode_);
+        }
+
+        if (!flashlight_mode_) {
+          if (light_.type == Light::kLightPoint || light_.type == Light::kLightSpot) {
+            ImGui::DragFloat3("Position", &light_.position[0], 0.1f);
+          }
+          if (light_.type == Light::kLightDirectional || light_.type == Light::kLightSpot) {
+            ImGui::DragFloat3("Direction", &light_.direction[0], 0.1f);
+          }
+        }
+
+        if (light_.type == Light::kLightSpot) {
+          ImGui::NewLine();
+          ImGui::DragFloat("Cut Off", &light_.cutOff, 0.01f, 0.0f, 10.0f);
+          ImGui::DragFloat("Outer Cut Off", &light_.outerCutOff, 0.01f, 0.0f, 10.0f);
+        }
+        ImGui::NewLine();
         ImGui::ColorEdit3("Ambient", &light_.ambient[0]);
         ImGui::ColorEdit3("Diffuse", &light_.diffuse[0]);
         ImGui::ColorEdit3("Specular", &light_.specular[0]);
+        ImGui::NewLine();
         ImGui::DragFloat("Constant", &light_.constant, 0.1f, 1.0f, 10.0f);
         ImGui::DragFloat("Linear", &light_.linear, 0.005f, 0.0f, 1.0f);
         ImGui::DragFloat("Quadratic", &light_.quadratic, 0.0001f, 0.0f, 1.0f);
@@ -302,6 +328,14 @@ private:
   };
 
   struct Light {
+    enum Type {
+      kLightPoint = 0,
+      kLightSpot = 1,
+      kLightDirectional = 2,
+    };
+
+    Type type = kLightPoint;
+
     glm::vec3 position;
     glm::vec3 direction;
     float cutOff;
@@ -314,6 +348,14 @@ private:
     float constant;
     float linear;
     float quadratic;
+
+    static std::string_view GetName(Type type) {
+      switch (type) {
+        case kLightPoint: return "Point";
+        case kLightSpot: return "Spot";
+        case kLightDirectional: return "Directional";
+      }
+    }
   };
 
   inline static const std::array kVertices{
@@ -394,7 +436,7 @@ private:
   bool capture_hold_ = false;
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
-  bool animate_light_color_ = false;
+  bool flashlight_mode_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;
@@ -406,7 +448,11 @@ private:
     .shininess = 32.0f,
   };
   Light light_{
+    .type = Light::kLightPoint,
     .position = glm::vec3(1.0f, 1.0f, 2.0f),
+    .direction = glm::vec3(1.0f, -1.0f, 0.0f),
+    .cutOff = glm::cos(glm::radians(12.5f)),
+    .outerCutOff = glm::cos(glm::radians(17.5f)),
     .ambient = glm::vec3(0.2f, 0.2f, 0.2f),
     .diffuse = glm::vec3(0.5f, 0.5f, 0.5f),
     .specular = glm::vec3(1.0f, 1.0f, 1.0f),

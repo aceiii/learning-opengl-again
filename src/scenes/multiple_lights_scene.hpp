@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -16,7 +17,7 @@
 #include "../camera.hpp"
 
 
-class LightCastersScene final : public Scene {
+class MultipleLightsScene final : public Scene {
 public:
   void Init(IAppContext* ctx) override {
     ctx_ = ctx;
@@ -29,8 +30,8 @@ public:
     textures_.push_back(LoadTexture(GL_TEXTURE2, "resources/textures/lighting_maps_specular_color.png"));
     textures_.push_back(LoadTexture(GL_TEXTURE3, "resources/textures/matrix.jpg"));
 
-    lighting_shader_ = Shader::FromFiles("resources/shaders/light_casters_scene/main.vs", "resources/shaders/light_casters_scene/main.fs");
-    light_cube_shader_ = Shader::FromFiles("resources/shaders/light_casters_scene/light.vs", "resources/shaders/light_casters_scene/light.fs");
+    lighting_shader_ = Shader::FromFiles("resources/shaders/multiple_lights_scene/main.vs", "resources/shaders/multiple_lights_scene/main.fs");
+    light_cube_shader_ = Shader::FromFiles("resources/shaders/multiple_lights_scene/light.vs", "resources/shaders/multiple_lights_scene/light.fs");
 
     vaos_.resize(2);
     vbos_.resize(1);
@@ -59,6 +60,9 @@ public:
     camera_.yaw = -100.0f;
     camera_.pitch = -10.0f;
     camera_.UpdateCameraVectors();
+
+    spot_light_.position = camera_.position;
+    spot_light_.direction = camera_.front;
   }
 
   void Update(float dt) override {
@@ -75,12 +79,12 @@ public:
       camera_.ProcessKeyboard(CameraMovement::kMoveRight, dt);
     }
 
-    if (light_.type == Light::kLightSpot && flashlight_mode_) {
-      light_.position = camera_.position;
-      light_.direction = camera_.front;
-    }
-
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
+
+    if (flashlight_mode_) {
+      spot_light_.position = camera_.position;
+      spot_light_.direction = camera_.front;
+    }
   }
 
   void Render() override {
@@ -92,17 +96,34 @@ public:
     lighting_shader_.SetMat4("view", view);
     lighting_shader_.SetMat4("projection", projection_);
     lighting_shader_.SetVec3("viewPos", camera_.position);
-    lighting_shader_.SetInt("light.type", light_.type);
-    lighting_shader_.SetVec3("light.position", light_.position);
-    lighting_shader_.SetVec3("light.direction", light_.direction);
-    lighting_shader_.SetFloat("light.cutOff", light_.cutOff);
-    lighting_shader_.SetFloat("light.outerCutOff", light_.outerCutOff);
-    lighting_shader_.SetVec3("light.ambient", light_.ambient);
-    lighting_shader_.SetVec3("light.diffuse", light_.diffuse);
-    lighting_shader_.SetVec3("light.specular", light_.specular);
-    lighting_shader_.SetFloat("light.constant", light_.constant);
-    lighting_shader_.SetFloat("light.linear", light_.linear);
-    lighting_shader_.SetFloat("light.quadratic", light_.quadratic);
+
+    lighting_shader_.SetVec3("directionalLight.direction", directional_light_.direction);
+    lighting_shader_.SetVec3("directionalLight.ambient", directional_light_.ambient);
+    lighting_shader_.SetVec3("directionalLight.diffuse", directional_light_.diffuse);
+    lighting_shader_.SetVec3("directionalLight.specular", directional_light_.specular);
+
+    lighting_shader_.SetVec3("spotLight.position", spot_light_.position);
+    lighting_shader_.SetVec3("spotLight.direction", spot_light_.direction);
+    lighting_shader_.SetVec3("spotLight.ambient", spot_light_.ambient);
+    lighting_shader_.SetVec3("spotLight.diffuse", spot_light_.diffuse);
+    lighting_shader_.SetVec3("spotLight.specular", spot_light_.specular);
+    lighting_shader_.SetFloat("spotLight.cutOff", spot_light_.cutOff);
+    lighting_shader_.SetFloat("spotLight.outerCutOff", spot_light_.outerCutOff);
+    lighting_shader_.SetFloat("spotLight.constant", spot_light_.constant);
+    lighting_shader_.SetFloat("spotLight.linear", spot_light_.linear);
+    lighting_shader_.SetFloat("spotLight.quadratic", spot_light_.quadratic);
+
+    for (auto i = 0; i < point_lights_.size(); i++) {
+      const auto& light = point_lights_[i];
+      lighting_shader_.SetVec3(std::format("pointLight[{}].position", i), light.position);
+      lighting_shader_.SetVec3(std::format("pointLight[{}].ambient", i), light.ambient);
+      lighting_shader_.SetVec3(std::format("pointLight[{}].diffuse", i), light.diffuse);
+      lighting_shader_.SetVec3(std::format("pointLight[{}].specular", i), light.specular);
+      lighting_shader_.SetFloat(std::format("pointLight[{}].constant", i), light.constant);
+      lighting_shader_.SetFloat(std::format("pointLight[{}].linear", i), light.linear);
+      lighting_shader_.SetFloat(std::format("pointLight[{}].quadratic", i), light.quadratic);
+    }
+
     lighting_shader_.SetInt("material.diffuse", material_.diffuse);
     lighting_shader_.SetInt("material.specular", material_.specular);
     lighting_shader_.SetFloat("material.shininess", material_.shininess);
@@ -128,16 +149,16 @@ public:
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
-    if (!flashlight_mode_) {
+    for (const auto& light : point_lights_) {
       glm::mat4 model = glm::mat4(1.0f);
-      model = glm::translate(model, light_.position);
-      model = glm::scale(model, glm::vec3(0.2f));
+      model = glm::translate(model, light.position);
+      model = glm::scale(model, glm::vec3(0.1f));
 
       light_cube_shader_.Use();
       light_cube_shader_.SetMat4("view", view);
       light_cube_shader_.SetMat4("projection", projection_);
       light_cube_shader_.SetMat4("model", model);
-      light_cube_shader_.SetVec3("lightColor", light_.diffuse);
+      light_cube_shader_.SetVec3("lightColor", light.diffuse);
 
       glBindVertexArray(vaos_[0]);
       glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -148,7 +169,7 @@ public:
     constexpr auto padding = 5.0f;
     constexpr auto menu_bar_height = 32.0f;
 
-    ImGui::PushID("LightCasters");
+    ImGui::PushID("MultipleLights");
     ImGui::SetNextWindowPos(ImVec2(window_width - padding, menu_bar_height - padding), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
@@ -159,46 +180,7 @@ public:
       ImGui::NewLine();
       if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushID("Lighting");
-
-        if (ImGui::BeginCombo("Type", Light::GetName(light_.type).data())) {
-          if (ImGui::Selectable("Point", light_.type == Light::kLightPoint)) {
-            light_.type = Light::kLightPoint;
-          }
-          if (ImGui::Selectable("Spot", light_.type == Light::kLightSpot)) {
-            light_.type = Light::kLightSpot;
-          }
-          if (ImGui::Selectable("Directional", light_.type == Light::kLightDirectional)) {
-            light_.type = Light::kLightDirectional;
-          }
-          ImGui::EndCombo();
-        }
-
-        if (light_.type == Light::kLightSpot) {
-          ImGui::Checkbox("Flashlight mode", &flashlight_mode_);
-        }
-
-        if (!flashlight_mode_) {
-          if (light_.type == Light::kLightPoint || light_.type == Light::kLightSpot) {
-            ImGui::DragFloat3("Position", &light_.position[0], 0.1f);
-          }
-          if (light_.type == Light::kLightDirectional || light_.type == Light::kLightSpot) {
-            ImGui::DragFloat3("Direction", &light_.direction[0], 0.1f);
-          }
-        }
-
-        if (light_.type == Light::kLightSpot) {
-          ImGui::NewLine();
-          ImGui::DragFloat("Cut Off", &light_.cutOff, 0.01f, 0.0f, 10.0f);
-          ImGui::DragFloat("Outer Cut Off", &light_.outerCutOff, 0.01f, 0.0f, 10.0f);
-        }
-        ImGui::NewLine();
-        ImGui::ColorEdit3("Ambient", &light_.ambient[0]);
-        ImGui::ColorEdit3("Diffuse", &light_.diffuse[0]);
-        ImGui::ColorEdit3("Specular", &light_.specular[0]);
-        ImGui::NewLine();
-        ImGui::DragFloat("Constant", &light_.constant, 0.1f, 1.0f, 10.0f);
-        ImGui::DragFloat("Linear", &light_.linear, 0.005f, 0.0f, 1.0f);
-        ImGui::DragFloat("Quadratic", &light_.quadratic, 0.0001f, 0.0f, 1.0f);
+        ImGui::Checkbox("Flashlight mode", &flashlight_mode_);
         ImGui::PopID();
       }
       if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -247,7 +229,7 @@ public:
   }
 
   std::string Name() const override {
-    return "Light Casters";
+    return "Multiple Lights";
   }
 
   void OnMouseMoveEvent(float x, float y) override {
@@ -329,35 +311,34 @@ private:
     float shininess;
   };
 
-  struct Light {
-    enum Type {
-      kLightPoint = 0,
-      kLightSpot = 1,
-      kLightDirectional = 2,
-    };
+  struct DirectionalLight {
+      glm::vec3 direction;
+      glm::vec3 ambient;
+      glm::vec3 diffuse;
+      glm::vec3 specular;
+  };
 
-    Type type = kLightPoint;
+  struct PointLight {
+      glm::vec3 position;
+      glm::vec3 ambient;
+      glm::vec3 diffuse;
+      glm::vec3 specular;
+      float constant;
+      float linear;
+      float quadratic;
+  };
 
+  struct SpotLight {
     glm::vec3 position;
     glm::vec3 direction;
-    float cutOff;
-    float outerCutOff;
-
     glm::vec3 ambient;
     glm::vec3 diffuse;
     glm::vec3 specular;
-
     float constant;
     float linear;
     float quadratic;
-
-    static std::string_view GetName(Type type) {
-      switch (type) {
-        case kLightPoint: return "Point";
-        case kLightSpot: return "Spot";
-        case kLightDirectional: return "Directional";
-      }
-    }
+    float cutOff;
+    float outerCutOff;
   };
 
   inline static const std::array kVertices{
@@ -438,7 +419,7 @@ private:
   bool capture_hold_ = false;
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
-  bool flashlight_mode_ = false;
+  bool flashlight_mode_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;
@@ -449,18 +430,64 @@ private:
     .specular = 1,
     .shininess = 32.0f,
   };
-  Light light_{
-    .type = Light::kLightPoint,
-    .position = glm::vec3(1.0f, 1.0f, 2.0f),
-    .direction = glm::vec3(1.0f, -1.0f, 0.0f),
-    .cutOff = glm::cos(glm::radians(12.5f)),
-    .outerCutOff = glm::cos(glm::radians(17.5f)),
-    .ambient = glm::vec3(0.2f, 0.2f, 0.2f),
-    .diffuse = glm::vec3(0.5f, 0.5f, 0.5f),
+
+  DirectionalLight directional_light_{
+    .direction = glm::vec3(-0.2f, -1.0f, -0.3f),
+    .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
+    .diffuse = glm::vec3(0.4f, 0.4f, 0.4f),
+    .specular = glm::vec3(0.5f, 0.5f, 0.5f),
+  };
+
+  SpotLight spot_light_{
+    .position = glm::vec3(0.0f, 0.0f, 0.0f),
+    .direction = glm::vec3(0.0f, 0.0f, 0.0f),
+    .ambient = glm::vec3(0.0f, 0.0f, 0.0f),
+    .diffuse = glm::vec3(1.0f, 1.0f, 1.0f),
     .specular = glm::vec3(1.0f, 1.0f, 1.0f),
     .constant = 1.0f,
     .linear = 0.09f,
     .quadratic = 0.032f,
+    .cutOff = glm::cos(glm::radians(12.5f)),
+    .outerCutOff = glm::cos(glm::radians(15.0f)),
+  };
+
+  std::array<PointLight, 4> point_lights_{
+    PointLight{
+      .position = glm::vec3(0.7f,  0.2f,  2.0f),
+      .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
+      .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
+      .specular = glm::vec3(1.0f, 1.0f, 1.0f),
+      .constant = 1.0f,
+      .linear = 0.09f,
+      .quadratic = 0.032f,
+    },
+    PointLight{
+      .position = glm::vec3(2.3f, -3.3f, -4.0f),
+      .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
+      .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
+      .specular = glm::vec3(1.0f, 1.0f, 1.0f),
+      .constant = 1.0f,
+      .linear = 0.09f,
+      .quadratic = 0.032f,
+    },
+    PointLight{
+      .position = glm::vec3(-4.0f,  2.0f, -12.0f),
+      .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
+      .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
+      .specular = glm::vec3(1.0f, 1.0f, 1.0f),
+      .constant = 1.0f,
+      .linear = 0.09f,
+      .quadratic = 0.032f,
+    },
+    PointLight{
+      .position = glm::vec3(0.0f,  0.0f, -3.0f),
+      .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
+      .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
+      .specular = glm::vec3(1.0f, 1.0f, 1.0f),
+      .constant = 1.0f,
+      .linear = 0.09f,
+      .quadratic = 0.032f,
+    },
   };
 
   glm::mat4 projection_;

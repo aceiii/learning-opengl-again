@@ -11,3 +11,4 @@
 #include "scenes/materials_scene.hpp"
 #include "scenes/lighting_maps_scene.hpp"
 #include "scenes/light_casters_scene.hpp"
+#include "scenes/multiple_lights_scene.hpp"

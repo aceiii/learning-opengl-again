@@ -25,6 +25,8 @@ set(SOURCE_FILES
     src/logger.cpp
     src/logger.hpp
     src/main.cpp
+    src/mesh.cpp
+    src/mesh.hpp
     src/mouse.hpp
     src/scene.hpp
     src/scenes.hpp

@@ -10,35 +10,36 @@ include(cmake/imgui.cmake)
 include(cmake/stb.cmake)
 
 set(SOURCE_FILES
-    src/main.cpp
-    src/application.hpp
+    src/app_context.hpp
     src/application.cpp
-    src/imgui_impl.hpp
-    src/imgui_impl.cpp
-    src/applog.hpp
+    src/application.hpp
     src/applog.cpp
-    src/logger.hpp
-    src/logger.cpp
+    src/applog.hpp
     src/callback_sink.hpp
+    src/camera.hpp
+    src/file.hpp
+    src/image.hpp
+    src/imgui_impl.cpp
+    src/imgui_impl.hpp
+    src/key.hpp
+    src/logger.cpp
+    src/logger.hpp
+    src/main.cpp
+    src/mouse.hpp
     src/scene.hpp
     src/scenes.hpp
     src/shader.hpp
-    src/file.hpp
-    src/image.hpp
     src/stb_impl.cpp
-    src/key.hpp
-    src/mouse.hpp
-    src/app_context.hpp
-    src/camera.hpp
 )
 
 file(GLOB SCENE_SOURCE_FILES "src/scenes/*")
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${SCENE_SOURCE_FILES})
 
+add_subdirectory(external/assimp)
 add_subdirectory(external/glfw)
 add_subdirectory(external/glm)
 add_subdirectory(external/quill)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw glm::glm glad quill::quill imgui::imgui)
+target_link_libraries(${PROJECT_NAME} PRIVATE assimp::assimp glfw glm::glm glad quill::quill imgui::imgui)
 

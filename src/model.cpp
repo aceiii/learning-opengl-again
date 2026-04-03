@@ -45,7 +45,10 @@ static unsigned int TextureFromFile(std::string_view path, const std::string& di
   return texture_id;
 }
 
+Model::Model() {}
+
 Model::Model(std::string_view path) {
+  LoadModel(path);
 }
 
 void Model::Draw(Shader& shader) {

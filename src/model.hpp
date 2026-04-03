@@ -11,6 +11,7 @@
 
 class Model {
 public:
+  Model();
   Model(std::string_view path);
   void Draw(Shader& shader);
 

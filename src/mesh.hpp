@@ -10,12 +10,13 @@
 struct Vertex {
   glm::vec3 position;
   glm::vec3 normal;
-  glm::vec3 tex_coords;
+  glm::vec2 tex_coords;
 };
 
 struct Texture {
   unsigned int id;
   std::string type;
+  std::string path;
 };
 
 class Mesh {

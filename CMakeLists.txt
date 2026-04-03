@@ -17,7 +17,9 @@ set(SOURCE_FILES
     src/applog.hpp
     src/callback_sink.hpp
     src/camera.hpp
+    src/file.cpp
     src/file.hpp
+    src/image.cpp
     src/image.hpp
     src/imgui_impl.cpp
     src/imgui_impl.hpp
@@ -27,9 +29,12 @@ set(SOURCE_FILES
     src/main.cpp
     src/mesh.cpp
     src/mesh.hpp
+    src/model.cpp
+    src/model.hpp
     src/mouse.hpp
     src/scene.hpp
     src/scenes.hpp
+    src/shader.cpp
     src/shader.hpp
     src/stb_impl.cpp
 )

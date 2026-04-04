@@ -42,6 +42,8 @@ static unsigned int TextureFromFile(std::string_view path, const std::string& di
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+  glBindTexture(GL_TEXTURE_2D, 0);
+
   return texture_id;
 }
 
@@ -96,7 +98,7 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene) {
       .normal = glm::vec3(norm.x, norm.y, norm.z),
     };
 
-    if (mesh->mTextureCoords[0]) {
+    if (mesh->HasTextureCoords(0)) {
       const auto& tex = mesh->mTextureCoords[0][i];
       vertex.tex_coords = glm::vec2(tex.x, tex.y);
     }

@@ -72,36 +72,36 @@ public:
     model_shader_.SetMat4("projection", projection_);
     model_shader_.SetVec3("viewPos", camera_.position);
 
-    // model_shader_.SetVec3("directionalLight.direction", environment_.directional_light.direction);
-    // model_shader_.SetVec3("directionalLight.ambient", environment_.directional_light.ambient);
-    // model_shader_.SetVec3("directionalLight.diffuse", environment_.directional_light.diffuse);
-    // model_shader_.SetVec3("directionalLight.specular", environment_.directional_light.specular);
+    model_shader_.SetVec3("directionalLight.direction", environment_.directional_light.direction);
+    model_shader_.SetVec3("directionalLight.ambient", environment_.directional_light.ambient);
+    model_shader_.SetVec3("directionalLight.diffuse", environment_.directional_light.diffuse);
+    model_shader_.SetVec3("directionalLight.specular", environment_.directional_light.specular);
 
-    // model_shader_.SetVec3("spotLight.position", environment_.spot_light.position);
-    // model_shader_.SetVec3("spotLight.direction", environment_.spot_light.direction);
-    // model_shader_.SetVec3("spotLight.ambient", environment_.spot_light.ambient);
-    // model_shader_.SetVec3("spotLight.diffuse", environment_.spot_light.diffuse);
-    // model_shader_.SetVec3("spotLight.specular", environment_.spot_light.specular);
-    // model_shader_.SetFloat("spotLight.cutOff", environment_.spot_light.cutOff);
-    // model_shader_.SetFloat("spotLight.outerCutOff", environment_.spot_light.outerCutOff);
-    // model_shader_.SetFloat("spotLight.constant", environment_.spot_light.constant);
-    // model_shader_.SetFloat("spotLight.linear", environment_.spot_light.linear);
-    // model_shader_.SetFloat("spotLight.quadratic", environment_.spot_light.quadratic);
+    model_shader_.SetVec3("spotLight.position", environment_.spot_light.position);
+    model_shader_.SetVec3("spotLight.direction", environment_.spot_light.direction);
+    model_shader_.SetVec3("spotLight.ambient", environment_.spot_light.ambient);
+    model_shader_.SetVec3("spotLight.diffuse", environment_.spot_light.diffuse);
+    model_shader_.SetVec3("spotLight.specular", environment_.spot_light.specular);
+    model_shader_.SetFloat("spotLight.cutOff", environment_.spot_light.cutOff);
+    model_shader_.SetFloat("spotLight.outerCutOff", environment_.spot_light.outerCutOff);
+    model_shader_.SetFloat("spotLight.constant", environment_.spot_light.constant);
+    model_shader_.SetFloat("spotLight.linear", environment_.spot_light.linear);
+    model_shader_.SetFloat("spotLight.quadratic", environment_.spot_light.quadratic);
 
-    // for (auto i = 0; i < environment_.point_lights.size(); i++) {
-    //   const auto& light = environment_.point_lights[i];
-    //   model_shader_.SetVec3(std::format("pointLight[{}].position", i), light.position);
-    //   model_shader_.SetVec3(std::format("pointLight[{}].ambient", i), light.ambient);
-    //   model_shader_.SetVec3(std::format("pointLight[{}].diffuse", i), light.diffuse);
-    //   model_shader_.SetVec3(std::format("pointLight[{}].specular", i), light.specular);
-    //   model_shader_.SetFloat(std::format("pointLight[{}].constant", i), light.constant);
-    //   model_shader_.SetFloat(std::format("pointLight[{}].linear", i), light.linear);
-    //   model_shader_.SetFloat(std::format("pointLight[{}].quadratic", i), light.quadratic);
-    // }
+    for (auto i = 0; i < environment_.point_lights.size(); i++) {
+      const auto& light = environment_.point_lights[i];
+      model_shader_.SetVec3(std::format("pointLight[{}].position", i), light.position);
+      model_shader_.SetVec3(std::format("pointLight[{}].ambient", i), light.ambient);
+      model_shader_.SetVec3(std::format("pointLight[{}].diffuse", i), light.diffuse);
+      model_shader_.SetVec3(std::format("pointLight[{}].specular", i), light.specular);
+      model_shader_.SetFloat(std::format("pointLight[{}].constant", i), light.constant);
+      model_shader_.SetFloat(std::format("pointLight[{}].linear", i), light.linear);
+      model_shader_.SetFloat(std::format("pointLight[{}].quadratic", i), light.quadratic);
+    }
 
     // model_shader_.SetInt("material.diffuse", material_.diffuse);
     // model_shader_.SetInt("material.specular", material_.specular);
-    // model_shader_.SetFloat("material.shininess", material_.shininess);
+    model_shader_.SetFloat("shininess", shininess_);
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
@@ -142,9 +142,7 @@ public:
       }
       if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushID("Material");
-        ImGui::DragInt("Diffuse", &material_.diffuse, 1, 0, 8);
-        ImGui::DragInt("Specular", &material_.specular, 1, 0, 8);
-        ImGui::DragFloat("Shininess", &material_.shininess, 0.01f, 0.01f, 10.0f);
+        ImGui::DragFloat("Shininess", &shininess_, 0.01f, 0.01f, 100.0f);
         ImGui::PopID();
       }
       if (ImGui::CollapsingHeader("Camera")) {
@@ -251,12 +249,6 @@ private:
       reset_mouse_ = true;
     }
   }
-
-  struct Material {
-    int diffuse;
-    int specular;
-    float shininess;
-  };
 
   struct DirectionalLight {
       glm::vec3 direction;
@@ -607,18 +599,11 @@ private:
   inline static const float kMaxPitch = 89.0f;
 
   Shader model_shader_;
-
   Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
-  Material material_{
-    .diffuse = 0,
-    .specular = 1,
-    .shininess = 32.0f,
-  };
-
   Environment environment_ = kEnvironments[0];
-  int selected_environment_ = 0;
-
   Model model_;
+
+  int selected_environment_ = 0;
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;
@@ -634,5 +619,6 @@ private:
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;
+  float shininess_ = 32.0f;
 
 };

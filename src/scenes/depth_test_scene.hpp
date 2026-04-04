@@ -18,7 +18,7 @@
 #include "../model.hpp"
 
 
-class ModelScene final : public Scene {
+class DepthTestScene final : public Scene {
 public:
   void Init(IAppContext* ctx) override {
     ctx_ = ctx;
@@ -26,7 +26,7 @@ public:
     orig_bgcolor_ = ctx_->GetBackgroundColor();
     ctx_->SetBackgroundColor(environment_.bg_color);
 
-    model_shader_ = Shader::FromFiles("resources/shaders/model_scene/main.vs", "resources/shaders/model_scene/main.fs");
+    model_shader_ = Shader::FromFiles("resources/shaders/depth_test_scene/main.vs", "resources/shaders/depth_test_scene/main.fs");
     model_ = Model::Load("resources/models/backpack/backpack.obj");
 
     glEnable(GL_DEPTH_TEST);
@@ -115,36 +115,13 @@ public:
     constexpr auto padding = 5.0f;
     constexpr auto menu_bar_height = 32.0f;
 
-    ImGui::PushID("Model");
+    ImGui::PushID("DepthTest");
     ImGui::SetNextWindowPos(ImVec2(window_width - padding, menu_bar_height - padding), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
-      if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::PushID("Lighting");
-        if (ImGui::BeginCombo("Environment", environment_.name.data())) {
-          for (int idx = 0; idx < kEnvironments.size(); idx++) {
-            const auto& env = kEnvironments[idx];
-            if (ImGui::Selectable(env.name.data(), selected_environment_ == idx)) {
-              SpotLight prev_spot_light = environment_.spot_light;
-              environment_ = env;
-              environment_.spot_light.position = prev_spot_light.position;
-              environment_.spot_light.direction = prev_spot_light.direction;
-              ctx_->SetBackgroundColor(environment_.bg_color);
-              selected_environment_ = idx;
-            }
-          }
-          ImGui::EndCombo();
-        }
-        ImGui::Checkbox("Flashlight mode", &flashlight_mode_);
-        ImGui::PopID();
-      }
-      if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::PushID("Material");
-        ImGui::DragFloat("Shininess", &shininess_, 0.01f, 0.01f, 100.0f);
-        ImGui::PopID();
-      }
+
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
         ImGui::Checkbox("Hold Capture on mouse press", &capture_hold_);
@@ -174,7 +151,7 @@ public:
   }
 
   std::string Name() const override {
-    return "Model";
+    return "Depth Test";
   }
 
   void OnMouseMoveEvent(float x, float y) override {
@@ -288,8 +265,16 @@ private:
     std::array<PointLight, 4> point_lights;
   };
 
-  inline static const std::array kEnvironments{
-    Environment{
+  IAppContext* ctx_ = nullptr;
+
+  inline static const float kDefaultYaw = -90.0f;
+  inline static const float kDefaultPitch = 0.0f;
+  inline static const float kMinPitch = -89.0f;
+  inline static const float kMaxPitch = 89.0f;
+
+  Shader model_shader_;
+  Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
+  Environment environment_{
       .name = "Default",
       .bg_color = glm::vec3(0.5, 0.5, 0.5),
       .directional_light = {
@@ -348,259 +333,8 @@ private:
           .quadratic = 0.032f,
         },
       },
-    },
-    Environment{
-      .name = "Desert",
-      .bg_color = glm::vec3(0.75f, 0.52f, 0.3f),
-      .directional_light = {
-        .direction = glm::vec3(-0.2f, -1.0f, -0.3f),
-        .ambient = glm::vec3(0.3f, 0.24f, 0.14f),
-        .diffuse = glm::vec3(0.7f, 0.42f, 0.26f),
-        .specular = glm::vec3(0.5f, 0.5f, 0.5f),
-      },
-      .spot_light = {
-        .position = glm::vec3(0.0f, 0.0f, 0.0f),
-        .direction = glm::vec3(0.0f, 0.0f, 0.0f),
-        .ambient = glm::vec3(0.0f, 0.0f, 0.0f),
-        .diffuse = glm::vec3(0.8f, 0.8f, 0.0f),
-        .specular = glm::vec3(0.8f, 0.8f, 0.0f),
-        .constant = 1.0f,
-        .linear = 0.09f,
-        .quadratic = 0.032f,
-        .cutOff = glm::cos(glm::radians(12.5f)),
-        .outerCutOff = glm::cos(glm::radians(15.0f)),
-      },
-      .point_lights = {
-        PointLight{
-          .position = glm::vec3(0.7f,  0.2f,  2.0f),
-          .ambient = glm::vec3(0.1f, 0.06f, 0.0f),
-          .diffuse = glm::vec3(1.0f, 0.6f, 0.0f),
-          .specular = glm::vec3(1.0f, 0.6f, 0.0f),
-          .constant = 1.0f,
-          .linear = 0.09f,
-          .quadratic = 0.032f,
-        },
-        PointLight{
-          .position = glm::vec3(2.3f, -3.3f, -4.0f),
-          .ambient = glm::vec3(0.1f, 0.0f, 0.0f),
-          .diffuse = glm::vec3(1.0f, 0.0f, 0.0f),
-          .specular = glm::vec3(1.0f, 0.0f, 0.0f),
-          .constant = 1.0f,
-          .linear = 0.09f,
-          .quadratic = 0.032f,
-        },
-        PointLight{
-          .position = glm::vec3(-4.0f,  2.0f, -12.0f),
-          .ambient = glm::vec3(0.1f, 0.1f, 0.0f),
-          .diffuse = glm::vec3(1.0f, 1.0f, 0.0f),
-          .specular = glm::vec3(1.0f, 1.0f, 0.0f),
-          .constant = 1.0f,
-          .linear = 0.09f,
-          .quadratic = 0.032f,
-        },
-        PointLight{
-          .position = glm::vec3(0.0f,  0.0f, -3.0f),
-          .ambient = glm::vec3(0.02f, 0.02f, 0.1f),
-          .diffuse = glm::vec3(0.2f, 0.2f, 1.0f),
-          .specular = glm::vec3(0.2f, 0.2f, 1.0f),
-          .constant = 1.0f,
-          .linear = 0.09f,
-          .quadratic = 0.032f,
-        },
-      },
-    },
-    Environment{
-      .name = "Factory",
-      .bg_color = glm::vec3(0.1f, 0.1f, 0.1f),
-      .directional_light = {
-        .direction = glm::vec3(-0.2f, -1.0f, -0.3f),
-        .ambient = glm::vec3(0.05f, 0.05f, 0.1f),
-        .diffuse = glm::vec3(0.2f, 0.2f, 0.7f),
-        .specular = glm::vec3(0.7f, 0.7f, 0.7f),
-      },
-      .spot_light = {
-        .position = glm::vec3(0.0f, 0.0f, 0.0f),
-        .direction = glm::vec3(0.0f, 0.0f, 0.0f),
-        .ambient = glm::vec3(0.0f, 0.0f, 0.0f),
-        .diffuse = glm::vec3(1.0f, 1.0f, 1.0f),
-        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-        .constant = 1.0f,
-        .linear = 0.009f,
-        .quadratic = 0.0032f,
-        .cutOff = glm::cos(glm::radians(10.5f)),
-        .outerCutOff = glm::cos(glm::radians(12.5f)),
-      },
-      .point_lights = {
-        PointLight{
-          .position = glm::vec3(0.7f,  0.2f,  2.0f),
-          .ambient = glm::vec3(0.02f, 0.02f, 0.06f),
-          .diffuse = glm::vec3(0.2f, 0.2f, 0.6f),
-          .specular = glm::vec3(0.2f, 0.2f, 0.6f),
-          .constant = 1.0f,
-          .linear = 0.09f,
-          .quadratic = 0.032f,
-        },
-        PointLight{
-          .position = glm::vec3(2.3f, -3.3f, -4.0f),
-          .ambient = glm::vec3(0.03f, 0.03f, 0.07f),
-          .diffuse = glm::vec3(0.3f, 0.3f, 0.7f),
-          .specular = glm::vec3(0.3f, 0.3f, 0.7f),
-          .constant = 1.0f,
-          .linear = 0.09f,
-          .quadratic = 0.032f,
-        },
-        PointLight{
-          .position = glm::vec3(-4.0f,  2.0f, -12.0f),
-          .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
-          .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
-          .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-          .constant = 1.0f,
-          .linear = 0.09f,
-          .quadratic = 0.032f,
-        },
-        PointLight{
-          .position = glm::vec3(0.0f,  0.0f, -3.0f),
-          .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
-          .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
-          .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-          .constant = 1.0f,
-          .linear = 0.09f,
-          .quadratic = 0.032f,
-        },
-      },
-    },
-    Environment{
-      .name = "Horror",
-      .bg_color = glm::vec3(0.0f, 0.0f, 0.0f),
-      .directional_light = {
-        .direction = glm::vec3(-0.2f, -1.0f, -0.3f),
-        .ambient = glm::vec3(0.0f, 0.0f, 0.0f),
-        .diffuse = glm::vec3(0.05f, 0.05f, 0.05f),
-        .specular = glm::vec3(0.2f, 0.2f, 0.2f),
-      },
-      .spot_light = {
-        .position = glm::vec3(0.0f, 0.0f, 0.0f),
-        .direction = glm::vec3(0.0f, 0.0f, 0.0f),
-        .ambient = glm::vec3(0.0f, 0.0f, 0.0f),
-        .diffuse = glm::vec3(1.0f, 1.0f, 1.0f),
-        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-        .constant = 1.0f,
-        .linear = 0.09f,
-        .quadratic = 0.032f,
-        .cutOff = glm::cos(glm::radians(10.0f)),
-        .outerCutOff = glm::cos(glm::radians(15.0f)),
-      },
-      .point_lights = {
-        PointLight{
-          .position = glm::vec3(0.7f,  0.2f,  2.0f),
-          .ambient = glm::vec3(0.01f, 0.01f, 0.01f),
-          .diffuse = glm::vec3(0.1f, 0.1f, 0.1f),
-          .specular = glm::vec3(0.1f, 0.1f, 0.1f),
-          .constant = 1.0f,
-          .linear = 0.14f,
-          .quadratic = 0.07f,
-        },
-        PointLight{
-          .position = glm::vec3(2.3f, -3.3f, -4.0f),
-          .ambient = glm::vec3(0.01f, 0.01f, 0.01f),
-          .diffuse = glm::vec3(0.1f, 0.1f, 0.1f),
-          .specular = glm::vec3(0.1f, 0.1f, 0.1f),
-          .constant = 1.0f,
-          .linear = 0.14f,
-          .quadratic = 0.07,
-        },
-        PointLight{
-          .position = glm::vec3(-4.0f,  2.0f, -12.0f),
-          .ambient = glm::vec3(0.01f, 0.01f, 0.01f),
-          .diffuse = glm::vec3(0.1f, 0.1f, 0.1f),
-          .specular = glm::vec3(0.1f, 0.1f, 0.1f),
-          .constant = 1.0f,
-          .linear = 0.22f,
-          .quadratic = 0.2f,
-        },
-        PointLight{
-          .position = glm::vec3(0.0f,  0.0f, -3.0f),
-          .ambient = glm::vec3(0.03f, 0.01f, 0.01f),
-          .diffuse = glm::vec3(0.3f, 0.1f, 0.1f),
-          .specular = glm::vec3(0.3f, 0.1f, 0.1f),
-          .constant = 1.0f,
-          .linear = 0.14f,
-          .quadratic = 0.07f,
-        },
-      },
-    },
-    Environment{
-      .name = "Biochemical Lab",
-      .bg_color = glm::vec3(0.9f, 0.9f, 0.9f),
-      .directional_light = {
-        .direction = glm::vec3(-0.2f, -1.0f, -0.3f),
-        .ambient = glm::vec3(0.5f, 0.5f, 0.5f),
-        .diffuse = glm::vec3(1.0f, 1.0f, 1.0f),
-        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-      },
-      .spot_light = {
-        .position = glm::vec3(0.0f, 0.0f, 0.0f),
-        .direction = glm::vec3(0.0f, 0.0f, 0.0f),
-        .ambient = glm::vec3(0.0f, 0.0f, 0.0f),
-        .diffuse = glm::vec3(0.0f, 1.0f, 0.0f),
-        .specular = glm::vec3(0.0f, 1.0f, 0.0f),
-        .constant = 1.0f,
-        .linear = 0.07f,
-        .quadratic = 0.017f,
-        .cutOff = glm::cos(glm::radians(7.f)),
-        .outerCutOff = glm::cos(glm::radians(10.0f)),
-      },
-      .point_lights = {
-        PointLight{
-          .position = glm::vec3(0.7f,  0.2f,  2.0f),
-          .ambient = glm::vec3(0.04f, 0.07f, 0.01f),
-          .diffuse = glm::vec3(0.4f, 0.7f, 0.1f),
-          .specular = glm::vec3(0.4f, 0.7f, 0.1f),
-          .constant = 1.0f,
-          .linear = 0.07f,
-          .quadratic = 0.017f,
-        },
-        PointLight{
-          .position = glm::vec3(2.3f, -3.3f, -4.0f),
-          .ambient = glm::vec3(0.04f, 0.07f, 0.01f),
-          .diffuse = glm::vec3(0.4f, 0.7f, 0.1f),
-          .specular = glm::vec3(0.4f, 0.7f, 0.1f),
-          .constant = 1.0f,
-          .linear = 0.07f,
-          .quadratic = 0.017f,
-        },
-        PointLight{
-          .position = glm::vec3(-4.0f,  2.0f, -12.0f),
-          .ambient = glm::vec3(0.04f, 0.07f, 0.01f),
-          .diffuse = glm::vec3(0.4f, 0.7f, 0.1f),
-          .specular = glm::vec3(0.4f, 0.7f, 0.1f),
-          .constant = 1.0f,
-          .linear = 0.07f,
-          .quadratic = 0.017f,
-        },
-        PointLight{
-          .position = glm::vec3(0.0f,  0.0f, -3.0f),
-          .ambient = glm::vec3(0.04f, 0.07f, 0.01f),
-          .diffuse = glm::vec3(0.4f, 0.7f, 0.1f),
-          .specular = glm::vec3(0.4f, 0.7f, 0.1f),
-          .constant = 1.0f,
-          .linear = 0.07f,
-          .quadratic = 0.017f,
-        },
-      },
-    },
-  };
+    };
 
-  IAppContext* ctx_ = nullptr;
-
-  inline static const float kDefaultYaw = -90.0f;
-  inline static const float kDefaultPitch = 0.0f;
-  inline static const float kMinPitch = -89.0f;
-  inline static const float kMaxPitch = 89.0f;
-
-  Shader model_shader_;
-  Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
-  Environment environment_ = kEnvironments[0];
   Model model_;
 
   int selected_environment_ = 0;

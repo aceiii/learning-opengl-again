@@ -47,14 +47,14 @@ static unsigned int TextureFromFile(std::string_view path, const std::string& di
   return texture_id;
 }
 
-Model::Model() {}
-
-Model::Model(std::string_view path) {
-  LoadModel(path);
+Model Model::Load(std::string_view path) {
+  Model model{};
+  model.LoadModel(path);
+  return model;
 }
 
 void Model::Draw(Shader& shader) {
-  for (auto& mesh : meshes_) {
+  for (auto& mesh : meshes) {
     mesh.Draw(shader);
   }
 }
@@ -69,14 +69,14 @@ void Model::LoadModel(std::string_view path) {
     return;
   }
 
-  directory_ = path.substr(0, path.find_last_of("/"));
+  directory = path.substr(0, path.find_last_of("/"));
   ProcessNode(scene->mRootNode, scene);
 }
 
 void Model::ProcessNode(aiNode* node, const aiScene* scene) {
   for (unsigned int i = 0; i < node->mNumMeshes; i++) {
     aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-    meshes_.push_back(ProcessMesh(mesh, scene));
+    meshes.push_back(ProcessMesh(mesh, scene));
   }
 
   for (unsigned int i = 0; i < node->mNumChildren; i++) {
@@ -126,7 +126,7 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene) {
 }
 
 std::vector<Texture> Model::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string type_name) {
-  std::vector<Texture> textures;
+  std::vector<Texture> new_textures;
 
   for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
     aiString str;
@@ -134,9 +134,9 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial* mat, aiTextureType 
 
     bool skip = false;
 
-    for (const auto& existing_texture : textures_) {
+    for (const auto& existing_texture : textures) {
       if (std::strcmp(existing_texture.path.data(), str.C_Str()) == 0) {
-        textures.push_back(existing_texture);
+        new_textures.push_back(existing_texture);
         skip = true;
         break;
       }
@@ -144,16 +144,16 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial* mat, aiTextureType 
 
     if (!skip) {
       Texture texture{
-        .id = TextureFromFile(str.C_Str(), directory_),
+        .id = TextureFromFile(str.C_Str(), directory),
         .type = type_name,
         .path = str.C_Str(),
       };
 
+      new_textures.push_back(texture);
       textures.push_back(texture);
-      textures_.push_back(texture);
     }
   }
 
-  return textures;
+  return new_textures;
 }
 

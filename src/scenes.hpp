@@ -13,3 +13,4 @@
 #include "scenes/light_casters_scene.hpp"
 #include "scenes/multiple_lights_scene.hpp"
 #include "scenes/model_scene.hpp"
+#include "scenes/depth_test_scene.hpp"

@@ -89,14 +89,18 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene) {
 std::vector<Texture> Model::LoadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string type_name) {
   std::vector<Texture> new_textures;
 
+  auto logger = Logger::GetRootLogger();
+
   for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
     aiString str;
     mat->GetTexture(type, i, &str);
 
+    std::string path = directory + '/' + str.C_Str();
     bool skip = false;
 
     for (const auto& existing_texture : textures) {
-      if (std::strcmp(existing_texture.path.data(), str.C_Str()) == 0) {
+      quill::info(logger, "Checking existing texture: {} -> {}", existing_texture.path, str.C_Str());
+      if (existing_texture.path == path) {
         new_textures.push_back(existing_texture);
         skip = true;
         break;
@@ -104,7 +108,7 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial* mat, aiTextureType 
     }
 
     if (!skip) {
-      Texture texture = Texture::Load(type_name, directory + '/' + str.C_Str());
+      Texture texture = Texture::Load(type_name, path);
       new_textures.push_back(texture);
       textures.push_back(texture);
     }

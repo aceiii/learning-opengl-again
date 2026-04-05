@@ -18,8 +18,8 @@ Texture Texture::Load(std::string_view type, std::string_view path) {
     quill::warning(logger, "Texture failed to load at path: '{}'", filename);
     return {
       .id = texture_id,
-      .path = std::string{path},
       .type = std::string{type},
+      .path = std::string{path},
     };
   }
 
@@ -47,7 +47,7 @@ Texture Texture::Load(std::string_view type, std::string_view path) {
 
   return {
     .id = texture_id,
-    .path = std::string{path},
     .type = std::string{type},
+    .path = std::string{path},
   };
 }

@@ -27,7 +27,7 @@ public:
     ctx_->SetBackgroundColor(environment_.bg_color);
 
     model_shader_ = Shader::FromFiles("resources/shaders/model_scene/main.vs", "resources/shaders/model_scene/main.fs");
-    model_ = Model::Load("resources/models/backpack/backpack.obj");
+    model_ = Model::Load(kModels[selected_model_].path);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -120,6 +120,17 @@ public:
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
+      ImGui::NewLine();
+      if (ImGui::BeginCombo("Model", kModels[selected_model_].name.c_str())) {
+        for (auto idx = 0; idx < kModels.size(); idx++) {
+          const auto& model = kModels[idx];
+          if (ImGui::Selectable(model.name.c_str(), idx == selected_model_)) {
+            selected_model_ = idx;
+            model_ = Model::Load(model.path);
+          }
+        }
+        ImGui::EndCombo();
+      }
       ImGui::NewLine();
       if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushID("Lighting");
@@ -286,6 +297,11 @@ private:
     DirectionalLight directional_light;
     SpotLight spot_light;
     std::array<PointLight, 4> point_lights;
+  };
+
+  struct NamedModel {
+    std::string name;
+    std::string path;
   };
 
   inline static const std::array kEnvironments{
@@ -591,6 +607,17 @@ private:
     },
   };
 
+  inline static const std::array kModels{
+    NamedModel{
+      .name = "Backpack",
+      .path = "resources/models/backpack/backpack.obj",
+    },
+    NamedModel{
+      .name = "Nanosuit",
+      .path = "resources/models/nanosuit/nanosuit.obj",
+    },
+  };
+
   IAppContext* ctx_ = nullptr;
 
   inline static const float kDefaultYaw = -90.0f;
@@ -604,6 +631,7 @@ private:
   Model model_;
 
   int selected_environment_ = 0;
+  int selected_model_ = 0;
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;

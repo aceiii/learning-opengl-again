@@ -37,6 +37,8 @@ set(SOURCE_FILES
     src/shader.cpp
     src/shader.hpp
     src/stb_impl.cpp
+    src/texture.cpp
+    src/texture.hpp
 )
 
 file(GLOB SCENE_SOURCE_FILES "src/scenes/*")

@@ -27,7 +27,7 @@ public:
     ctx_->SetBackgroundColor(environment_.bg_color);
 
     model_shader_ = Shader::FromFiles("resources/shaders/depth_test_scene/main.vs", "resources/shaders/depth_test_scene/main.fs");
-    model_ = Model::Load("resources/models/backpack/backpack.obj");
+    // model_ = Model::Load("resources/models/backpack/backpack.obj");
 
     glEnable(GL_DEPTH_TEST);
 
@@ -60,6 +60,8 @@ public:
       environment_.spot_light.position = camera_.position;
       environment_.spot_light.direction = camera_.front;
     }
+
+    glDepthFunc(kDepthFuncs[selected_depth_func_].func);
   }
 
   void Render() override {
@@ -72,43 +74,46 @@ public:
     model_shader_.SetMat4("projection", projection_);
     model_shader_.SetVec3("viewPos", camera_.position);
 
-    model_shader_.SetVec3("directionalLight.direction", environment_.directional_light.direction);
-    model_shader_.SetVec3("directionalLight.ambient", environment_.directional_light.ambient);
-    model_shader_.SetVec3("directionalLight.diffuse", environment_.directional_light.diffuse);
-    model_shader_.SetVec3("directionalLight.specular", environment_.directional_light.specular);
+    // model_shader_.SetVec3("directionalLight.direction", environment_.directional_light.direction);
+    // model_shader_.SetVec3("directionalLight.ambient", environment_.directional_light.ambient);
+    // model_shader_.SetVec3("directionalLight.diffuse", environment_.directional_light.diffuse);
+    // model_shader_.SetVec3("directionalLight.specular", environment_.directional_light.specular);
 
-    model_shader_.SetVec3("spotLight.position", environment_.spot_light.position);
-    model_shader_.SetVec3("spotLight.direction", environment_.spot_light.direction);
-    model_shader_.SetVec3("spotLight.ambient", environment_.spot_light.ambient);
-    model_shader_.SetVec3("spotLight.diffuse", environment_.spot_light.diffuse);
-    model_shader_.SetVec3("spotLight.specular", environment_.spot_light.specular);
-    model_shader_.SetFloat("spotLight.cutOff", environment_.spot_light.cutOff);
-    model_shader_.SetFloat("spotLight.outerCutOff", environment_.spot_light.outerCutOff);
-    model_shader_.SetFloat("spotLight.constant", environment_.spot_light.constant);
-    model_shader_.SetFloat("spotLight.linear", environment_.spot_light.linear);
-    model_shader_.SetFloat("spotLight.quadratic", environment_.spot_light.quadratic);
+    // model_shader_.SetVec3("spotLight.position", environment_.spot_light.position);
+    // model_shader_.SetVec3("spotLight.direction", environment_.spot_light.direction);
+    // model_shader_.SetVec3("spotLight.ambient", environment_.spot_light.ambient);
+    // model_shader_.SetVec3("spotLight.diffuse", environment_.spot_light.diffuse);
+    // model_shader_.SetVec3("spotLight.specular", environment_.spot_light.specular);
+    // model_shader_.SetFloat("spotLight.cutOff", environment_.spot_light.cutOff);
+    // model_shader_.SetFloat("spotLight.outerCutOff", environment_.spot_light.outerCutOff);
+    // model_shader_.SetFloat("spotLight.constant", environment_.spot_light.constant);
+    // model_shader_.SetFloat("spotLight.linear", environment_.spot_light.linear);
+    // model_shader_.SetFloat("spotLight.quadratic", environment_.spot_light.quadratic);
 
-    for (auto i = 0; i < environment_.point_lights.size(); i++) {
-      const auto& light = environment_.point_lights[i];
-      model_shader_.SetVec3(std::format("pointLight[{}].position", i), light.position);
-      model_shader_.SetVec3(std::format("pointLight[{}].ambient", i), light.ambient);
-      model_shader_.SetVec3(std::format("pointLight[{}].diffuse", i), light.diffuse);
-      model_shader_.SetVec3(std::format("pointLight[{}].specular", i), light.specular);
-      model_shader_.SetFloat(std::format("pointLight[{}].constant", i), light.constant);
-      model_shader_.SetFloat(std::format("pointLight[{}].linear", i), light.linear);
-      model_shader_.SetFloat(std::format("pointLight[{}].quadratic", i), light.quadratic);
-    }
-
-    // model_shader_.SetInt("material.diffuse", material_.diffuse);
-    // model_shader_.SetInt("material.specular", material_.specular);
-    model_shader_.SetFloat("shininess", shininess_);
+    // for (auto i = 0; i < environment_.point_lights.size(); i++) {
+    //   const auto& light = environment_.point_lights[i];
+    //   model_shader_.SetVec3(std::format("pointLight[{}].position", i), light.position);
+    //   model_shader_.SetVec3(std::format("pointLight[{}].ambient", i), light.ambient);
+    //   model_shader_.SetVec3(std::format("pointLight[{}].diffuse", i), light.diffuse);
+    //   model_shader_.SetVec3(std::format("pointLight[{}].specular", i), light.specular);
+    //   model_shader_.SetFloat(std::format("pointLight[{}].constant", i), light.constant);
+    //   model_shader_.SetFloat(std::format("pointLight[{}].linear", i), light.linear);
+    //   model_shader_.SetFloat(std::format("pointLight[{}].quadratic", i), light.quadratic);
+    // }
 
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
     model_shader_.SetMat4("model", model);
+    cube_mesh_.Draw(model_shader_);
 
-    model_.Draw(model_shader_);
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+    model_shader_.SetMat4("model", model);
+    cube_mesh_.Draw(model_shader_);
+
+    model = glm::mat4(1.0f);
+    model_shader_.SetMat4("model", model);
+    floor_mesh_.Draw(model_shader_);
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -121,6 +126,18 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
+
+      if (ImGui::CollapsingHeader("Depth Testing")) {
+        if (ImGui::BeginCombo("Depth Func", kDepthFuncs[selected_depth_func_].name.c_str())) {
+          for (auto idx = 0; idx < kDepthFuncs.size(); idx++) {
+            const auto& depth_func = kDepthFuncs[idx];
+            if (ImGui::Selectable(depth_func.name.c_str(), selected_depth_func_ == idx)) {
+              selected_depth_func_ = idx;
+            }
+          }
+          ImGui::EndCombo();
+        }
+      }
 
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -265,6 +282,11 @@ private:
     std::array<PointLight, 4> point_lights;
   };
 
+  struct DepthFunc {
+    std::string name;
+    GLenum func;
+  };
+
   IAppContext* ctx_ = nullptr;
 
   inline static const float kDefaultYaw = -90.0f;
@@ -272,72 +294,171 @@ private:
   inline static const float kMinPitch = -89.0f;
   inline static const float kMaxPitch = 89.0f;
 
+  inline static const std::array kDepthFuncs{
+    DepthFunc{
+      .name = "Always",
+      .func = GL_ALWAYS,
+    },
+    DepthFunc{
+      .name = "Never",
+      .func = GL_NEVER,
+    },
+    DepthFunc{
+      .name = "Less",
+      .func = GL_LESS,
+    },
+    DepthFunc{
+      .name = "Equal",
+      .func = GL_EQUAL,
+    },
+    DepthFunc{
+      .name = "Less Than or Equal",
+      .func = GL_LEQUAL,
+    },
+    DepthFunc{
+      .name = "Greater",
+      .func = GL_GREATER,
+    },
+    DepthFunc{
+      .name = "Not Equal",
+      .func = GL_NOTEQUAL,
+    },
+    DepthFunc{
+      .name = "Greater Than or Equal",
+      .func = GL_GEQUAL,
+    },
+  };
+
   Shader model_shader_;
   Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
   Environment environment_{
-      .name = "Default",
-      .bg_color = glm::vec3(0.5, 0.5, 0.5),
-      .directional_light = {
-        .direction = glm::vec3(-0.2f, -1.0f, -0.3f),
+    .name = "Default",
+    .bg_color = glm::vec3(0.1f, 0.1f, 0.1f),
+    .directional_light = {
+      .direction = glm::vec3(-0.2f, -1.0f, -0.3f),
+      .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
+      .diffuse = glm::vec3(0.4f, 0.4f, 0.4f),
+      .specular = glm::vec3(0.5f, 0.5f, 0.5f),
+    },
+    .spot_light = {
+      .position = glm::vec3(0.0f, 0.0f, 0.0f),
+      .direction = glm::vec3(0.0f, 0.0f, 0.0f),
+      .ambient = glm::vec3(0.0f, 0.0f, 0.0f),
+      .diffuse = glm::vec3(1.0f, 1.0f, 1.0f),
+      .specular = glm::vec3(1.0f, 1.0f, 1.0f),
+      .constant = 1.0f,
+      .linear = 0.09f,
+      .quadratic = 0.032f,
+      .cutOff = glm::cos(glm::radians(12.5f)),
+      .outerCutOff = glm::cos(glm::radians(15.0f)),
+    },
+    .point_lights = {
+      PointLight{
+        .position = glm::vec3(0.7f,  0.2f,  2.0f),
         .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
-        .diffuse = glm::vec3(0.4f, 0.4f, 0.4f),
-        .specular = glm::vec3(0.5f, 0.5f, 0.5f),
-      },
-      .spot_light = {
-        .position = glm::vec3(0.0f, 0.0f, 0.0f),
-        .direction = glm::vec3(0.0f, 0.0f, 0.0f),
-        .ambient = glm::vec3(0.0f, 0.0f, 0.0f),
-        .diffuse = glm::vec3(1.0f, 1.0f, 1.0f),
+        .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
         .specular = glm::vec3(1.0f, 1.0f, 1.0f),
         .constant = 1.0f,
         .linear = 0.09f,
         .quadratic = 0.032f,
-        .cutOff = glm::cos(glm::radians(12.5f)),
-        .outerCutOff = glm::cos(glm::radians(15.0f)),
       },
-      .point_lights = {
-        PointLight{
-          .position = glm::vec3(0.7f,  0.2f,  2.0f),
-          .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
-          .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
-          .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-          .constant = 1.0f,
-          .linear = 0.09f,
-          .quadratic = 0.032f,
-        },
-        PointLight{
-          .position = glm::vec3(2.3f, -3.3f, -4.0f),
-          .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
-          .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
-          .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-          .constant = 1.0f,
-          .linear = 0.09f,
-          .quadratic = 0.032f,
-        },
-        PointLight{
-          .position = glm::vec3(-4.0f,  2.0f, -12.0f),
-          .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
-          .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
-          .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-          .constant = 1.0f,
-          .linear = 0.09f,
-          .quadratic = 0.032f,
-        },
-        PointLight{
-          .position = glm::vec3(0.0f,  0.0f, -3.0f),
-          .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
-          .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
-          .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-          .constant = 1.0f,
-          .linear = 0.09f,
-          .quadratic = 0.032f,
-        },
+      PointLight{
+        .position = glm::vec3(2.3f, -3.3f, -4.0f),
+        .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
+        .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
+        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
+        .constant = 1.0f,
+        .linear = 0.09f,
+        .quadratic = 0.032f,
       },
-    };
+      PointLight{
+        .position = glm::vec3(-4.0f,  2.0f, -12.0f),
+        .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
+        .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
+        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
+        .constant = 1.0f,
+        .linear = 0.09f,
+        .quadratic = 0.032f,
+      },
+      PointLight{
+        .position = glm::vec3(0.0f,  0.0f, -3.0f),
+        .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
+        .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
+        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
+        .constant = 1.0f,
+        .linear = 0.09f,
+        .quadratic = 0.032f,
+      },
+    },
+  };
 
-  Model model_;
+  Mesh cube_mesh_{
+    {
+      { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+      { {  0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+      { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } },
+      { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } },
+      { { -0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },
+      { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+
+      { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+      { {  0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+      { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } },
+      { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } },
+      { { -0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },
+      { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+
+      { { -0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+      { { -0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } },
+      { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },
+      { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },
+      { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+      { { -0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+
+      { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+      { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } },
+      { {  0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },
+      { {  0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },
+      { {  0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+      { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+
+      { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },
+      { {  0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } },
+      { {  0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+      { {  0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+      { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+      { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },
+
+      { { -0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },
+      { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } },
+      { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+      { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+      { { -0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+      { { -0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },
+    },
+    {},
+    {
+      Texture::Load("diffuse", "resources/textures/marble.jpg"),
+    },
+  };
+  Mesh floor_mesh_{
+    {
+      { {  5.0f, -0.5f,  5.0f }, { 0.0f, 0.0f, 0.0f }, { 2.0f, 0.0f } },
+      { { -5.0f, -0.5f,  5.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+      { { -5.0f, -0.5f, -5.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 2.0f } },
+
+      { {  5.0f, -0.5f,  5.0f }, { 0.0f, 0.0f, 0.0f }, { 2.0f, 0.0f } },
+      { { -5.0f, -0.5f, -5.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 2.0f } },
+      { {  5.0f, -0.5f, -5.0f }, { 0.0f, 0.0f, 0.0f }, { 2.0f, 2.0f } },
+    },
+    {},
+    {
+      Texture::Load("diffuse", "resources/textures/metal.png"),
+    },
+  };
 
   int selected_environment_ = 0;
+  int selected_depth_func_ = 0;
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;

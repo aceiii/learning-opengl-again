@@ -38,6 +38,8 @@ public:
 
     environment_.spot_light.position = camera_.position;
     environment_.spot_light.direction = camera_.front;
+
+    glGetIntegerv(GL_DEPTH_FUNC, &orig_depth_func_);
   }
 
   void Update(float dt) override {
@@ -127,7 +129,7 @@ public:
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
 
-      if (ImGui::CollapsingHeader("Depth Testing")) {
+      if (ImGui::CollapsingHeader("Depth Testing", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::BeginCombo("Depth Func", kDepthFuncs[selected_depth_func_].name.c_str())) {
           for (auto idx = 0; idx < kDepthFuncs.size(); idx++) {
             const auto& depth_func = kDepthFuncs[idx];
@@ -165,6 +167,8 @@ public:
     }
 
     model_shader_.Destroy();
+
+    glDepthFunc(orig_depth_func_);
   }
 
   std::string Name() const override {
@@ -476,4 +480,5 @@ private:
   float camera_radius_ = 10.0f;
   float shininess_ = 32.0f;
 
+  GLint orig_depth_func_;
 };

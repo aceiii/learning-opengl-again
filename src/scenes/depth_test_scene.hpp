@@ -75,6 +75,8 @@ public:
     model_shader_.SetMat4("view", view);
     model_shader_.SetMat4("projection", projection_);
     model_shader_.SetVec3("viewPos", camera_.position);
+    model_shader_.SetBool("viewDepth", view_depth_);
+    model_shader_.SetFloat("depthScale", depth_scale_);
 
     // model_shader_.SetVec3("directionalLight.direction", environment_.directional_light.direction);
     // model_shader_.SetVec3("directionalLight.ambient", environment_.directional_light.ambient);
@@ -138,6 +140,10 @@ public:
             }
           }
           ImGui::EndCombo();
+        }
+        ImGui::Checkbox("View depth", &view_depth_);
+        if (view_depth_) {
+          ImGui::DragFloat("Depth scale", &depth_scale_, 1.0f, 1.0f, 128.0f);
         }
       }
 
@@ -475,10 +481,12 @@ private:
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
   bool flashlight_mode_ = true;
+  bool view_depth_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;
   float shininess_ = 32.0f;
+  float depth_scale_ = 1.0f;
 
   GLint orig_depth_func_;
 };

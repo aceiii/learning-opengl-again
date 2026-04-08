@@ -134,7 +134,7 @@ public:
       cube_mesh_.Draw(model_shader_);
     }
 
-    {
+    if (draw_outline_) {
       glStencilFunc(GL_NOTEQUAL, 1, 0xff);
       glStencilMask(0x00);
       glDisable(GL_DEPTH_TEST);
@@ -143,18 +143,17 @@ public:
       outline_shader_.SetMat4("view", view);
       outline_shader_.SetMat4("projection", projection_);
       outline_shader_.SetVec3("viewPos", camera_.position);
-      outline_shader_.SetBool("viewDepth", view_depth_);
-      outline_shader_.SetFloat("depthScale", depth_scale_);
+      outline_shader_.SetVec3("outlineColor", outline_color_);
 
       model = glm::mat4(1.0f);
       model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
-      model = glm::scale(model, glm::vec3(1.1f));
+      model = glm::scale(model, glm::vec3(outline_scale_));
       outline_shader_.SetMat4("model", model);
       cube_mesh_.Draw(outline_shader_);
 
       model = glm::mat4(1.0f);
       model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-      model = glm::scale(model, glm::vec3(1.1f));
+      model = glm::scale(model, glm::vec3(outline_scale_));
       outline_shader_.SetMat4("model", model);
       cube_mesh_.Draw(outline_shader_);
 
@@ -174,6 +173,12 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
+
+      if (ImGui::CollapsingHeader("Stencil Testing", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Checkbox("Draw outline", &draw_outline_);
+        ImGui::DragFloat("Outline scale", &outline_scale_, 0.01f, 1.0f, 1.5f);
+        ImGui::ColorEdit3("Outline color", &outline_color_[0]);
+      }
 
       if (ImGui::CollapsingHeader("Depth Testing", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::BeginCombo("Depth Func", kDepthFuncs[selected_depth_func_].name.c_str())) {
@@ -517,6 +522,7 @@ private:
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;
+  glm::vec3 outline_color_ = glm::vec3(0.04f, 0.28f, 0.26f);
   glm::vec2 last_mouse_;
 
   bool wireframe_ = false;
@@ -527,11 +533,13 @@ private:
   bool hide_interface_ = true;
   bool flashlight_mode_ = true;
   bool view_depth_ = false;
+  bool draw_outline_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;
   float shininess_ = 32.0f;
   float depth_scale_ = 1.0f;
+  float outline_scale_ = 1.1f;
 
   GLint orig_depth_func_;
 };

@@ -15,3 +15,4 @@
 #include "scenes/model_scene.hpp"
 #include "scenes/depth_test_scene.hpp"
 #include "scenes/stencil_test_scene.hpp"
+#include "scenes/blending_scene.hpp"

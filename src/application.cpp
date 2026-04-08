@@ -75,6 +75,7 @@ std::expected<void, std::string> Application::Init() {
   scenes_.push_back(std::make_shared<MultipleLightsScene>());
   scenes_.push_back(std::make_shared<ModelScene>());
   scenes_.push_back(std::make_shared<DepthTestScene>());
+  scenes_.push_back(std::make_shared<StencilTestScene>());
 
   return {};
 }
@@ -172,7 +173,7 @@ void Application::Update(float dt) {
 
 void Application::Render() {
   glClearColor(bgcolor_.r, bgcolor_.g, bgcolor_.b, 1.0);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
   if (g_selected_scene_) {
     g_selected_scene_->Render();

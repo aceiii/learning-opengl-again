@@ -26,9 +26,8 @@ public:
     orig_bgcolor_ = ctx_->GetBackgroundColor();
     ctx_->SetBackgroundColor(environment_.bg_color);
 
-    model_shader_ = Shader::FromFiles("resources/shaders/stencil_test_scene/main.vs", "resources/shaders/stencil_test_scene/main.fs");
-    outline_shader_ = Shader::FromFiles("resources/shaders/stencil_test_scene/outline.vs", "resources/shaders/stencil_test_scene/outline.fs");
-    // model_ = Model::Load("resources/models/backpack/backpack.obj");
+    model_shader_ = Shader::FromFiles("resources/shaders/blending_scene/main.vs", "resources/shaders/blending_scene/main.fs");
+    grass_shader_ = Shader::FromFiles("resources/shaders/blending_scene/grass.vs", "resources/shaders/blending_scene/grass.fs");
 
     camera_.position = glm::vec3(0.82, 0.85f, 4.1f);
     camera_.yaw = -100.0f;
@@ -64,11 +63,6 @@ public:
       environment_.spot_light.position = camera_.position;
       environment_.spot_light.direction = camera_.front;
     }
-
-    glDepthFunc(kDepthFuncs[selected_depth_func_].func);
-
-    glEnable(GL_STENCIL_TEST);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
   }
 
   void Render() override {
@@ -80,86 +74,32 @@ public:
     model_shader_.SetMat4("view", view);
     model_shader_.SetMat4("projection", projection_);
     model_shader_.SetVec3("viewPos", camera_.position);
-    model_shader_.SetBool("viewDepth", view_depth_);
-    model_shader_.SetFloat("depthScale", depth_scale_);
 
-    // model_shader_.SetVec3("directionalLight.direction", environment_.directional_light.direction);
-    // model_shader_.SetVec3("directionalLight.ambient", environment_.directional_light.ambient);
-    // model_shader_.SetVec3("directionalLight.diffuse", environment_.directional_light.diffuse);
-    // model_shader_.SetVec3("directionalLight.specular", environment_.directional_light.specular);
-
-    // model_shader_.SetVec3("spotLight.position", environment_.spot_light.position);
-    // model_shader_.SetVec3("spotLight.direction", environment_.spot_light.direction);
-    // model_shader_.SetVec3("spotLight.ambient", environment_.spot_light.ambient);
-    // model_shader_.SetVec3("spotLight.diffuse", environment_.spot_light.diffuse);
-    // model_shader_.SetVec3("spotLight.specular", environment_.spot_light.specular);
-    // model_shader_.SetFloat("spotLight.cutOff", environment_.spot_light.cutOff);
-    // model_shader_.SetFloat("spotLight.outerCutOff", environment_.spot_light.outerCutOff);
-    // model_shader_.SetFloat("spotLight.constant", environment_.spot_light.constant);
-    // model_shader_.SetFloat("spotLight.linear", environment_.spot_light.linear);
-    // model_shader_.SetFloat("spotLight.quadratic", environment_.spot_light.quadratic);
-
-    // for (auto i = 0; i < environment_.point_lights.size(); i++) {
-    //   const auto& light = environment_.point_lights[i];
-    //   model_shader_.SetVec3(std::format("pointLight[{}].position", i), light.position);
-    //   model_shader_.SetVec3(std::format("pointLight[{}].ambient", i), light.ambient);
-    //   model_shader_.SetVec3(std::format("pointLight[{}].diffuse", i), light.diffuse);
-    //   model_shader_.SetVec3(std::format("pointLight[{}].specular", i), light.specular);
-    //   model_shader_.SetFloat(std::format("pointLight[{}].constant", i), light.constant);
-    //   model_shader_.SetFloat(std::format("pointLight[{}].linear", i), light.linear);
-    //   model_shader_.SetFloat(std::format("pointLight[{}].quadratic", i), light.quadratic);
-    // }
     glm::mat4 model;
 
-    {
-      glStencilMask(0x00);
+    model = glm::mat4(1.0f);
+    model_shader_.SetMat4("model", model);
+    floor_mesh_.Draw(model_shader_);
 
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+    model_shader_.SetMat4("model", model);
+    cube_mesh_.Draw(model_shader_);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+    model_shader_.SetMat4("model", model);
+    cube_mesh_.Draw(model_shader_);
+
+    grass_shader_.Use();
+    grass_shader_.SetMat4("view", view);
+    grass_shader_.SetMat4("projection", projection_);
+    grass_shader_.SetVec3("viewPos", camera_.position);
+    for (const auto& grass_pos : kVegetationPositions) {
       model = glm::mat4(1.0f);
-      model_shader_.SetMat4("model", model);
-      floor_mesh_.Draw(model_shader_);
-    }
-
-    {
-      glStencilFunc(GL_ALWAYS, 1, 0xff);
-      glStencilMask(0xff);
-
-      model = glm::mat4(1.0f);
-      model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
-      model_shader_.SetMat4("model", model);
-      cube_mesh_.Draw(model_shader_);
-
-      model = glm::mat4(1.0f);
-      model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-      model_shader_.SetMat4("model", model);
-      cube_mesh_.Draw(model_shader_);
-    }
-
-    if (draw_outline_) {
-      glStencilFunc(GL_NOTEQUAL, 1, 0xff);
-      glStencilMask(0x00);
-      glDisable(GL_DEPTH_TEST);
-
-      outline_shader_.Use();
-      outline_shader_.SetMat4("view", view);
-      outline_shader_.SetMat4("projection", projection_);
-      outline_shader_.SetVec3("viewPos", camera_.position);
-      outline_shader_.SetVec3("outlineColor", outline_color_);
-
-      model = glm::mat4(1.0f);
-      model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
-      model = glm::scale(model, glm::vec3(outline_scale_));
-      outline_shader_.SetMat4("model", model);
-      cube_mesh_.Draw(outline_shader_);
-
-      model = glm::mat4(1.0f);
-      model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-      model = glm::scale(model, glm::vec3(outline_scale_));
-      outline_shader_.SetMat4("model", model);
-      cube_mesh_.Draw(outline_shader_);
-
-      glStencilMask(0xff);
-      glStencilFunc(GL_ALWAYS, 1, 0xff);
-      glEnable(GL_DEPTH_TEST);
+      model = glm::translate(model, grass_pos);
+      grass_shader_.SetMat4("model", model);
+      grass_mesh_.Draw(grass_shader_);
     }
   }
 
@@ -173,28 +113,6 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
-
-      if (ImGui::CollapsingHeader("Stencil Testing", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::Checkbox("Draw outline", &draw_outline_);
-        ImGui::DragFloat("Outline scale", &outline_scale_, 0.01f, 1.0f, 1.5f);
-        ImGui::ColorEdit3("Outline color", &outline_color_[0]);
-      }
-
-      if (ImGui::CollapsingHeader("Depth Testing", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if (ImGui::BeginCombo("Depth Func", kDepthFuncs[selected_depth_func_].name.c_str())) {
-          for (auto idx = 0; idx < kDepthFuncs.size(); idx++) {
-            const auto& depth_func = kDepthFuncs[idx];
-            if (ImGui::Selectable(depth_func.name.c_str(), selected_depth_func_ == idx)) {
-              selected_depth_func_ = idx;
-            }
-          }
-          ImGui::EndCombo();
-        }
-        ImGui::Checkbox("View depth", &view_depth_);
-        if (view_depth_) {
-          ImGui::DragFloat("Depth scale", &depth_scale_, 1.0f, 1.0f, 128.0f);
-        }
-      }
 
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -353,43 +271,16 @@ private:
   inline static const float kMinPitch = -89.0f;
   inline static const float kMaxPitch = 89.0f;
 
-  inline static const std::array kDepthFuncs{
-    DepthFunc{
-      .name = "Always",
-      .func = GL_ALWAYS,
-    },
-    DepthFunc{
-      .name = "Never",
-      .func = GL_NEVER,
-    },
-    DepthFunc{
-      .name = "Less",
-      .func = GL_LESS,
-    },
-    DepthFunc{
-      .name = "Equal",
-      .func = GL_EQUAL,
-    },
-    DepthFunc{
-      .name = "Less Than or Equal",
-      .func = GL_LEQUAL,
-    },
-    DepthFunc{
-      .name = "Greater",
-      .func = GL_GREATER,
-    },
-    DepthFunc{
-      .name = "Not Equal",
-      .func = GL_NOTEQUAL,
-    },
-    DepthFunc{
-      .name = "Greater Than or Equal",
-      .func = GL_GEQUAL,
-    },
+  inline static const std::array kVegetationPositions{
+    glm::vec3(-1.5f,  0.0f, -0.48f),
+    glm::vec3( 1.5f,  0.0f,  0.51f),
+    glm::vec3( 0.0f,  0.0f,  0.7f),
+    glm::vec3(-0.3f,  0.0f, -2.3f),
+    glm::vec3( 0.5f,  0.0f, -0.6f),
   };
 
   Shader model_shader_;
-  Shader outline_shader_;
+  Shader grass_shader_;
   Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
   Environment environment_{
     .name = "Default",
@@ -516,13 +407,27 @@ private:
       Texture::Load("diffuse", "resources/textures/metal.png"),
     },
   };
+  Mesh grass_mesh_{
+    {
+      { { 0.0f,  0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f,  1.0f } },
+      { { 0.0f, -0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f,  0.0f } },
+      { { 1.0f, -0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f,  0.0f } },
+
+      { { 0.0f,  0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f,  1.0f } },
+      { { 1.0f, -0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f,  0.0f } },
+      { { 1.0f,  0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f,  1.0f } }
+    },
+    {},
+    {
+      Texture::Load("diffuse", "resources/textures/grass.png"),
+    },
+  };
 
   int selected_environment_ = 0;
   int selected_depth_func_ = 2;
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;
-  glm::vec3 outline_color_ = glm::vec3(0.04f, 0.28f, 0.26f);
   glm::vec2 last_mouse_;
 
   bool wireframe_ = false;
@@ -532,14 +437,10 @@ private:
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
   bool flashlight_mode_ = true;
-  bool view_depth_ = false;
-  bool draw_outline_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;
   float shininess_ = 32.0f;
-  float depth_scale_ = 1.0f;
-  float outline_scale_ = 1.1f;
 
   GLint orig_depth_func_;
 };

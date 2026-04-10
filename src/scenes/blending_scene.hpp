@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <map>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -96,15 +97,25 @@ public:
     model_shader_.SetMat4("model", model);
     cube_mesh_.Draw(model_shader_);
 
+    std::map<float, glm::vec3> sorted;
+    for (auto idx = 0; idx < kVegetationPositions.size(); idx++) {
+      float distance = glm::length(camera_.position - kVegetationPositions[idx]);
+      sorted[distance] = kVegetationPositions[idx];
+    }
+
     grass_shader_.Use();
     grass_shader_.SetMat4("view", view);
     grass_shader_.SetMat4("projection", projection_);
     grass_shader_.SetVec3("viewPos", camera_.position);
-    for (const auto& grass_pos : kVegetationPositions) {
+    for (auto it = sorted.rbegin(); it != sorted.rend(); it++) {
       model = glm::mat4(1.0f);
-      model = glm::translate(model, grass_pos);
+      model = glm::translate(model, it->second);
       grass_shader_.SetMat4("model", model);
-      grass_mesh_.Draw(grass_shader_);
+      if (draw_window_) {
+        window_mesh_.Draw(grass_shader_);
+      } else {
+        grass_mesh_.Draw(grass_shader_);
+      }
     }
   }
 
@@ -117,6 +128,7 @@ public:
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
+      ImGui::Checkbox("Draw window", &draw_window_);
       ImGui::NewLine();
 
       if (ImGui::CollapsingHeader("Blending", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -133,7 +145,7 @@ public:
             const auto& blend = kBlendFuncModes[idx];
             if (ImGui::Selectable(blend.name.c_str(), idx == selected_blend_src_)) {
               selected_blend_src_ = idx;
-              glBlendFunc(blend.func, kBlendFuncModes[selected_blend_src_].func);
+              glBlendFunc(blend.func, kBlendFuncModes[selected_blend_dst_].func);
             }
           }
           ImGui::EndCombo();
@@ -498,6 +510,24 @@ private:
       }),
     },
   };
+  Mesh window_mesh_{
+    {
+      { { 0.0f,  0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f,  1.0f } },
+      { { 0.0f, -0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f,  0.0f } },
+      { { 1.0f, -0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f,  0.0f } },
+
+      { { 0.0f,  0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f,  1.0f } },
+      { { 1.0f, -0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f,  0.0f } },
+      { { 1.0f,  0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f,  1.0f } },
+    },
+    {},
+    {
+      Texture::Load("diffuse", "resources/textures/blending_transparent_window.png", TextureOptions{
+        .wrap_s = GL_CLAMP_TO_EDGE,
+        .wrap_t = GL_CLAMP_TO_EDGE,
+      }),
+    },
+  };
 
   int selected_environment_ = 0;
   int selected_depth_func_ = 2;
@@ -517,6 +547,7 @@ private:
   bool hide_interface_ = true;
   bool flashlight_mode_ = true;
   bool enable_blending_ = true;
+  bool draw_window_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;

@@ -45,6 +45,7 @@ public:
 
     glEnable(GL_BLEND);
     glBlendFunc(kBlendFuncModes[selected_blend_src_].func, kBlendFuncModes[selected_blend_dst_].func);
+    glBlendEquation(kBlendEquations[selected_blend_equation_].func);
   }
 
   void Update(float dt) override {
@@ -143,11 +144,24 @@ public:
             const auto& blend = kBlendFuncModes[idx];
             if (ImGui::Selectable(blend.name.c_str(), idx == selected_blend_dst_)) {
               selected_blend_dst_ = idx;
-              glBlendFunc(blend.func, kBlendFuncModes[selected_blend_dst_].func);
+              glBlendFunc(kBlendFuncModes[selected_blend_src_].func, blend.func);
             }
           }
           ImGui::EndCombo();
         }
+
+        if (ImGui::BeginCombo("Blend Equation", kBlendEquations[selected_blend_equation_].name.c_str())) {
+          for (auto idx = 0; idx < kBlendEquations.size(); idx++) {
+            const auto& equation = kBlendEquations[idx];
+            if (ImGui::Selectable(equation.name.c_str(), idx == selected_blend_equation_)) {
+              selected_blend_equation_ = idx;
+              glBlendEquation(equation.func);
+            }
+          }
+          ImGui::EndCombo();
+        }
+
+        ImGui::NewLine();
       }
 
       if (ImGui::CollapsingHeader("Camera")) {
@@ -330,6 +344,14 @@ private:
     NamedEnum{ "1 - constant alpha", GL_ONE_MINUS_CONSTANT_ALPHA },
   };
 
+  inline static const std::array kBlendEquations{
+    NamedEnum{ "Add", GL_FUNC_ADD },
+    NamedEnum( "Subtract", GL_FUNC_SUBTRACT ),
+    NamedEnum( "Reverse Subtract", GL_FUNC_REVERSE_SUBTRACT ),
+    NamedEnum( "Min", GL_MIN ),
+    NamedEnum( "Max", GL_MAX ),
+  };
+
   Shader model_shader_;
   Shader grass_shader_;
   Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
@@ -481,6 +503,7 @@ private:
   int selected_depth_func_ = 2;
   int selected_blend_src_ = 5;
   int selected_blend_dst_ = 6;
+  int selected_blend_equation_ = 0;
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;

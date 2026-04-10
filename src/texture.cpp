@@ -4,8 +4,14 @@
 #include "texture.hpp"
 #include "logger.hpp"
 
+namespace {
+  constexpr int kDefaultWrapS = GL_REPEAT;
+  constexpr int kDefaultWrapT = GL_REPEAT;
+  constexpr int kDefaultMinFilter = GL_LINEAR_MIPMAP_LINEAR;
+  constexpr int kDefaultMagFilter = GL_LINEAR;
+}
 
-Texture Texture::Load(std::string_view type, std::string_view path) {
+Texture Texture::Load(std::string_view type, std::string_view path, TextureOptions options) {
   std::string filename{path};
 
   unsigned int texture_id;
@@ -38,10 +44,15 @@ Texture Texture::Load(std::string_view type, std::string_view path) {
   glTexImage2D(GL_TEXTURE_2D, 0, format, image.width, image.height, 0, format, GL_UNSIGNED_BYTE, image.data.get());
   glGenerateMipmap(GL_TEXTURE_2D);
 
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  auto wrap_s = options.wrap_s ? options.wrap_s : kDefaultWrapS;
+  auto wrap_t = options.wrap_t ? options.wrap_t : kDefaultWrapT;
+  auto min_filter = options.min_filter ? options.min_filter : kDefaultMinFilter;
+  auto mag_filter = options.mag_filter ? options.mag_filter : kDefaultMagFilter;
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
 
   glBindTexture(GL_TEXTURE_2D, 0);
 

@@ -415,11 +415,14 @@ private:
 
       { { 0.0f,  0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f,  1.0f } },
       { { 1.0f, -0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f,  0.0f } },
-      { { 1.0f,  0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f,  1.0f } }
+      { { 1.0f,  0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f,  1.0f } },
     },
     {},
     {
-      Texture::Load("diffuse", "resources/textures/grass.png"),
+      Texture::Load("diffuse", "resources/textures/grass.png", TextureOptions{
+        .wrap_s = GL_CLAMP_TO_EDGE,
+        .wrap_t = GL_CLAMP_TO_EDGE,
+      }),
     },
   };
 

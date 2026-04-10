@@ -38,9 +38,13 @@ public:
     environment_.spot_light.direction = camera_.front;
 
     glEnable(GL_DEPTH_TEST);
+    glGetIntegerv(GL_DEPTH_FUNC, &orig_depth_func_);
+    glDepthFunc(GL_LEQUAL);
+
     glEnable(GL_STENCIL_TEST);
 
-    glGetIntegerv(GL_DEPTH_FUNC, &orig_depth_func_);
+    glEnable(GL_BLEND);
+    glBlendFunc(kBlendFuncModes[selected_blend_src_].func, kBlendFuncModes[selected_blend_dst_].func);
   }
 
   void Update(float dt) override {
@@ -113,6 +117,38 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
+
+      if (ImGui::CollapsingHeader("Blending", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::Checkbox("Enable blending", &enable_blending_)) {
+          if (enable_blending_) {
+            glEnable(GL_BLEND);
+          } else {
+            glDisable(GL_BLEND);
+          }
+        }
+
+        if (ImGui::BeginCombo("Blend Source", kBlendFuncModes[selected_blend_src_].name.c_str())) {
+          for (auto idx = 0; idx < kBlendFuncModes.size(); idx++) {
+            const auto& blend = kBlendFuncModes[idx];
+            if (ImGui::Selectable(blend.name.c_str(), idx == selected_blend_src_)) {
+              selected_blend_src_ = idx;
+              glBlendFunc(blend.func, kBlendFuncModes[selected_blend_src_].func);
+            }
+          }
+          ImGui::EndCombo();
+        }
+
+        if (ImGui::BeginCombo("Blend Destination", kBlendFuncModes[selected_blend_dst_].name.c_str())) {
+          for (auto idx = 0; idx < kBlendFuncModes.size(); idx++) {
+            const auto& blend = kBlendFuncModes[idx];
+            if (ImGui::Selectable(blend.name.c_str(), idx == selected_blend_dst_)) {
+              selected_blend_dst_ = idx;
+              glBlendFunc(blend.func, kBlendFuncModes[selected_blend_dst_].func);
+            }
+          }
+          ImGui::EndCombo();
+        }
+      }
 
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -259,7 +295,7 @@ private:
     std::array<PointLight, 4> point_lights;
   };
 
-  struct DepthFunc {
+  struct NamedEnum {
     std::string name;
     GLenum func;
   };
@@ -277,6 +313,21 @@ private:
     glm::vec3( 0.0f,  0.0f,  0.7f),
     glm::vec3(-0.3f,  0.0f, -2.3f),
     glm::vec3( 0.5f,  0.0f, -0.6f),
+  };
+
+  inline static const std::array kBlendFuncModes{
+    NamedEnum{ "0", GL_ZERO },
+    NamedEnum{ "1", GL_ONE },
+    NamedEnum{ "src color", GL_SRC_COLOR },
+    NamedEnum{ "1 - src color", GL_ONE_MINUS_SRC_COLOR },
+    NamedEnum{ "1 - dst color", GL_ONE_MINUS_DST_COLOR },
+    NamedEnum{ "src alpha", GL_SRC_ALPHA },
+    NamedEnum{ "1 - src alpha", GL_ONE_MINUS_SRC_ALPHA },
+    NamedEnum{ "dst alpha", GL_DST_ALPHA },
+    NamedEnum{ "1 - dst alpha", GL_ONE_MINUS_DST_ALPHA },
+    NamedEnum{ "constant color", GL_CONSTANT_COLOR },
+    NamedEnum{ "constant alpha", GL_CONSTANT_ALPHA },
+    NamedEnum{ "1 - constant alpha", GL_ONE_MINUS_CONSTANT_ALPHA },
   };
 
   Shader model_shader_;
@@ -428,6 +479,8 @@ private:
 
   int selected_environment_ = 0;
   int selected_depth_func_ = 2;
+  int selected_blend_src_ = 5;
+  int selected_blend_dst_ = 6;
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;
@@ -440,6 +493,7 @@ private:
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
   bool flashlight_mode_ = true;
+  bool enable_blending_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;

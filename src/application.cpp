@@ -77,6 +77,7 @@ std::expected<void, std::string> Application::Init() {
   scenes_.push_back(std::make_shared<DepthTestScene>());
   scenes_.push_back(std::make_shared<StencilTestScene>());
   scenes_.push_back(std::make_shared<BlendingScene>());
+  scenes_.push_back(std::make_shared<CullingScene>());
 
   return {};
 }

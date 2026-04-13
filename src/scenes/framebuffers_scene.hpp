@@ -56,10 +56,10 @@ public:
     model_shader_ = Shader::FromFiles("resources/shaders/framebuffers_scene/main.vs", "resources/shaders/framebuffers_scene/main.fs");
     screen_shader_ = Shader::FromFiles("resources/shaders/framebuffers_scene/screen.vs", "resources/shaders/framebuffers_scene/screen.fs");
 
-    camera_.position = glm::vec3(0.82, 0.85f, 4.1f);
-    camera_.yaw = -100.0f;
-    camera_.pitch = -10.0f;
-    camera_.UpdateCameraVectors();
+    // camera_.position = glm::vec3(0.82, 0.85f, 4.1f);
+    // camera_.yaw = -100.0f;
+    // camera_.pitch = -10.0f;
+    // camera_.UpdateCameraVectors();
 
     environment_.spot_light.position = camera_.position;
     environment_.spot_light.direction = camera_.front;
@@ -95,15 +95,7 @@ public:
     }
   }
 
-  void Render() override {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_);
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-
+  void DrawScene() {
     glm::mat4 view = camera_.GetViewMatrix();
 
     model_shader_.Use();
@@ -124,19 +116,48 @@ public:
     model = glm::mat4(1.0f);
     model_shader_.SetMat4("model", model);
     floor_mesh_.Draw(model_shader_);
+  }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glDisable(GL_DEPTH_TEST);
+  void Render() override {
+    if (render_texture_) {
+      const auto window_size = ctx_->GetWindowSize();
 
-    glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
+      glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_);
+      glViewport(0, 0, window_size.first, window_size.second);
 
-    screen_shader_.Use();
-    screen_shader_.SetInt("screenTexture", 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture_color_buffer_);
-    quad_mesh_.Draw(screen_shader_);
+      glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      glEnable(GL_DEPTH_TEST);
+      glDepthFunc(GL_LEQUAL);
+
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+      DrawScene();
+
+      const auto framebuffer_size = ctx_->GetFramebufferSize();
+
+      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      glViewport(0, 0, framebuffer_size.first, framebuffer_size.second);
+      glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+      glClear(GL_COLOR_BUFFER_BIT);
+      glDisable(GL_DEPTH_TEST);
+
+      glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
+
+      screen_shader_.Use();
+      screen_shader_.SetInt("screenTexture", 0);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, texture_color_buffer_);
+      quad_mesh_.Draw(screen_shader_);
+    } else {
+      glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
+
+      glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      glEnable(GL_DEPTH_TEST);
+      glDepthFunc(GL_LEQUAL);
+
+      DrawScene();
+    }
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -149,6 +170,10 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
+
+      if (ImGui::CollapsingHeader("Framebuffer", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Checkbox("Render to texture", &render_texture_);
+      }
 
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -517,6 +542,7 @@ private:
   bool flashlight_mode_ = true;
   bool enable_blending_ = true;
   bool draw_window_ = false;
+  bool render_texture_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;

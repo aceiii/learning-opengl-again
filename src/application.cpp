@@ -92,6 +92,7 @@ void Application::Run() {
     last_frame_time = current_time;
 
     glfwGetWindowSize(g_window, &window_width_, &window_height_);
+    glfwGetFramebufferSize(g_window, &framebuffer_width_, &framebuffer_height_);
 
     Update(delta_time_);
     Render();
@@ -122,6 +123,10 @@ float Application::GetTime() const {
 
 float Application::GetFrameTime() const {
   return delta_time_;
+}
+
+std::pair<int, int> Application::GetFramebufferSize() const {
+  return std::make_pair(framebuffer_width_, framebuffer_height_);
 }
 
 std::pair<int, int> Application::GetWindowSize() const {

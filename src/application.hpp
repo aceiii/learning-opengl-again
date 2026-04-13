@@ -23,6 +23,7 @@ public:
 public:
   float GetTime() const override;
   float GetFrameTime() const override;
+  std::pair<int, int> GetFramebufferSize() const override;
   std::pair<int, int> GetWindowSize() const override;
   virtual std::pair<float, float> GetMousePosition() const override;
   bool IsKeyDown(Key key) const override;
@@ -63,6 +64,8 @@ private:
   float delta_time_ = 0;
   int window_width_ = 0;
   int window_height_ = 0;
+  int framebuffer_width_ = 0;
+  int framebuffer_height_ = 0;
 
   glm::vec3 bgcolor_ = glm::vec3(0.2f, 0.3f, 0.3f);
 };

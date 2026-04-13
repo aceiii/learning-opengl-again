@@ -144,6 +144,7 @@ public:
       glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
 
       screen_shader_.Use();
+      screen_shader_.SetInt("mode", shader_mode_);
       screen_shader_.SetInt("screenTexture", 0);
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, texture_color_buffer_);
@@ -173,6 +174,15 @@ public:
 
       if (ImGui::CollapsingHeader("Framebuffer", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Render to texture", &render_texture_);
+        if (ImGui::BeginCombo("Shader Mode", kShaderModes[shader_mode_].c_str())) {
+          for (auto idx = 0; idx < kShaderModes.size(); idx++) {
+            const auto& mode = kShaderModes[idx];
+            if (ImGui::Selectable(mode.c_str(), idx == shader_mode_)) {
+              shader_mode_ = idx;
+            }
+          }
+          ImGui::EndCombo();
+        }
       }
 
       if (ImGui::CollapsingHeader("Camera")) {
@@ -246,26 +256,6 @@ public:
   }
 
 private:
-  unsigned int LoadTexture(GLenum texture, std::string_view path) {
-    unsigned texture_id;
-    glGenTextures(1, &texture_id);
-
-    glActiveTexture(texture);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    Image image = Image::Load(path);
-    if (image.data) {
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width, image.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data.get());
-      glGenerateMipmap(GL_TEXTURE_2D);
-    }
-
-    return texture_id;
-  }
-
   void ToggleCaptureMouse(bool capture) {
     if (capture) {
       ctx_->CaptureMouse(true);
@@ -372,6 +362,14 @@ private:
   inline static const std::array kFrontFaceModes{
     NamedEnum{ "Clock-wise", GL_CW },
     NamedEnum{ "Counter Clock-wise", GL_CCW },
+  };
+
+  inline static const std::array kShaderModes {
+    std::string{"Regular"},
+    std::string{"Invert"},
+    std::string{"Greyscale"},
+    std::string{"Greyscale 2"},
+    std::string{"Kernel"},
   };
 
   Shader model_shader_;
@@ -528,6 +526,7 @@ private:
   int selected_depth_func_ = 2;
   int selected_cull_face_ = 1;
   int selected_front_face_ = 0;
+  int shader_mode_ = 0;
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;

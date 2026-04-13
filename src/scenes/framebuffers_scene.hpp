@@ -30,21 +30,21 @@ public:
     const auto window_size = ctx_->GetWindowSize();
 
     glGenFramebuffers(1, &framebuffer_);
-    glBindBuffer(GL_FRAMEBUFFER, framebuffer_);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_);
 
     glGenTextures(1, &texture_color_buffer_);
     glBindTexture(GL_TEXTURE_2D, texture_color_buffer_);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, window_size.first, window_size.second, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    // glBindTexture(GL_TEXTURE_2D, 0);
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_color_buffer_, 0);
 
     glGenRenderbuffers(1, &rbo_);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo_);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, window_size.first, window_size.second);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    // glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo_);
 
@@ -68,9 +68,9 @@ public:
     glGetIntegerv(GL_DEPTH_FUNC, &orig_depth_func_);
     glDepthFunc(GL_LEQUAL);
 
-    glEnable(GL_CULL_FACE);
-    glCullFace(kCullFaceModes[selected_cull_face_].func);
-    glFrontFace(kFrontFaceModes[selected_front_face_].func);
+    // glEnable(GL_CULL_FACE);
+    // glCullFace(kCullFaceModes[selected_cull_face_].func);
+    // glFrontFace(kFrontFaceModes[selected_front_face_].func);
   }
 
   void Update(float dt) override {
@@ -102,6 +102,7 @@ public:
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
 
     glm::mat4 view = camera_.GetViewMatrix();
 
@@ -124,17 +125,17 @@ public:
     model_shader_.SetMat4("model", model);
     floor_mesh_.Draw(model_shader_);
 
-    glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+
+    glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
 
     screen_shader_.Use();
-    // glBindVertexArray(quad_vao_);
-    glDisable(GL_DEPTH_TEST);
+    screen_shader_.SetInt("screenTexture", 0);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_color_buffer_);
-    // glDrawArrays(GL_TRIANGLES, 0, 6);
     quad_mesh_.Draw(screen_shader_);
   }
 
@@ -464,7 +465,7 @@ private:
     },
     {},
     {
-      Texture::Load("diffuse", "resources/textures/marble.jpg"),
+      Texture::Load("diffuse", "resources/textures/container.jpg"),
     },
   };
 
@@ -486,10 +487,13 @@ private:
 
   Mesh quad_mesh_{
     {
-      { {  0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 2.0f, 2.0f } },
-      { {  0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 2.0f, 0.0f } },
-      { { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
-      { { -0.5f,  0.5f, 0.0f }, { 1.0f, 1.0f, 0.0f }, { 0.0f, 2.0f } },
+      { { -1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },
+      { { -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },
+      { {  1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+
+      { { -1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } },
+      { {  1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+      { {  1.0f,  1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } }
     },
     {},
     {},

@@ -146,6 +146,7 @@ public:
       screen_shader_.Use();
       screen_shader_.SetInt("mode", shader_mode_);
       screen_shader_.SetInt("screenTexture", 0);
+      screen_shader_.SetFloatSpan("kernel", kKernelModes[kernel_mode_].kernel);
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, texture_color_buffer_);
       quad_mesh_.Draw(screen_shader_);
@@ -182,6 +183,18 @@ public:
             }
           }
           ImGui::EndCombo();
+        }
+
+        if (shader_mode_ == 4) {
+          if (ImGui::BeginCombo("Kernel", kKernelModes[kernel_mode_].name.c_str())) {
+            for (auto idx = 0; idx < kKernelModes.size(); idx++) {
+              const auto kernel_mode = kKernelModes[idx];
+              if (ImGui::Selectable(kernel_mode.name.c_str())) {
+                kernel_mode_ = idx;
+              }
+            }
+            ImGui::EndCombo();
+          }
         }
       }
 
@@ -315,6 +328,11 @@ private:
     GLenum func;
   };
 
+  struct KernelMode {
+    std::string name;
+    std::array<float, 9> kernel;
+  };
+
   IAppContext* ctx_ = nullptr;
 
   inline static const float kDefaultYaw = -90.0f;
@@ -370,6 +388,12 @@ private:
     std::string{"Greyscale"},
     std::string{"Greyscale 2"},
     std::string{"Kernel"},
+  };
+
+  inline static const std::array kKernelModes {
+    KernelMode{ "Sharpen",        { -1.0f, -1.0f, -1.0f, -1.0f,  9.0f, -1.0f, -1.0f, -1.0f, -1.0f } },
+    KernelMode{ "Blur",           {  1.0f,  2.0f,  1.0f,  2.0f,  4.0f,  2.0f,  1.0f,  2.0f,  1.0f } },
+    KernelMode{ "Edge Detection", {  1.0f,  1.0f,  1.0f,  1.0f, -8.0f,  1.0f,  1.0f,  1.0f,  1.0f } },
   };
 
   Shader model_shader_;
@@ -527,6 +551,7 @@ private:
   int selected_cull_face_ = 1;
   int selected_front_face_ = 0;
   int shader_mode_ = 0;
+  int kernel_mode_ = 0;
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;

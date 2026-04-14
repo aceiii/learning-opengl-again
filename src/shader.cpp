@@ -124,3 +124,11 @@ void Shader::SetVec3(const std::string& name, float x, float y, float z) {
 void Shader::SetVec3(const std::string& name, const glm::vec3& vec) {
   glUniform3fv(glGetUniformLocation(id_, name.data()), 1, glm::value_ptr(vec));
 }
+
+void Shader::SetIntSpan(const std::string& name, std::span<const int> span) {
+  glUniform1iv(glGetUniformLocation(id_, name.data()), span.size(), span.data());
+}
+
+void Shader::SetFloatSpan(const std::string& name, std::span<const float> span) {
+  glUniform1fv(glGetUniformLocation(id_, name.data()), span.size(), span.data());
+}

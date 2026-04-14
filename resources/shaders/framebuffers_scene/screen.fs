@@ -6,6 +6,7 @@ in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
 uniform int mode;
+uniform float[9] kernel;
 
 void RenderRegularScene() {
     FragColor = texture(screenTexture, TexCoords);
@@ -42,20 +43,21 @@ void RenderKernel() {
         vec2( offset, -offset)
     );
 
-    float kernel[9] = float[](
-        -1, -1, -1,
-        -1, 9, -1,
-        -1, -1, -1
-    );
-
     vec3 sampleTex[9];
     for (int i = 0; i < 9; i++) {
         sampleTex[i] = vec3(texture(screenTexture, TexCoords.st + offsets[i]));
     }
 
+    float kernel_total = 0.0f;
+    for (int i = 0; i < 9; i++) {
+        kernel_total += kernel[i];
+    }
+
+    kernel_total = max(abs(kernel_total), 1.0);
+
     vec3 col = vec3(0.0);
     for (int i = 0; i < 9; i++) {
-        col += sampleTex[i] * kernel[i];
+        col += sampleTex[i] * kernel[i] / kernel_total;
     }
 
     FragColor = vec4(col, 1.0);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include <string>
 #include <string_view>
 #include <glm/glm.hpp>
@@ -30,6 +31,8 @@ public:
   void SetMat4(const std::string& name, const glm::mat4& matrix);
   void SetVec3(const std::string& name, float x, float y, float z);
   void SetVec3(const std::string& name, const glm::vec3& vec);
+  void SetIntSpan(const std::string& name, std::span<const int> span);
+  void SetFloatSpan(const std::string& name, std::span<const float> span);
 
 private:
   Shader(const std::string& vs_source, const std::string& fs_source);

@@ -109,14 +109,6 @@ public:
     glm::mat4 view = camera_.GetViewMatrix();
     glm::mat4 skybox_view =  glm::mat4(glm::mat3(view));
 
-    glDepthMask(GL_FALSE);
-    skybox_shader_.Use();
-    skybox_shader_.SetMat4("view", skybox_view);
-    skybox_shader_.SetMat4("projection", projection_);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture_);
-    sky_mesh_.Draw(skybox_shader_);
-    glDepthMask(GL_TRUE);
-
     model_shader_.Use();
     model_shader_.SetMat4("view", view);
     model_shader_.SetMat4("projection", projection_);
@@ -135,6 +127,14 @@ public:
     model = glm::mat4(1.0f);
     model_shader_.SetMat4("model", model);
     floor_mesh_.Draw(model_shader_);
+
+    glDepthMask(GL_FALSE);
+    skybox_shader_.Use();
+    skybox_shader_.SetMat4("view", skybox_view);
+    skybox_shader_.SetMat4("projection", projection_);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture_);
+    sky_mesh_.Draw(skybox_shader_);
+    glDepthMask(GL_TRUE);
   }
 
   void Render() override {

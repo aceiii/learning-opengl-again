@@ -18,3 +18,4 @@
 #include "scenes/blending_scene.hpp"
 #include "scenes/culling_scene.hpp"
 #include "scenes/framebuffers_scene.hpp"
+#include "scenes/cubemap_scene.hpp"

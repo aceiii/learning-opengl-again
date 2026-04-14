@@ -6,10 +6,10 @@
 #include "logger.hpp"
 
 
-Image Image::Load(std::string_view path, int req_num_components) {
+Image Image::Load(std::string_view path, int req_num_components, bool flip_vertically) {
   int width, height, num_components;
 
-  stbi_set_flip_vertically_on_load(true);
+  stbi_set_flip_vertically_on_load(flip_vertically);
 
   unsigned char* bytes = stbi_load(path.data(), &width, &height, &num_components, req_num_components);
   if (!bytes) {

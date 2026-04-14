@@ -12,5 +12,5 @@ public:
   unsigned int width, height, num_components;
   std::shared_ptr<u8> data;
 
-  static Image Load(std::string_view path, int req_num_components = 4);
+  static Image Load(std::string_view path, int req_num_components = 4, bool flip_vertically = true);
 };

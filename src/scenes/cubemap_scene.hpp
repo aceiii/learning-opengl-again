@@ -113,6 +113,7 @@ public:
     model_shader_.SetMat4("view", view);
     model_shader_.SetMat4("projection", projection_);
     model_shader_.SetVec3("viewPos", camera_.position);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture_);
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
@@ -509,52 +510,52 @@ private:
   Mesh cube_mesh_{
     {
       // Back face
-      { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } }, // Bottom-left
-      { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } }, // top-right
-      { {  0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } }, // bottom-right
-      { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } }, // top-right
-      { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } }, // bottom-left
-      { { -0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } }, // top-left
+      { { -0.5f, -0.5f, -0.5f }, { 0.0f,  0.0f, -1.0f }, { 0.0f, 0.0f } }, // Bottom-left
+      { {  0.5f,  0.5f, -0.5f }, { 0.0f,  0.0f, -1.0f }, { 1.0f, 1.0f } }, // top-right
+      { {  0.5f, -0.5f, -0.5f }, { 0.0f,  0.0f, -1.0f }, { 1.0f, 0.0f } }, // bottom-right
+      { {  0.5f,  0.5f, -0.5f }, { 0.0f,  0.0f, -1.0f }, { 1.0f, 1.0f } }, // top-right
+      { { -0.5f, -0.5f, -0.5f }, { 0.0f,  0.0f, -1.0f }, { 0.0f, 0.0f } }, // bottom-left
+      { { -0.5f,  0.5f, -0.5f }, { 0.0f,  0.0f, -1.0f }, { 0.0f, 1.0f } }, // top-left
 
       // Front face
-      { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } }, // bottom-left
-      { {  0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } }, // bottom-right
-      { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } }, // top-right
-      { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } }, // top-right
-      { { -0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } }, // top-left
-      { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } }, // bottom-left
+      { { -0.5f, -0.5f,  0.5f }, { 0.0f,  0.0f, 1.0f }, { 0.0f, 0.0f } }, // bottom-left
+      { {  0.5f, -0.5f,  0.5f }, { 0.0f,  0.0f, 1.0f }, { 1.0f, 0.0f } }, // bottom-right
+      { {  0.5f,  0.5f,  0.5f }, { 0.0f,  0.0f, 1.0f }, { 1.0f, 1.0f } }, // top-right
+      { {  0.5f,  0.5f,  0.5f }, { 0.0f,  0.0f, 1.0f }, { 1.0f, 1.0f } }, // top-right
+      { { -0.5f,  0.5f,  0.5f }, { 0.0f,  0.0f, 1.0f }, { 0.0f, 1.0f } }, // top-left
+      { { -0.5f, -0.5f,  0.5f }, { 0.0f,  0.0f, 1.0f }, { 0.0f, 0.0f } }, // bottom-left
 
       // Left face
-      { { -0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } }, // top-right
-      { { -0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } }, // top-left
-      { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } }, // bottom-left
-      { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } }, // bottom-left
-      { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } }, // bottom-right
-      { { -0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } }, // top-right
+      { { -0.5f,  0.5f,  0.5f }, { -1.0f,  0.0f,  0.0f }, { 1.0f, 0.0f } }, // top-right
+      { { -0.5f,  0.5f, -0.5f }, { -1.0f,  0.0f,  0.0f }, { 1.0f, 1.0f } }, // top-left
+      { { -0.5f, -0.5f, -0.5f }, { -1.0f,  0.0f,  0.0f }, { 0.0f, 1.0f } }, // bottom-left
+      { { -0.5f, -0.5f, -0.5f }, { -1.0f,  0.0f,  0.0f }, { 0.0f, 1.0f } }, // bottom-left
+      { { -0.5f, -0.5f,  0.5f }, { -1.0f,  0.0f,  0.0f }, { 0.0f, 0.0f } }, // bottom-right
+      { { -0.5f,  0.5f,  0.5f }, { -1.0f,  0.0f,  0.0f }, { 1.0f, 0.0f } }, // top-right
 
       // Right face
-      { { 0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } }, // top-left
-      { { 0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } }, // bottom-right
-      { { 0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } }, // top-right
-      { { 0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } }, // bottom-right
-      { { 0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } }, // top-left
-      { { 0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } }, // bottom-left
+      { { 0.5f,  0.5f,  0.5f }, { 1.0f,  0.0f,  0.0f }, { 1.0f, 0.0f } }, // top-left
+      { { 0.5f, -0.5f, -0.5f }, { 1.0f,  0.0f,  0.0f }, { 0.0f, 1.0f } }, // bottom-right
+      { { 0.5f,  0.5f, -0.5f }, { 1.0f,  0.0f,  0.0f }, { 1.0f, 1.0f } }, // top-right
+      { { 0.5f, -0.5f, -0.5f }, { 1.0f,  0.0f,  0.0f }, { 0.0f, 1.0f } }, // bottom-right
+      { { 0.5f,  0.5f,  0.5f }, { 1.0f,  0.0f,  0.0f }, { 1.0f, 0.0f } }, // top-left
+      { { 0.5f, -0.5f,  0.5f }, { 1.0f,  0.0f,  0.0f }, { 0.0f, 0.0f } }, // bottom-left
 
       // Bottom face
-      { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } }, // top-right
-      { {  0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } }, // top-left
-      { {  0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } }, // bottom-left
-      { {  0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } }, // bottom-left
-      { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } }, // bottom-right
-      { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } }, // top-right
+      { { -0.5f, -0.5f, -0.5f }, { 0.0f, -1.0f,  0.0f }, { 0.0f, 1.0f } }, // top-right
+      { {  0.5f, -0.5f, -0.5f }, { 0.0f, -1.0f,  0.0f }, { 1.0f, 1.0f } }, // top-left
+      { {  0.5f, -0.5f,  0.5f }, { 0.0f, -1.0f,  0.0f }, { 1.0f, 0.0f } }, // bottom-left
+      { {  0.5f, -0.5f,  0.5f }, { 0.0f, -1.0f,  0.0f }, { 1.0f, 0.0f } }, // bottom-left
+      { { -0.5f, -0.5f,  0.5f }, { 0.0f, -1.0f,  0.0f }, { 0.0f, 0.0f } }, // bottom-right
+      { { -0.5f, -0.5f, -0.5f }, { 0.0f, -1.0f,  0.0f }, { 0.0f, 1.0f } }, // top-right
 
       // Top face
-      { { -0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } }, // top-left
-      { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } }, // bottom-right
-      { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f } }, // top-right
-      { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } }, // bottom-right
-      { { -0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f } }, // top-left
-      { { -0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f } },  // bottom-left
+      { { -0.5f,  0.5f, -0.5f }, { 0.0f,  1.0f,  0.0f }, { 0.0f, 1.0f } }, // top-left
+      { {  0.5f,  0.5f,  0.5f }, { 0.0f,  1.0f,  0.0f }, { 1.0f, 0.0f } }, // bottom-right
+      { {  0.5f,  0.5f, -0.5f }, { 0.0f,  1.0f,  0.0f }, { 1.0f, 1.0f } }, // top-right
+      { {  0.5f,  0.5f,  0.5f }, { 0.0f,  1.0f,  0.0f }, { 1.0f, 0.0f } }, // bottom-right
+      { { -0.5f,  0.5f, -0.5f }, { 0.0f,  1.0f,  0.0f }, { 0.0f, 1.0f } }, // top-left
+      { { -0.5f,  0.5f,  0.5f }, { 0.0f,  1.0f,  0.0f }, { 0.0f, 0.0f } },  // bottom-left
     },
     {},
     {

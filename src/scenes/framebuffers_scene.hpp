@@ -391,9 +391,12 @@ private:
   };
 
   inline static const std::array kKernelModes {
-    KernelMode{ "Sharpen",        { -1.0f, -1.0f, -1.0f, -1.0f,  9.0f, -1.0f, -1.0f, -1.0f, -1.0f } },
-    KernelMode{ "Blur",           {  1.0f,  2.0f,  1.0f,  2.0f,  4.0f,  2.0f,  1.0f,  2.0f,  1.0f } },
-    KernelMode{ "Edge Detection", {  1.0f,  1.0f,  1.0f,  1.0f, -8.0f,  1.0f,  1.0f,  1.0f,  1.0f } },
+    KernelMode{ "Identity",         {  0.0f,  0.0f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f } },
+    KernelMode{ "Sharpen",          { -1.0f, -1.0f, -1.0f, -1.0f,  9.0f, -1.0f, -1.0f, -1.0f, -1.0f } },
+    KernelMode{ "Box Blur",         {  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f } },
+    KernelMode{ "Gaussian Blur",    {  1.0f,  2.0f,  1.0f,  2.0f,  4.0f,  2.0f,  1.0f,  2.0f,  1.0f } },
+    KernelMode{ "Edge Detection",   {  1.0f,  1.0f,  1.0f,  1.0f, -8.0f,  1.0f,  1.0f,  1.0f,  1.0f } },
+    KernelMode{ "Edge Detection 2", { -1.0f, -1.0f, -1.0f, -1.0f,  8.0f, -1.0f, -1.0f, -1.0f, -1.0f } },
   };
 
   Shader model_shader_;

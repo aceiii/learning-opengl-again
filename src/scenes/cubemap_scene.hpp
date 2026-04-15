@@ -115,6 +115,8 @@ public:
     model_shader_.SetMat4("view", view);
     model_shader_.SetMat4("projection", projection_);
     model_shader_.SetVec3("viewPos", camera_.position);
+    model_shader_.SetBool("useReflect", use_reflect_);
+    model_shader_.SetFloat("refractiveIndex", index_of_refraction_);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture_);
 
     if (draw_backpack_) {
@@ -202,6 +204,8 @@ public:
       ImGui::NewLine();
       if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Draw backpack", &draw_backpack_);
+        ImGui::Checkbox("Reflect", &use_reflect_);
+        ImGui::DragFloat("Index of refraction", &index_of_refraction_, 0.01f, 1.0f, 3.0f);
       }
 
       if (ImGui::CollapsingHeader("Framebuffer", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -677,10 +681,12 @@ private:
   bool draw_window_ = false;
   bool render_texture_ = true;
   bool draw_backpack_ = false;
+  bool use_reflect_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;
   float shininess_ = 32.0f;
+  float index_of_refraction_ = 1.52f;
 
   GLint orig_depth_func_;
 

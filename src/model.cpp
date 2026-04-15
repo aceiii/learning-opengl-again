@@ -99,7 +99,6 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial* mat, aiTextureType 
     bool skip = false;
 
     for (const auto& existing_texture : textures) {
-      quill::info(logger, "Checking existing texture: {} -> {}", existing_texture.path, str.C_Str());
       if (existing_texture.path == path) {
         new_textures.push_back(existing_texture);
         skip = true;

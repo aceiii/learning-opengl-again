@@ -66,6 +66,8 @@ public:
     screen_shader_ = Shader::FromFiles("resources/shaders/cubemap_scene/screen.vs", "resources/shaders/cubemap_scene/screen.fs");
     skybox_shader_ = Shader::FromFiles("resources/shaders/cubemap_scene/skybox.vs", "resources/shaders/cubemap_scene/skybox.fs");
 
+    model_ = Model::Load("resources/models/backpack/backpack.obj");
+
     // camera_.position = glm::vec3(0.82, 0.85f, 4.1f);
     // camera_.yaw = -100.0f;
     // camera_.pitch = -10.0f;
@@ -115,19 +117,25 @@ public:
     model_shader_.SetVec3("viewPos", camera_.position);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture_);
 
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
-    model_shader_.SetMat4("model", model);
-    cube_mesh_.Draw(model_shader_);
+    if (draw_backpack_) {
+      glm::mat4 model = glm::mat4(1.0f);
+      model_shader_.SetMat4("model", model);
+      model_.Draw(model_shader_);
+    } else {
+      glm::mat4 model = glm::mat4(1.0f);
+      model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+      model_shader_.SetMat4("model", model);
+      cube_mesh_.Draw(model_shader_);
 
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-    model_shader_.SetMat4("model", model);
-    cube_mesh_.Draw(model_shader_);
+      model = glm::mat4(1.0f);
+      model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
+      model_shader_.SetMat4("model", model);
+      cube_mesh_.Draw(model_shader_);
 
-    model = glm::mat4(1.0f);
-    model_shader_.SetMat4("model", model);
-    floor_mesh_.Draw(model_shader_);
+      model = glm::mat4(1.0f);
+      model_shader_.SetMat4("model", model);
+      floor_mesh_.Draw(model_shader_);
+    }
 
     glDepthMask(GL_FALSE);
     skybox_shader_.Use();
@@ -192,6 +200,9 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
+      if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Checkbox("Draw backpack", &draw_backpack_);
+      }
 
       if (ImGui::CollapsingHeader("Framebuffer", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Render to texture", &render_texture_);
@@ -642,6 +653,8 @@ private:
     {},
   };
 
+  Model model_;
+
   int selected_environment_ = 0;
   int selected_depth_func_ = 2;
   int selected_cull_face_ = 1;
@@ -663,6 +676,7 @@ private:
   bool enable_blending_ = true;
   bool draw_window_ = false;
   bool render_texture_ = true;
+  bool draw_backpack_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float camera_radius_ = 10.0f;

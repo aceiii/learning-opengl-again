@@ -93,6 +93,10 @@ void Shader::Use() {
   glUseProgram(id_);
 }
 
+void Shader::SetBlockBinding(const std::string& name, unsigned int binding) {
+  glUniformBlockBinding(id_, glGetUniformBlockIndex(id_, name.data()), binding);
+}
+
 void Shader::SetBool(const std::string& name, bool value) {
   glUniform1i(glGetUniformLocation(id_, name.data()), static_cast<int>(value));
 }

@@ -80,6 +80,7 @@ std::expected<void, std::string> Application::Init() {
   scenes_.push_back(std::make_shared<CullingScene>());
   scenes_.push_back(std::make_shared<FramebuffersScene>());
   scenes_.push_back(std::make_shared<CubemapScene>());
+  scenes_.push_back(std::make_shared<UboScene>());
 
   return {};
 }

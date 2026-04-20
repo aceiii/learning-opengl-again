@@ -11,6 +11,13 @@
 #include "logger.hpp"
 
 
+Shader Shader::FromFiles(std::string_view gs_path, std::string_view vs_path, std::string_view fs_path) {
+  std::string gs_source = File::ReadContents(std::string{gs_path});
+  std::string vs_source = File::ReadContents(std::string{vs_path});
+  std::string fs_source = File::ReadContents(std::string{fs_path});
+  return Shader(vs_source, fs_source);
+}
+
 Shader Shader::FromFiles(std::string_view vs_path, std::string_view fs_path) {
   std::string vs_source = File::ReadContents(std::string{vs_path});
   std::string fs_source = File::ReadContents(std::string{fs_path});
@@ -48,6 +55,10 @@ void Shader::CheckProgramLinkStatus(unsigned int program_id) {
 }
 
 unsigned int Shader::CreateShaderProgram(const std::string& vertex_shader_source, const std::string& fragment_shader_source) {
+  return CreateShaderProgram("", vertex_shader_source, fragment_shader_source);
+}
+
+unsigned int Shader::CreateShaderProgram(const std::string& geometry_shader_source, const std::string& vertex_shader_source, const std::string& fragment_shader_source) {
   auto* vs_source = vertex_shader_source.c_str();
   unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertex_shader, 1, &vs_source, nullptr);
@@ -72,10 +83,15 @@ unsigned int Shader::CreateShaderProgram(const std::string& vertex_shader_source
   return program_id;
 }
 
+
 Shader::Shader() : id_{0} {}
 
 Shader::Shader(const std::string& vs_source, const std::string& fs_source) {
   id_ = CreateShaderProgram(vs_source, fs_source);
+}
+
+Shader::Shader(const std::string& gs_source, const std::string& vs_source, const std::string& fs_source) {
+  id_ = CreateShaderProgram(gs_source, vs_source, fs_source);
 }
 
 unsigned int Shader::ID() {

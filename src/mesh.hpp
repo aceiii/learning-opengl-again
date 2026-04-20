@@ -14,13 +14,25 @@ struct Vertex {
   glm::vec2 tex_coords;
 };
 
+enum struct VertexType {
+  Points,
+  Triangles,
+};
+
 class Mesh {
 public:
+  enum struct Type {
+    Points,
+    Triangles,
+  };
+
+  Type type = Type::Triangles;
   std::vector<Vertex> vertices;
   std::vector<unsigned int> indices;
   std::vector<Texture> textures;
 
-  Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
+  Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices = {}, std::vector<Texture> textures = {});
+  Mesh(Type type, std::vector<Vertex> vertices, std::vector<unsigned int> indices = {}, std::vector<Texture> textures = {});
   void Draw(Shader& shader);
 
 private:

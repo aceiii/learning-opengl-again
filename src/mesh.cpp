@@ -8,6 +8,12 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
   SetupMesh();
 }
 
+Mesh::Mesh(Mesh::Type type, std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
+  : type{type}, vertices{std::move(vertices)}, indices{indices}, textures{std::move(textures)}
+{
+  SetupMesh();
+}
+
 void Mesh::Draw(Shader& shader) {
   if (!textures.empty()) {
     unsigned int num_diffuse = 1;
@@ -30,10 +36,11 @@ void Mesh::Draw(Shader& shader) {
   }
 
   glBindVertexArray(vao_);
+  const auto draw_type = type == Type::Triangles ? GL_TRIANGLES : GL_POINTS;
   if (indices.empty()) {
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+    glDrawArrays(draw_type, 0, vertices.size());
   } else {
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(draw_type, indices.size(), GL_UNSIGNED_INT, 0);
   }
   glBindVertexArray(0);
 }

@@ -10,12 +10,13 @@
 
 class Shader {
 public:
-
+  static Shader FromFiles(std::string_view gs_path, std::string_view vs_path, std::string_view fs_path);
   static Shader FromFiles(std::string_view vs_path, std::string_view fs_path);
   static Shader FromSource(const std::string& vs_source, const std::string& fs_source);
   static void CheckShaderCompilation(std::string_view type, unsigned int shader_id);
   static void CheckProgramLinkStatus(unsigned int program_id);
   static unsigned int CreateShaderProgram(const std::string& vertex_shader_source, const std::string& fragment_shader_source);
+  static unsigned int CreateShaderProgram(const std::string& geometry_shader_source, const std::string& vertex_shader_source, const std::string& fragment_shader_source);
 
   Shader();
 
@@ -37,6 +38,7 @@ public:
 
 private:
   Shader(const std::string& vs_source, const std::string& fs_source);
+  Shader(const std::string& gs_source, const std::string& vs_source, const std::string& fs_source);
 
   unsigned int id_ = 0;
 };

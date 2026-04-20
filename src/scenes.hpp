@@ -20,3 +20,4 @@
 #include "scenes/framebuffers_scene.hpp"
 #include "scenes/cubemap_scene.hpp"
 #include "scenes/ubo_scene.hpp"
+#include "scenes/geometry_shader_scene.hpp"

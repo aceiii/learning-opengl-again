@@ -31,6 +31,9 @@ public:
     const auto window_size = ctx_->GetWindowSize();
 
     shader_ = Shader::FromFiles("resources/shaders/geometry_shader_scene/main.gs", "resources/shaders/geometry_shader_scene/main.vs", "resources/shaders/geometry_shader_scene/main.fs");
+    explode_shader_ = Shader::FromFiles("resources/shaders/geometry_shader_scene/main.gs", "resources/shaders/geometry_shader_scene/main.vs", "resources/shaders/geometry_shader_scene/main.fs");
+
+    backpack_model_ = Model::Load("resources/models/backpack/backpack.obj");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
 
@@ -63,8 +66,13 @@ public:
   void Render() override {
     glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
 
-    shader_.Use();
-    mesh_.Draw(shader_);
+    if (explode_) {
+      explode_shader_.Use();
+      backpack_model_.Draw(explode_shader_);
+    } else {
+      shader_.Use();
+      mesh_.Draw(shader_);
+    }
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -77,6 +85,10 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
+
+      if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Checkbox("Explode", &explode_);
+      }
 
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -278,6 +290,7 @@ private:
   };
 
   Shader shader_;
+  Shader explode_shader_;
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
   Environment environment_{
@@ -351,6 +364,8 @@ private:
     },
   };
 
+  Model backpack_model_;
+
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;
   glm::vec2 last_mouse_;
@@ -362,6 +377,7 @@ private:
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
   bool flashlight_mode_ = true;
+  bool explode_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
 };

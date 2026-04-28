@@ -31,7 +31,7 @@ public:
     const auto window_size = ctx_->GetWindowSize();
 
     shader_ = Shader::FromFiles("resources/shaders/geometry_shader_scene/main.gs", "resources/shaders/geometry_shader_scene/main.vs", "resources/shaders/geometry_shader_scene/main.fs");
-    explode_shader_ = Shader::FromFiles("resources/shaders/geometry_shader_scene/main.gs", "resources/shaders/geometry_shader_scene/main.vs", "resources/shaders/geometry_shader_scene/main.fs");
+    explode_shader_ = Shader::FromFiles("resources/shaders/geometry_shader_scene/explode.gs", "resources/shaders/geometry_shader_scene/explode.vs", "resources/shaders/geometry_shader_scene/explode.fs");
 
     backpack_model_ = Model::Load("resources/models/backpack/backpack.obj");
 
@@ -67,7 +67,18 @@ public:
     glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
 
     if (explode_) {
+      glm::mat4 view = camera_.GetViewMatrix();
+
       explode_shader_.Use();
+      explode_shader_.SetMat4("view", view);
+      explode_shader_.SetMat4("projection", projection_);
+
+      glm::mat4 model = glm::mat4(1.0f);
+      model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+      model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+      explode_shader_.SetMat4("model", model);
+
+      explode_shader_.SetFloat("time", ctx_->GetTime());
       backpack_model_.Draw(explode_shader_);
     } else {
       shader_.Use();

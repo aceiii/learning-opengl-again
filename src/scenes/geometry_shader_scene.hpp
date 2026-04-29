@@ -32,6 +32,7 @@ public:
 
     shader_ = Shader::FromFiles("resources/shaders/geometry_shader_scene/main.gs", "resources/shaders/geometry_shader_scene/main.vs", "resources/shaders/geometry_shader_scene/main.fs");
     explode_shader_ = Shader::FromFiles("resources/shaders/geometry_shader_scene/explode.gs", "resources/shaders/geometry_shader_scene/explode.vs", "resources/shaders/geometry_shader_scene/explode.fs");
+    normal_shader_ = Shader::FromFiles("resources/shaders/geometry_shader_scene/normal.gs", "resources/shaders/geometry_shader_scene/normal.vs", "resources/shaders/geometry_shader_scene/normal.fs");
 
     backpack_model_ = Model::Load("resources/models/backpack/backpack.obj");
 
@@ -66,7 +67,7 @@ public:
   void Render() override {
     glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
 
-    if (explode_) {
+    if (explode_ || render_normals_) {
       glm::mat4 view = camera_.GetViewMatrix();
 
       explode_shader_.Use();
@@ -78,8 +79,19 @@ public:
       model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
       explode_shader_.SetMat4("model", model);
 
-      explode_shader_.SetFloat("time", ctx_->GetTime());
+      float time = explode_ ? ctx_->GetTime() : 1.0f;
+
+      explode_shader_.SetFloat("time", time);
       backpack_model_.Draw(explode_shader_);
+
+      if (render_normals_) {
+        normal_shader_.Use();
+        normal_shader_.SetMat4("view", view);
+        normal_shader_.SetMat4("projection", projection_);
+        normal_shader_.SetMat4("model", model);
+        normal_shader_.SetMat4("time", time);
+        backpack_model_.Draw(normal_shader_);
+      }
     } else {
       shader_.Use();
       mesh_.Draw(shader_);
@@ -99,6 +111,7 @@ public:
 
       if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Explode", &explode_);
+        ImGui::Checkbox("Render normals", &render_normals_);
       }
 
       if (ImGui::CollapsingHeader("Camera")) {
@@ -302,6 +315,7 @@ private:
 
   Shader shader_;
   Shader explode_shader_;
+  Shader normal_shader_;
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
   Environment environment_{
@@ -389,6 +403,7 @@ private:
   bool hide_interface_ = true;
   bool flashlight_mode_ = true;
   bool explode_ = false;
+  bool render_normals_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
 };

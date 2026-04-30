@@ -62,6 +62,10 @@ public:
       environment_.spot_light.position = camera_.position;
       environment_.spot_light.direction = camera_.front;
     }
+
+    if (animate_explode_) {
+      explode_time_ += ctx_->GetFrameTime();
+    }
   }
 
   void Render() override {
@@ -79,7 +83,7 @@ public:
       model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
       explode_shader_.SetMat4("model", model);
 
-      float time = explode_ ? ctx_->GetTime() : 1.0f;
+      float time = sinf(explode_time_);
 
       explode_shader_.SetFloat("time", time);
       backpack_model_.Draw(explode_shader_);
@@ -89,7 +93,7 @@ public:
         normal_shader_.SetMat4("view", view);
         normal_shader_.SetMat4("projection", projection_);
         normal_shader_.SetMat4("model", model);
-        normal_shader_.SetMat4("time", time);
+        normal_shader_.SetFloat("time", time);
         backpack_model_.Draw(normal_shader_);
       }
     } else {
@@ -404,6 +408,8 @@ private:
   bool flashlight_mode_ = true;
   bool explode_ = false;
   bool render_normals_ = false;
+  bool animate_explode_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
+  float explode_time_ = 0.0f;
 };

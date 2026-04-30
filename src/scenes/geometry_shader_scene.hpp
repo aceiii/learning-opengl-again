@@ -65,6 +65,9 @@ public:
 
     if (animate_explode_) {
       explode_time_ += ctx_->GetFrameTime();
+      while (explode_time_ > (2 * M_PI)) {
+        explode_time_ -= (2 * M_PI);
+      }
     }
   }
 
@@ -115,7 +118,14 @@ public:
 
       if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Explode", &explode_);
+        ImGui::Checkbox("Animate explosion", &animate_explode_);
         ImGui::Checkbox("Render normals", &render_normals_);
+
+        static float sin_time;
+        sin_time = sin(explode_time_);
+        if (ImGui::DragFloat("Explode time", &sin_time, 0.01f, -1.0f, 1.0f)) {
+          explode_time_ = asinf(sin_time);
+        }
       }
 
       if (ImGui::CollapsingHeader("Camera")) {

@@ -10,6 +10,7 @@ in VS_OUT {
 out vec2 TexCoords;
 
 uniform float time;
+uniform float explode_magnitude;
 
 vec3 GetNormal() {
     vec3 a = vec3(gl_in[0].gl_Position) - vec3(gl_in[1].gl_Position);
@@ -18,8 +19,7 @@ vec3 GetNormal() {
 }
 
 vec4 explode(vec4 position, vec3 normal) {
-    float magnitude = 2.0;
-    vec3 direction = normal * ((time + 1.0) / 2.0) * magnitude;
+    vec3 direction = normal * ((time + 1.0) / 2.0) * explode_magnitude;
     return position + vec4(direction, 0.0);
 }
 

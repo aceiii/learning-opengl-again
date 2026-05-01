@@ -89,6 +89,8 @@ public:
       float time = sinf(explode_time_);
 
       explode_shader_.SetFloat("time", time);
+      explode_shader_.SetFloat("explode_magnitude", explode_magnitude_);
+      explode_shader_.SetFloat("normal_magnitude", normal_magnitude_);
       backpack_model_.Draw(explode_shader_);
 
       if (render_normals_) {
@@ -97,6 +99,8 @@ public:
         normal_shader_.SetMat4("projection", projection_);
         normal_shader_.SetMat4("model", model);
         normal_shader_.SetFloat("time", time);
+        normal_shader_.SetFloat("explode_magnitude", explode_magnitude_);
+        normal_shader_.SetFloat("normal_magnitude", normal_magnitude_);
         backpack_model_.Draw(normal_shader_);
       }
     } else {
@@ -126,6 +130,9 @@ public:
         if (ImGui::DragFloat("Explode time", &sin_time, 0.01f, -1.0f, 1.0f)) {
           explode_time_ = asinf(sin_time);
         }
+
+        ImGui::DragFloat("Explode magnitude", &explode_magnitude_, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat("Normal magnitude", &normal_magnitude_, 0.01f, 0.0f, 10.0f);
       }
 
       if (ImGui::CollapsingHeader("Camera")) {
@@ -422,4 +429,6 @@ private:
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float explode_time_ = 0.0f;
+  float explode_magnitude_ = 2.0f;
+  float normal_magnitude_ = 0.4f;
 };

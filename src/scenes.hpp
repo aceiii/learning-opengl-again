@@ -21,3 +21,4 @@
 #include "scenes/cubemap_scene.hpp"
 #include "scenes/ubo_scene.hpp"
 #include "scenes/geometry_shader_scene.hpp"
+#include "scenes/instancing_scene.hpp"

@@ -31,6 +31,8 @@ public:
   void SetFloat4(const std::string& name, std::array<float, 4> arr);
   void SetFloat4(const std::string& name, float x, float y, float z, float w);
   void SetMat4(const std::string& name, const glm::mat4& matrix);
+  void SetVec2(const std::string& name, float x, float y);
+  void SetVec2(const std::string& name, const glm::vec2& vec);
   void SetVec3(const std::string& name, float x, float y, float z);
   void SetVec3(const std::string& name, const glm::vec3& vec);
   void SetIntSpan(const std::string& name, std::span<const int> span);

@@ -83,6 +83,7 @@ std::expected<void, std::string> Application::Init() {
   scenes_.push_back(std::make_shared<UboScene>());
   scenes_.push_back(std::make_shared<GeometryShaderScene>());
   scenes_.push_back(std::make_shared<InstancingScene>());
+  scenes_.push_back(std::make_shared<AsteroidsScene>());
 
   return {};
 }

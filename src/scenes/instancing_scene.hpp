@@ -32,6 +32,23 @@ public:
 
     shader_ = Shader::FromFiles("resources/shaders/instancing_scene/main.vs", "resources/shaders/instancing_scene/main.fs");
 
+    std::array<glm::vec2, 100> translations;
+    int index = 0;
+    float offset = 0.1f;
+    for (int y = -10; y < 10; y += 2) {
+      for (int x = -10; x < 10; x += 2) {
+        glm::vec2 translation;
+        translation.x = ((float)x / 10.0f) + offset;
+        translation.y = ((float)y / 10.0f) + offset;
+        translations[index++] = translation;
+      }
+    }
+
+    glGenBuffers(1, &instance_vbo_);
+    glBindBuffer(GL_ARRAY_BUFFER, instance_vbo_);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * translations.size(), translations.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
     glGenVertexArrays(1, &quad_vao_);
     glGenBuffers(1, &quad_vbo_);
 
@@ -42,6 +59,11 @@ public:
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, instance_vbo_);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+    glEnableVertexAttribArray(2);
+    glVertexAttribDivisor(2, 1);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
@@ -75,22 +97,10 @@ public:
   void Render() override {
     glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
 
-    glm::vec2 translations[100];
-    int index = 0;
-    float offset = 0.1f;
-    for (int y = -10; y < 10; y += 2) {
-      for (int x = -10; x < 10; x += 2) {
-        glm::vec2 translation;
-        translation.x = ((float)x / 10.0f) + offset;
-        translation.y = ((float)y / 10.0f) + offset;
-        translations[index++] = translation;
-      }
-    }
-
     shader_.Use();
-    for (auto i = 0; i < 100; i++) {
-      shader_.SetVec2(("offsets[" + std::to_string(i) + "]"), translations[i]);
-    }
+    // for (auto i = 0; i < 100; i++) {
+    //   shader_.SetVec2(("offsets[" + std::to_string(i) + "]"), translations[i]);
+    // }
 
     glBindVertexArray(quad_vao_);
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
@@ -337,4 +347,5 @@ private:
 
   unsigned int quad_vao_;
   unsigned int quad_vbo_;
+  unsigned int instance_vbo_;
 };

@@ -55,16 +55,18 @@ public:
 
 
     srand(ctx_->GetTime());
+    GenerateAsteroids();
 
-    model_matrices_.clear();
-    model_matrices_.reserve(num_asteroids_);
+    glEnable(GL_DEPTH_TEST);
+  }
 
-    offset = 2.5f;
-    float radius = 50.0f;
+  void GenerateAsteroids() {
+    float offset = asteroids_offset_;
+    float radius = asteroids_radius_;
 
+    model_matrices_.resize(num_asteroids_);
     for (auto idx = 0; idx < num_asteroids_; idx++) {
       glm::mat4 model = glm::mat4(1.0f);
-
       float angle = static_cast<float>(idx) / static_cast<float>(num_asteroids_) * 360.0f;
       float displacement = (rand() % static_cast<int>(2 * offset * 100)) / 100.0f - offset;
       float x = sin(angle) * radius + displacement;
@@ -83,10 +85,8 @@ public:
       float rotation_angle = (rand() % 360);
       model = glm::rotate(model, rotation_angle, glm::vec3(0.4f, 0.6f, 0.8f));
 
-      model_matrices_.push_back(model);
+      model_matrices_[idx] = model;
     }
-
-    glEnable(GL_DEPTH_TEST);
   }
 
   void Update(float dt) override
@@ -151,6 +151,22 @@ public:
     {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
+
+      if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::DragFloat("Asteroid offset", &asteroids_offset_)) {
+          GenerateAsteroids();
+        }
+        if (ImGui::DragFloat("Asteroid radius", &asteroids_radius_)) {
+          GenerateAsteroids();
+        }
+        if (ImGui::DragInt("Num Asteroids", &num_asteroids_, 1, 0, 100'000)) {
+          if (num_asteroids_ < 1) {
+            model_matrices_.clear();
+          } else {
+            GenerateAsteroids();
+          }
+        }
+      }
 
       if (ImGui::CollapsingHeader("Camera"))
       {
@@ -434,6 +450,8 @@ private:
   bool flashlight_mode_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
+  float asteroids_offset_ = 2.5f;
+  float asteroids_radius_ = 50.f;
 
-  unsigned int num_asteroids_ = 1000;
+  int num_asteroids_ = 1000;
 };

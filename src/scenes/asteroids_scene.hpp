@@ -89,8 +89,15 @@ public:
     }
   }
 
-  void Update(float dt) override
-  {
+  void Update(float dt) override {
+    frame_time_[frame_time_idx_] = ctx_->GetFrameTime();
+    frame_time_idx_ = (frame_time_idx_ + 1) % frame_time_.size();
+    avg_fps_ = 0;
+    for (const auto ft : frame_time_) {
+      avg_fps_ += static_cast<int>(1.0f / ft);
+    }
+    avg_fps_ /= frame_time_.size();
+
     if (ctx_->IsKeyDown(Key::kKeyUp) || ctx_->IsKeyDown(Key::kKeyW))
     {
       camera_.ProcessKeyboard(CameraMovement::kMoveForward, dt);
@@ -149,6 +156,8 @@ public:
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options"))
     {
+      ImGui::Text("FPS: %4d", avg_fps_);
+      ImGui::NewLine();
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
 
@@ -441,6 +450,9 @@ private:
 
   std::vector<glm::mat4> model_matrices_;
 
+  std::array<float, 20> frame_time_;
+  int frame_time_idx_ = 0;
+
   bool wireframe_ = false;
   bool auto_rotate_camera_ = false;
   bool capture_mouse_ = false;
@@ -454,4 +466,5 @@ private:
   float asteroids_radius_ = 50.f;
 
   int num_asteroids_ = 1000;
+  int avg_fps_ = 0;
 };

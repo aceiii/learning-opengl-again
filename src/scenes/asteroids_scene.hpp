@@ -416,7 +416,7 @@ private:
   Model planet_;
   Model asteroid_;
 
-  Camera camera_{{0.0f, 10.0f, 100.0f}, { 0.0f, -0.35f, -1.0f}};
+  Camera camera_{{0.0f, 0.0f, 155.0f}};
   Environment environment_{
       .name = "Default",
       .bg_color = glm::vec3(0.0f, 0.0f, 0.0f),

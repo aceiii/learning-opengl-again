@@ -54,13 +54,10 @@ public:
     environment_.spot_light.position = camera_.position;
     environment_.spot_light.direction = camera_.front;
 
+    glGenBuffers(1, &matrix_buffer_);
 
     srand(ctx_->GetTime());
     GenerateAsteroids();
-
-    glGenBuffers(1, &matrix_buffer_);
-    glBindBuffer(GL_ARRAY_BUFFER, matrix_buffer_);
-    glBufferData(GL_ARRAY_BUFFER, num_asteroids_ * sizeof(glm::mat4), model_matrices_.data(), GL_STATIC_DRAW);
 
     for (auto& mesh : asteroid_.meshes) {
       mesh.CustomSetup([&]() {
@@ -112,6 +109,9 @@ public:
 
       model_matrices_[idx] = model;
     }
+
+    glBindBuffer(GL_ARRAY_BUFFER, matrix_buffer_);
+    glBufferData(GL_ARRAY_BUFFER, num_asteroids_ * sizeof(glm::mat4), model_matrices_.data(), GL_STATIC_DRAW);
   }
 
   void Update(float dt) override {

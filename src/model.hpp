@@ -18,6 +18,7 @@ public:
   static Model Load(std::string_view path);
 
   void Draw(Shader& shader);
+  void DrawInstanced(Shader& shader, unsigned int count);
 
 private:
   void LoadModel(std::string_view path);

@@ -15,25 +15,7 @@ Mesh::Mesh(Mesh::Type type, std::vector<Vertex> vertices, std::vector<unsigned i
 }
 
 void Mesh::Draw(Shader& shader) {
-  if (!textures.empty()) {
-    unsigned int num_diffuse = 1;
-    unsigned int num_specular = 1;
-
-    for (unsigned int i = 0; i < textures.size(); i++) {
-      glActiveTexture(GL_TEXTURE0 + i);
-
-      std::string number;
-      std::string name = textures[i].type;
-      if (name == "texture_diffuse") {
-        number = std::to_string(num_diffuse++);
-      } else if (name == "texture_specular") {
-        number = std::to_string(num_specular++);
-      }
-
-      shader.SetInt((name + number).c_str(), i);
-      glBindTexture(GL_TEXTURE_2D, textures[i].id);
-    }
-  }
+  BindTextures(shader);
 
   glBindVertexArray(vao_);
   const auto draw_type = type == Type::Triangles ? GL_TRIANGLES : GL_POINTS;
@@ -42,6 +24,25 @@ void Mesh::Draw(Shader& shader) {
   } else {
     glDrawElements(draw_type, indices.size(), GL_UNSIGNED_INT, 0);
   }
+  glBindVertexArray(0);
+}
+
+void Mesh::DrawInstanced(Shader& shader, unsigned int count) {
+  BindTextures(shader);
+
+  glBindVertexArray(vao_);
+  const auto draw_type = type == Type::Triangles ? GL_TRIANGLES : GL_POINTS;
+  if (indices.empty()) {
+    glDrawArraysInstanced(draw_type, 0, vertices.size(), count);
+  } else {
+    glDrawElementsInstanced(draw_type, indices.size(), GL_UNSIGNED_INT, 0, count);
+  }
+  glBindVertexArray(0);
+}
+
+void Mesh::CustomSetup(std::function<void()> func) {
+  glBindVertexArray(vao_);
+  func();
   glBindVertexArray(0);
 }
 
@@ -76,4 +77,31 @@ void Mesh::SetupMesh() {
   // (location = 2) in vec2 aTexCoords
   glEnableVertexAttribArray(2);
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tex_coords));
+
+  // unbind vao_
+  glBindVertexArray(0);
+}
+
+void Mesh::BindTextures(Shader& shader) {
+  if (textures.empty()) {
+    return;
+  }
+
+  unsigned int num_diffuse = 1;
+  unsigned int num_specular = 1;
+
+  for (unsigned int i = 0; i < textures.size(); i++) {
+    glActiveTexture(GL_TEXTURE0 + i);
+
+    std::string number;
+    std::string name = textures[i].type;
+    if (name == "texture_diffuse") {
+      number = std::to_string(num_diffuse++);
+    } else if (name == "texture_specular") {
+      number = std::to_string(num_specular++);
+    }
+
+    shader.SetInt((name + number).c_str(), i);
+    glBindTexture(GL_TEXTURE_2D, textures[i].id);
+  }
 }

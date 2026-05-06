@@ -32,6 +32,7 @@ public:
     const auto window_size = ctx_->GetWindowSize();
 
     shader_ = Shader::FromFiles("resources/shaders/asteroids_scene/main.vs", "resources/shaders/asteroids_scene/main.fs");
+    instance_shader_ = Shader::FromFiles("resources/shaders/asteroids_scene/instance.vs", "resources/shaders/asteroids_scene/instance.fs");
 
     planet_ = Model::Load("resources/models/planet/planet.obj");
     asteroid_ = Model::Load("resources/models/rock/rock.obj");
@@ -56,6 +57,30 @@ public:
 
     srand(ctx_->GetTime());
     GenerateAsteroids();
+
+    glGenBuffers(1, &matrix_buffer_);
+    glBindBuffer(GL_ARRAY_BUFFER, matrix_buffer_);
+    glBufferData(GL_ARRAY_BUFFER, num_asteroids_ * sizeof(glm::mat4), model_matrices_.data(), GL_STATIC_DRAW);
+
+    for (auto& mesh : asteroid_.meshes) {
+      mesh.CustomSetup([&]() {
+        glBindBuffer(GL_ARRAY_BUFFER, matrix_buffer_);
+
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void*)(0 * sizeof(glm::vec4)));
+        glVertexAttribDivisor(3, 1);
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void*)(1 * sizeof(glm::vec4)));
+        glVertexAttribDivisor(4, 1);
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void*)(2 * sizeof(glm::vec4)));
+        glVertexAttribDivisor(5, 1);
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void*)(3 * sizeof(glm::vec4)));
+        glVertexAttribDivisor(6, 1);
+
+      });
+    }
 
     glEnable(GL_DEPTH_TEST);
   }
@@ -140,10 +165,15 @@ public:
     shader_.SetMat4("model", model);
     planet_.Draw(shader_);
 
-    for (auto idx = 0; idx < model_matrices_.size(); idx++) {
-      shader_.SetMat4("model", model_matrices_[idx]);
-      asteroid_.Draw(shader_);
-    }
+    // for (auto idx = 0; idx < model_matrices_.size(); idx++) {
+    //   shader_.SetMat4("model", model_matrices_[idx]);
+    //   asteroid_.Draw(shader_);
+    // }
+
+    instance_shader_.Use();
+    instance_shader_.SetMat4("view", view);
+    instance_shader_.SetMat4("projection", projection_);
+    asteroid_.DrawInstanced(instance_shader_, model_matrices_.size());
   }
 
   void RenderInterface(int window_width, int window_height) override
@@ -378,6 +408,7 @@ private:
   };
 
   Shader shader_;
+  Shader instance_shader_;
 
   Model planet_;
   Model asteroid_;
@@ -462,9 +493,11 @@ private:
   bool flashlight_mode_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
-  float asteroids_offset_ = 2.5f;
-  float asteroids_radius_ = 50.f;
+  float asteroids_offset_ = 25.0f;
+  float asteroids_radius_ = 150.f;
 
   int num_asteroids_ = 1000;
   int avg_fps_ = 0;
+
+  unsigned int matrix_buffer_;
 };

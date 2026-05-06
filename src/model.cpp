@@ -20,6 +20,12 @@ void Model::Draw(Shader& shader) {
   }
 }
 
+void Model::DrawInstanced(Shader& shader, unsigned int count) {
+  for (auto& mesh : meshes) {
+    mesh.DrawInstanced(shader, count);
+  }
+}
+
 void Model::LoadModel(std::string_view path) {
   Assimp::Importer importer;
   const aiScene* scene = importer.ReadFile(std::string{path}, aiProcess_Triangulate | aiProcess_FlipUVs);

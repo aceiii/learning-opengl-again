@@ -165,15 +165,17 @@ public:
     shader_.SetMat4("model", model);
     planet_.Draw(shader_);
 
-    // for (auto idx = 0; idx < model_matrices_.size(); idx++) {
-    //   shader_.SetMat4("model", model_matrices_[idx]);
-    //   asteroid_.Draw(shader_);
-    // }
-
-    instance_shader_.Use();
-    instance_shader_.SetMat4("view", view);
-    instance_shader_.SetMat4("projection", projection_);
-    asteroid_.DrawInstanced(instance_shader_, model_matrices_.size());
+    if (use_instancing_) {
+      instance_shader_.Use();
+      instance_shader_.SetMat4("view", view);
+      instance_shader_.SetMat4("projection", projection_);
+      asteroid_.DrawInstanced(instance_shader_, model_matrices_.size());
+    } else {
+      for (auto idx = 0; idx < model_matrices_.size(); idx++) {
+        shader_.SetMat4("model", model_matrices_[idx]);
+        asteroid_.Draw(shader_);
+      }
+    }
   }
 
   void RenderInterface(int window_width, int window_height) override
@@ -192,6 +194,7 @@ public:
       ImGui::NewLine();
 
       if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Checkbox("Use instancing", &use_instancing_);
         if (ImGui::DragFloat("Asteroid offset", &asteroids_offset_)) {
           GenerateAsteroids();
         }
@@ -491,6 +494,7 @@ private:
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
   bool flashlight_mode_ = true;
+  bool use_instancing_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float asteroids_offset_ = 25.0f;

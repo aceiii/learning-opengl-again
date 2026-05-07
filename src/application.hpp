@@ -61,7 +61,10 @@ private:
   std::vector<std::shared_ptr<Scene>> scenes_;
 
   bool enable_interface_ = true;
+  bool enable_multisampling_ = false;
+
   float delta_time_ = 0;
+
   int window_width_ = 0;
   int window_height_ = 0;
   int framebuffer_width_ = 0;

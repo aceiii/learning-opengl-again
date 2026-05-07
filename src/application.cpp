@@ -33,6 +33,8 @@ std::expected<void, std::string> Application::Init() {
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
+  glfwWindowHint(GLFW_SAMPLES, 4);
+
   g_window = glfwCreateWindow(800, 600, "Learning OpenGL AGAIN!", nullptr, nullptr);
   if (g_window == nullptr) {
     return std::unexpected{"Failed to create GLFW Window"};
@@ -60,6 +62,8 @@ std::expected<void, std::string> Application::Init() {
   int framebuffer_width, framebuffer_height;
   glfwGetFramebufferSize(g_window, &framebuffer_width, &framebuffer_height);
   glViewport(0, 0, framebuffer_width, framebuffer_height);
+
+  glEnable(GL_MULTISAMPLE);
 
   scenes_.push_back(EmptyScene::Get());
   scenes_.push_back(std::make_shared<HelloTriangle>());
@@ -211,6 +215,17 @@ void Application::RenderInterface() {
       if (ImGui::BeginMenu("View")) {
         ImGui::MenuItem("Demo Window", nullptr, &show_demo_window);
         ImGui::MenuItem("Logs", nullptr, &show_logs);
+        ImGui::EndMenu();
+      }
+
+      if (ImGui::BeginMenu("Options")) {
+        if (ImGui::MenuItem("Multisampling", nullptr, &enable_multisampling_)) {
+          if (enable_multisampling_) {
+            glEnable(GL_MULTISAMPLE);
+          } else {
+            glDisable(GL_MULTISAMPLE);
+          }
+        }
         ImGui::EndMenu();
       }
     }

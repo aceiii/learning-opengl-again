@@ -23,3 +23,4 @@
 #include "scenes/geometry_shader_scene.hpp"
 #include "scenes/instancing_scene.hpp"
 #include "scenes/asteroids_scene.hpp"
+#include "scenes/advanced_lighting_scene.hpp"

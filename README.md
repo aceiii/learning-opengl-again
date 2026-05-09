@@ -7,6 +7,7 @@ Previous attempt here: https://github.com/aceiii/learning-opengl
 
 ## Screenshots
 
+![Asteroids](images/asteroids_2026-05-08.png)
 ![Cube Map](images/cubemap_2026-04-14.png)
 ![Model](images/model_2026-04-03.png)
 ![Hello Triangle](images/hello-triangle_2026-03-22.png)

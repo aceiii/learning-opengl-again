@@ -74,7 +74,7 @@ public:
 
     shader_.SetVec3("viewPos", camera_.position);
     shader_.SetVec3("lightPos", light_pos_);
-    shader_.SetInt("blinn", use_blinn_phong_);
+    shader_.SetBool("blinn", use_blinn_phong_);
 
     mesh_.Draw(shader_);
   }
@@ -256,7 +256,7 @@ private:
     },
     {},
     {
-      Texture::Load("diffuse", "resources/textures/wood.jpg"),
+      Texture::Load("diffuse", "resources/textures/wood.png"),
     },
   };
 

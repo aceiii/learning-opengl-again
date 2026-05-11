@@ -9,6 +9,7 @@ struct TextureOptions {
   int wrap_t;
   int min_filter;
   int mag_filter;
+  bool linear;
 };
 
 struct Texture {

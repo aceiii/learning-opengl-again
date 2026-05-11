@@ -12,6 +12,7 @@ namespace {
 }
 
 Texture Texture::Load(std::string_view type, std::string_view path, TextureOptions options) {
+  auto logger = Logger::GetRootLogger();
   std::string filename{path};
 
   unsigned int texture_id;
@@ -20,7 +21,6 @@ Texture Texture::Load(std::string_view type, std::string_view path, TextureOptio
   Image image = Image::Load(filename, 0);
 
   if (!image.data) {
-    auto logger = Logger::GetRootLogger();
     quill::warning(logger, "Texture failed to load at path: '{}'", filename);
     return {
       .id = texture_id,
@@ -34,14 +34,20 @@ Texture Texture::Load(std::string_view type, std::string_view path, TextureOptio
     case 1: format = GL_RED; break;
     case 3: format = GL_RGB; break;
     case 4: format = GL_RGBA; break;
-    default: {
-      auto logger = Logger::GetRootLogger();
-      quill::warning(logger, "Unknown texture format: {}", image.num_components);
+    default: quill::warning(logger, "Unknown texture format: {}", image.num_components);
+  }
+
+  GLenum internal_format = format;
+  if (options.linear) {
+    switch (image.num_components) {
+      case 3: internal_format = GL_SRGB; break;
+      case 4: internal_format = GL_SRGB_ALPHA; break;
+      default: internal_format = format;
     }
   }
 
   glBindTexture(GL_TEXTURE_2D, texture_id);
-  glTexImage2D(GL_TEXTURE_2D, 0, format, image.width, image.height, 0, format, GL_UNSIGNED_BYTE, image.data.get());
+  glTexImage2D(GL_TEXTURE_2D, 0, internal_format, image.width, image.height, 0, format, GL_UNSIGNED_BYTE, image.data.get());
   glGenerateMipmap(GL_TEXTURE_2D);
 
   auto wrap_s = options.wrap_s ? options.wrap_s : kDefaultWrapS;

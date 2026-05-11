@@ -24,3 +24,4 @@
 #include "scenes/instancing_scene.hpp"
 #include "scenes/asteroids_scene.hpp"
 #include "scenes/advanced_lighting_scene.hpp"
+#include "scenes/gamma_correction_scene.hpp"

@@ -29,21 +29,12 @@ Texture Texture::Load(std::string_view type, std::string_view path, TextureOptio
     };
   }
 
-  GLenum format;
+  GLenum format, internal_format;
   switch (image.num_components) {
-    case 1: format = GL_RED; break;
-    case 3: format = GL_RGB; break;
-    case 4: format = GL_RGBA; break;
+    case 1: internal_format = format = GL_RED; break;
+    case 3: format = GL_RGB; internal_format = options.linear ? GL_SRGB : GL_RGB; break;
+    case 4: format = GL_RGBA; internal_format = options.linear ? GL_SRGB_ALPHA : GL_RGBA; break;
     default: quill::warning(logger, "Unknown texture format: {}", image.num_components);
-  }
-
-  GLenum internal_format = format;
-  if (options.linear) {
-    switch (image.num_components) {
-      case 3: internal_format = GL_SRGB; break;
-      case 4: internal_format = GL_SRGB_ALPHA; break;
-      default: internal_format = format;
-    }
   }
 
   glBindTexture(GL_TEXTURE_2D, texture_id);

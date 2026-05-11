@@ -30,7 +30,7 @@ public:
 
     const auto window_size = ctx_->GetWindowSize();
 
-    shader_ = Shader::FromFiles("resources/shaders/advanced_lighting_scene/main.vs", "resources/shaders/advanced_lighting_scene/main.fs");
+    shader_ = Shader::FromFiles("resources/shaders/gamma_correction_scene/main.vs", "resources/shaders/gamma_correction_scene/main.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
 
@@ -73,7 +73,8 @@ public:
     shader_.SetMat4("model", model);
 
     shader_.SetVec3("viewPos", camera_.position);
-    shader_.SetVec3("lightPos", light_pos_);
+    shader_.SetVec3Span("lightPositions", kLightPositions);
+    shader_.SetVec3Span("lightColors", kLightColors);
     shader_.SetBool("blinn", use_blinn_phong_);
 
     mesh_.Draw(shader_);
@@ -250,6 +251,20 @@ private:
      0.05f,  0.05f, 0.0f, 1.0f, 1.0f,
   };
 
+  inline static const std::array kLightPositions = {
+    glm::vec3(-3.0f, 0.0f, 0.0f),
+    glm::vec3(-1.0f, 0.0f, 0.0f),
+    glm::vec3( 1.0f, 0.0f, 0.0f),
+    glm::vec3( 3.0f, 0.0f, 0.0f),
+  };
+
+  inline static const std::array kLightColors = {
+    glm::vec3(0.25f),
+    glm::vec3(0.50f),
+    glm::vec3(0.75f),
+    glm::vec3(1.00f),
+  };
+
   Shader shader_;
 
   Mesh mesh_{
@@ -331,7 +346,6 @@ private:
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;
-  glm::vec3 light_pos_;
   glm::vec2 last_mouse_;
 
   bool wireframe_ = false;

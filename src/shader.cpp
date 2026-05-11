@@ -190,3 +190,7 @@ void Shader::SetIntSpan(const std::string& name, std::span<const int> span) {
 void Shader::SetFloatSpan(const std::string& name, std::span<const float> span) {
   glUniform1fv(glGetUniformLocation(id_, name.data()), span.size(), span.data());
 }
+
+void Shader::SetVec3Span(const std::string& name, std::span<const glm::vec3> span) {
+  glUniform3fv(glGetUniformLocation(id_, name.data()), span.size(), glm::value_ptr(*span.data()));
+}

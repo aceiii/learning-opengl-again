@@ -22,6 +22,9 @@
 
 class ShadowMapScene final : public Scene {
 public:
+  static constexpr unsigned int kShadowWidth = 1024;
+  static constexpr unsigned int kShadowHeight = 1024;
+
   void Init(IAppContext* ctx) override {
     ctx_ = ctx;
 
@@ -31,11 +34,55 @@ public:
     const auto window_size = ctx_->GetWindowSize();
 
     shader_ = Shader::FromFiles("resources/shaders/shadowmap_scene/main.vs", "resources/shaders/shadowmap_scene/main.fs");
+    simple_depth_shader_ = Shader::FromFiles("resources/shaders/shadowmap_scene/depth.vs", "resources/shaders/shadowmap_scene/depth.fs");
+    debug_depth_shader_ = Shader::FromFiles("resources/shaders/shadowmap_scene/debug.vs", "resources/shaders/shadowmap_scene/debug.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
 
     environment_.spot_light.position = camera_.position;
     environment_.spot_light.direction = camera_.front;
+
+    glGenFramebuffers(1, &depth_map_fbo_);
+
+    glGenTextures(1, &depth_map_);
+    glBindTexture(GL_TEXTURE_2D, depth_map_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, kShadowWidth, kShadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, depth_map_fbo_);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_map_, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glGenVertexArrays(1, &quad_vao_);
+    glGenBuffers(1, &quad_vbo_);
+    glBindVertexArray(quad_vao_);
+    glBindBuffer(GL_ARRAY_BUFFER, quad_vbo_);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(kQuadVertices), kQuadVertices.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+    glBindVertexArray(0);
+
+    glGenVertexArrays(1, &cube_vao_);
+    glGenBuffers(1, &cube_vbo_);
+    glBindBuffer(GL_ARRAY_BUFFER, cube_vbo_);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(kCubeVertices), kCubeVertices.data(), GL_STATIC_DRAW);
+    glBindVertexArray(cube_vao_);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
 
   void Update(float dt) override {
@@ -60,24 +107,95 @@ public:
     }
   }
 
-  void Render() override {
-    glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
-
+  void ConfigureShaderAndMatrices() {
     glm::mat4 view = camera_.GetViewMatrix();
-
     shader_.Use();
     shader_.SetMat4("view", view);
     shader_.SetMat4("projection", projection_);
-
-    glm::mat4 model(1.0f);
-    shader_.SetMat4("model", model);
-
     shader_.SetVec3("viewPos", camera_.position);
-    shader_.SetVec3Span("lightPositions", kLightPositions);
-    shader_.SetVec3Span("lightColors", kLightColors);
-    shader_.SetBool("blinn", use_blinn_phong_);
+    shader_.SetVec3("lightPos", light_position_);
+  }
 
-    mesh_.Draw(shader_);
+  void RenderScene(Shader& shader) {
+    glm::mat4 model(1.0f);
+    shader.SetMat4("model", model);
+    // plane_mesh_.Draw(shader);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0f));
+    model = glm::scale(model, glm::vec3(0.5f));
+    RenderCube(shader, model);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0f));
+    model = glm::scale(model, glm::vec3(0.5f));
+    RenderCube(shader, model);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 1.0f));
+    model = glm::rotate(model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0f)));
+    model = glm::scale(model, glm::vec3(0.5f));
+    RenderCube(shader, model);
+  }
+
+  void RenderCube(Shader& shader, const glm::mat4& model) {
+
+  }
+
+  void RenderQuad() {
+    glBindVertexArray(quad_vao_);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+  }
+
+  void Render() override {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    float near_plane = 1.0f;
+    float far_plane = 7.5f;
+
+    glm::mat4 light_projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+    glm::mat4 light_view = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 light_space_matrix = light_projection * light_view;
+
+    glViewport(0, 0, kShadowWidth, kShadowHeight);
+    glBindFramebuffer(GL_FRAMEBUFFER, depth_map_fbo_);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    RenderScene(simple_depth_shader_);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // int width, height;
+    // std::tie(width, height) = ctx_->GetFramebufferSize();
+    // glViewport(0, 0, width, height);
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // ConfigureShaderAndMatrices();
+    // glBindTexture(GL_TEXTURE_2D, depth_map_);
+    // RenderScene();
+
+    debug_depth_shader_.Use();
+    debug_depth_shader_.SetFloat("nearPlane", near_plane);
+    debug_depth_shader_.SetFloat("farPlane", far_plane);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, depth_map_);
+    RenderQuad();
+
+    // glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
+
+    // glm::mat4 view = camera_.GetViewMatrix();
+
+    // shader_.Use();
+    // shader_.SetMat4("view", view);
+    // shader_.SetMat4("projection", projection_);
+
+    // glm::mat4 model(1.0f);
+    // shader_.SetMat4("model", model);
+
+    // shader_.SetVec3("viewPos", camera_.position);
+    // shader_.SetVec3Span("lightPositions", kLightPositions);
+    // shader_.SetVec3Span("lightColors", kLightColors);
+    // shader_.SetBool("blinn", use_blinn_phong_);
+
+    // mesh_.Draw(shader_);
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -242,13 +360,64 @@ private:
   inline static const float kMinPitch = -89.0f;
   inline static const float kMaxPitch = 89.0f;
 
+  // inline static const std::array kQuadVertices = {
+  //   -0.05f,  0.05f, 1.0f, 0.0f, 0.0f,
+  //    0.05f, -0.05f, 0.0f, 1.0f, 0.0f,
+  //   -0.05f, -0.05f, 0.0f, 0.0f, 1.0f,
+  //   -0.05f,  0.05f, 1.0f, 0.0f, 0.0f,
+  //    0.05f, -0.05f, 0.0f, 1.0f, 0.0f,
+  //    0.05f,  0.05f, 0.0f, 1.0f, 1.0f,
+  // };
+
   inline static const std::array kQuadVertices = {
-    -0.05f,  0.05f, 1.0f, 0.0f, 0.0f,
-     0.05f, -0.05f, 0.0f, 1.0f, 0.0f,
-    -0.05f, -0.05f, 0.0f, 0.0f, 1.0f,
-    -0.05f,  0.05f, 1.0f, 0.0f, 0.0f,
-     0.05f, -0.05f, 0.0f, 1.0f, 0.0f,
-     0.05f,  0.05f, 0.0f, 1.0f, 1.0f,
+    -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+    -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+     1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+     1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+  };
+
+  inline static const std::array kCubeVertices = {
+    -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+     1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+     1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right
+     1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+    -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+    -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+    // front face
+    -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+     1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+     1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+     1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+    -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+    -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+    // left face
+    -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+    -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+    -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+    -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+    -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+    -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+    // right face
+     1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+     1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+     1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right
+     1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+     1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+     1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left
+    // bottom face
+    -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+     1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+     1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+     1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+    -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+    -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+    // top face
+    -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+     1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+     1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right
+     1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+    -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+    -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left
   };
 
   inline static const std::array kLightPositions = {
@@ -266,6 +435,8 @@ private:
   };
 
   Shader shader_;
+  Shader simple_depth_shader_;
+  Shader debug_depth_shader_;
 
   Mesh mesh_{
     {
@@ -281,6 +452,8 @@ private:
       Texture::Load("diffuse", "resources/textures/wood.png", { .linear = true }),
     },
   };
+
+  Mesh plane_mesh_{};
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
   Environment environment_{
@@ -348,6 +521,8 @@ private:
   glm::vec3 orig_bgcolor_;
   glm::vec2 last_mouse_;
 
+  glm::vec3 light_position_ { -2.0f, 4.0f, -1.0f };
+
   bool wireframe_ = false;
   bool auto_rotate_camera_ = false;
   bool capture_mouse_ = false;
@@ -359,4 +534,11 @@ private:
   bool gamma_correct_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
+
+  unsigned int depth_map_fbo_;
+  unsigned int depth_map_;
+  unsigned int quad_vao_;
+  unsigned int quad_vbo_;
+  unsigned int cube_vao_;
+  unsigned int cube_vbo_;
 };

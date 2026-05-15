@@ -158,28 +158,29 @@ public:
     RenderScene(simple_depth_shader_);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // shader_.Use();
-    // shader_.SetMat4("view", camera_.GetViewMatrix());
-    // shader_.SetVec3("viewPos", camera_.position);
-    // shader_.SetMat4("projection", projection_);
-    // shader_.SetVec3("lightPosition", light_position_);
-    // shader_.SetVec3("lightColor", glm::vec3(1.0));
-    // RenderScene(shader_);
-
     int width, height;
     std::tie(width, height) = ctx_->GetFramebufferSize();
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // glBindTexture(GL_TEXTURE_2D, depth_map_);
-    // RenderScene();
-
-    debug_depth_shader_.Use();
-    debug_depth_shader_.SetFloat("nearPlane", near_plane);
-    debug_depth_shader_.SetFloat("farPlane", far_plane);
-    debug_depth_shader_.SetInt("depthMap", 0);
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, depth_map_);
-    RenderQuad();
+    shader_.Use();
+    shader_.SetMat4("lightSpaceMatrix", light_space_matrix);
+    shader_.SetMat4("view", camera_.GetViewMatrix());
+    shader_.SetVec3("viewPos", camera_.position);
+    shader_.SetMat4("projection", projection_);
+    shader_.SetVec3("lightPos", light_position_);
+    shader_.SetVec3("lightColor", light_color_);
+    shader_.SetInt("shadowMap", 1);
+    RenderScene(shader_);
+
+    // debug_depth_shader_.Use();
+    // debug_depth_shader_.SetFloat("nearPlane", near_plane);
+    // debug_depth_shader_.SetFloat("farPlane", far_plane);
+    // debug_depth_shader_.SetInt("depthMap", 0);
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, depth_map_);
+    // RenderQuad();
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -555,6 +556,7 @@ private:
   glm::vec2 last_mouse_;
 
   glm::vec3 light_position_ { -2.0f, 4.0f, -1.0f };
+  glm::vec3 light_color_ { 1.0f, 1.0f, 1.0f };
 
   bool wireframe_ = false;
   bool auto_rotate_camera_ = false;

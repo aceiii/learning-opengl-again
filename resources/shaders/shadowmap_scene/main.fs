@@ -6,13 +6,26 @@ in VS_OUT {
     vec3 FragPos;
     vec3 Normal;
     vec2 TexCoords;
+    vec4 FragPosLightSpace;
 } fs_in;
 
-uniform sampler2D floorTexture;
+uniform sampler2D texture_diffuse1;
+uniform sampler2D shadowMap;
 
-uniform vec3 lightPosition;
+uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
+
+float ShadowCalculation(vec4 fragPosLightSpace) {
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    float currentDepth = projCoords.z;
+    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+
+    return shadow;
+}
 
 vec3 BlinnPhong(vec3 normal, vec3 fragPos, vec3 lightPos, vec3 lightColor) {
     vec3 lightDir = normalize(lightPos - fragPos);
@@ -26,7 +39,6 @@ vec3 BlinnPhong(vec3 normal, vec3 fragPos, vec3 lightPos, vec3 lightColor) {
     float spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
     vec3 specular = spec * lightColor;
 
-    float max_distance = 1.5;
     float distance = length(lightPos - fragPos);
     float attenuation = 1.0 / distance;
 
@@ -37,14 +49,16 @@ vec3 BlinnPhong(vec3 normal, vec3 fragPos, vec3 lightPos, vec3 lightColor) {
 }
 
 void main() {
-    vec3 color = texture(floorTexture, fs_in.TexCoords).rgb;
+    vec3 color = texture(texture_diffuse1, fs_in.TexCoords).rgb;
+    vec3 normal = normalize(fs_in.Normal);
+    vec3 ambient = 0.15 * lightColor;
+
     vec3 lighting = vec3(0.0);
+    lighting += BlinnPhong(normal, fs_in.FragPos, lightPos, lightColor);
+    // color *= lighting;
 
-    // for (int i = 0; i < 4; ++i) {
-        lighting += BlinnPhong(normalize(fs_in.Normal), fs_in.FragPos, lightPosition, lightColor);
-    // }
-
-    color *= lighting;
+    float shadow = ShadowCalculation(fs_in.FragPosLightSpace);
+    color *= ambient + (1.0 - shadow) * lighting;
 
     FragColor= vec4(color, 1.0);
 }

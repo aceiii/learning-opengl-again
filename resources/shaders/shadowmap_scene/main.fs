@@ -10,8 +10,8 @@ in VS_OUT {
 
 uniform sampler2D floorTexture;
 
-uniform vec3 lightPositions[4];
-uniform vec3 lightColors[4];
+uniform vec3 lightPosition;
+uniform vec3 lightColor;
 uniform vec3 viewPos;
 
 vec3 BlinnPhong(vec3 normal, vec3 fragPos, vec3 lightPos, vec3 lightColor) {
@@ -40,9 +40,9 @@ void main() {
     vec3 color = texture(floorTexture, fs_in.TexCoords).rgb;
     vec3 lighting = vec3(0.0);
 
-    for (int i = 0; i < 4; ++i) {
-        lighting += BlinnPhong(normalize(fs_in.Normal), fs_in.FragPos, lightPositions[i], lightColors[i]);
-    }
+    // for (int i = 0; i < 4; ++i) {
+        lighting += BlinnPhong(normalize(fs_in.Normal), fs_in.FragPos, lightPosition, lightColor);
+    // }
 
     color *= lighting;
 

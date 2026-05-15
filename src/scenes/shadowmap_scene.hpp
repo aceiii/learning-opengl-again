@@ -107,39 +107,31 @@ public:
     }
   }
 
-  void ConfigureShaderAndMatrices() {
-    glm::mat4 view = camera_.GetViewMatrix();
-    shader_.Use();
-    shader_.SetMat4("view", view);
-    shader_.SetMat4("projection", projection_);
-    shader_.SetVec3("viewPos", camera_.position);
-    shader_.SetVec3("lightPos", light_position_);
-  }
-
   void RenderScene(Shader& shader) {
     glm::mat4 model(1.0f);
     shader.SetMat4("model", model);
-    // plane_mesh_.Draw(shader);
+    plane_mesh_.Draw(shader);
 
     model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0f));
     model = glm::scale(model, glm::vec3(0.5f));
-    RenderCube(shader, model);
+    shader.SetMat4("model", model);
+    cube_mesh_.Draw(shader);
 
     model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0f));
     model = glm::scale(model, glm::vec3(0.5f));
-    RenderCube(shader, model);
+    shader.SetMat4("model", model);
+    cube_mesh_.Draw(shader);
 
     model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 1.0f));
     model = glm::rotate(model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0f)));
     model = glm::scale(model, glm::vec3(0.5f));
-    RenderCube(shader, model);
-  }
+    shader.SetMat4("model", model);
+    cube_mesh_.Draw(shader);
 
-  void RenderCube(Shader& shader, const glm::mat4& model) {
-
+    glEnable(GL_DEPTH_TEST);
   }
 
   void RenderQuad() {
@@ -155,47 +147,39 @@ public:
     float far_plane = 7.5f;
 
     glm::mat4 light_projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-    glm::mat4 light_view = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 light_view = glm::lookAt(light_position_, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 light_space_matrix = light_projection * light_view;
 
     glViewport(0, 0, kShadowWidth, kShadowHeight);
     glBindFramebuffer(GL_FRAMEBUFFER, depth_map_fbo_);
     glClear(GL_DEPTH_BUFFER_BIT);
+    simple_depth_shader_.Use();
+    simple_depth_shader_.SetMat4("lightSpaceMatrix", light_space_matrix);
     RenderScene(simple_depth_shader_);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // int width, height;
-    // std::tie(width, height) = ctx_->GetFramebufferSize();
-    // glViewport(0, 0, width, height);
-    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // ConfigureShaderAndMatrices();
+    // shader_.Use();
+    // shader_.SetMat4("view", camera_.GetViewMatrix());
+    // shader_.SetVec3("viewPos", camera_.position);
+    // shader_.SetMat4("projection", projection_);
+    // shader_.SetVec3("lightPosition", light_position_);
+    // shader_.SetVec3("lightColor", glm::vec3(1.0));
+    // RenderScene(shader_);
+
+    int width, height;
+    std::tie(width, height) = ctx_->GetFramebufferSize();
+    glViewport(0, 0, width, height);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // glBindTexture(GL_TEXTURE_2D, depth_map_);
     // RenderScene();
 
     debug_depth_shader_.Use();
     debug_depth_shader_.SetFloat("nearPlane", near_plane);
     debug_depth_shader_.SetFloat("farPlane", far_plane);
+    debug_depth_shader_.SetInt("depthMap", 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, depth_map_);
     RenderQuad();
-
-    // glPolygonMode(GL_FRONT_AND_BACK, wireframe_ ? GL_LINE : GL_FILL);
-
-    // glm::mat4 view = camera_.GetViewMatrix();
-
-    // shader_.Use();
-    // shader_.SetMat4("view", view);
-    // shader_.SetMat4("projection", projection_);
-
-    // glm::mat4 model(1.0f);
-    // shader_.SetMat4("model", model);
-
-    // shader_.SetVec3("viewPos", camera_.position);
-    // shader_.SetVec3Span("lightPositions", kLightPositions);
-    // shader_.SetVec3Span("lightColors", kLightColors);
-    // shader_.SetBool("blinn", use_blinn_phong_);
-
-    // mesh_.Draw(shader_);
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -360,15 +344,6 @@ private:
   inline static const float kMinPitch = -89.0f;
   inline static const float kMaxPitch = 89.0f;
 
-  // inline static const std::array kQuadVertices = {
-  //   -0.05f,  0.05f, 1.0f, 0.0f, 0.0f,
-  //    0.05f, -0.05f, 0.0f, 1.0f, 0.0f,
-  //   -0.05f, -0.05f, 0.0f, 0.0f, 1.0f,
-  //   -0.05f,  0.05f, 1.0f, 0.0f, 0.0f,
-  //    0.05f, -0.05f, 0.0f, 1.0f, 0.0f,
-  //    0.05f,  0.05f, 0.0f, 1.0f, 1.0f,
-  // };
-
   inline static const std::array kQuadVertices = {
     -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
     -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
@@ -449,11 +424,69 @@ private:
     },
     {},
     {
-      Texture::Load("diffuse", "resources/textures/wood.png", { .linear = true }),
+      Texture::Load("diffuse", "resources/textures/wood.png"),
     },
   };
 
-  Mesh plane_mesh_{};
+  Mesh plane_mesh_{
+    {
+      { {  25.0f, -0.5f,  25.0f }, { 0.0f, 1.0f, 0.0f }, { 25.0f,  0.0f } },
+      { { -25.0f, -0.5f,  25.0f }, { 0.0f, 1.0f, 0.0f }, {  0.0f,  0.0f } },
+      { { -25.0f, -0.5f, -25.0f }, { 0.0f, 1.0f, 0.0f }, {  0.0f, 25.0f } },
+      { {  25.0f, -0.5f,  25.0f }, { 0.0f, 1.0f, 0.0f }, { 25.0f,  0.0f } },
+      { { -25.0f, -0.5f, -25.0f }, { 0.0f, 1.0f, 0.0f }, {  0.0f, 25.0f } },
+      { {  25.0f, -0.5f, -25.0f }, { 0.0f, 1.0f, 0.0f }, { 25.0f, 25.0f } }
+    },
+    {},
+    {
+      Texture::Load("diffuse", "resources/textures/wood.png"),
+    }
+  };
+
+  Mesh cube_mesh_{
+    {
+      { { -1.0f, -1.0f, -1.0f }, {  0.0f,  0.0f, -1.0f }, { 0.0f, 0.0f } },
+      { {  1.0f,  1.0f, -1.0f }, {  0.0f,  0.0f, -1.0f }, { 1.0f, 1.0f } },
+      { {  1.0f, -1.0f, -1.0f }, {  0.0f,  0.0f, -1.0f }, { 1.0f, 0.0f } },
+      { {  1.0f,  1.0f, -1.0f }, {  0.0f,  0.0f, -1.0f }, { 1.0f, 1.0f } },
+      { { -1.0f, -1.0f, -1.0f }, {  0.0f,  0.0f, -1.0f }, { 0.0f, 0.0f } },
+      { { -1.0f,  1.0f, -1.0f }, {  0.0f,  0.0f, -1.0f }, { 0.0f, 1.0f } },
+      { { -1.0f, -1.0f,  1.0f }, {  0.0f,  0.0f,  1.0f }, { 0.0f, 0.0f } },
+      { {  1.0f, -1.0f,  1.0f }, {  0.0f,  0.0f,  1.0f }, { 1.0f, 0.0f } },
+      { {  1.0f,  1.0f,  1.0f }, {  0.0f,  0.0f,  1.0f }, { 1.0f, 1.0f } },
+      { {  1.0f,  1.0f,  1.0f }, {  0.0f,  0.0f,  1.0f }, { 1.0f, 1.0f } },
+      { { -1.0f,  1.0f,  1.0f }, {  0.0f,  0.0f,  1.0f }, { 0.0f, 1.0f } },
+      { { -1.0f, -1.0f,  1.0f }, {  0.0f,  0.0f,  1.0f }, { 0.0f, 0.0f } },
+      { { -1.0f,  1.0f,  1.0f }, { -1.0f,  0.0f,  0.0f }, { 1.0f, 0.0f } },
+      { { -1.0f,  1.0f, -1.0f }, { -1.0f,  0.0f,  0.0f }, { 1.0f, 1.0f } },
+      { { -1.0f, -1.0f, -1.0f }, { -1.0f,  0.0f,  0.0f }, { 0.0f, 1.0f } },
+      { { -1.0f, -1.0f, -1.0f }, { -1.0f,  0.0f,  0.0f }, { 0.0f, 1.0f } },
+      { { -1.0f, -1.0f,  1.0f }, { -1.0f,  0.0f,  0.0f }, { 0.0f, 0.0f } },
+      { { -1.0f,  1.0f,  1.0f }, { -1.0f,  0.0f,  0.0f }, { 1.0f, 0.0f } },
+      { {  1.0f,  1.0f,  1.0f }, {  1.0f,  0.0f,  0.0f }, { 1.0f, 0.0f } },
+      { {  1.0f, -1.0f, -1.0f }, {  1.0f,  0.0f,  0.0f }, { 0.0f, 1.0f } },
+      { {  1.0f,  1.0f, -1.0f }, {  1.0f,  0.0f,  0.0f }, { 1.0f, 1.0f } },
+      { {  1.0f, -1.0f, -1.0f }, {  1.0f,  0.0f,  0.0f }, { 0.0f, 1.0f } },
+      { {  1.0f,  1.0f,  1.0f }, {  1.0f,  0.0f,  0.0f }, { 1.0f, 0.0f } },
+      { {  1.0f, -1.0f,  1.0f }, {  1.0f,  0.0f,  0.0f }, { 0.0f, 0.0f } },
+      { { -1.0f, -1.0f, -1.0f }, {  0.0f, -1.0f,  0.0f }, { 0.0f, 1.0f } },
+      { {  1.0f, -1.0f, -1.0f }, {  0.0f, -1.0f,  0.0f }, { 1.0f, 1.0f } },
+      { {  1.0f, -1.0f,  1.0f }, {  0.0f, -1.0f,  0.0f }, { 1.0f, 0.0f } },
+      { {  1.0f, -1.0f,  1.0f }, {  0.0f, -1.0f,  0.0f }, { 1.0f, 0.0f } },
+      { { -1.0f, -1.0f,  1.0f }, {  0.0f, -1.0f,  0.0f }, { 0.0f, 0.0f } },
+      { { -1.0f, -1.0f, -1.0f }, {  0.0f, -1.0f,  0.0f }, { 0.0f, 1.0f } },
+      { { -1.0f,  1.0f, -1.0f }, {  0.0f,  1.0f,  0.0f }, { 0.0f, 1.0f } },
+      { {  1.0f,  1.0f , 1.0f }, {  0.0f,  1.0f,  0.0f }, { 1.0f, 0.0f } },
+      { {  1.0f,  1.0f, -1.0f }, {  0.0f,  1.0f,  0.0f }, { 1.0f, 1.0f } },
+      { {  1.0f,  1.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }, { 1.0f, 0.0f } },
+      { { -1.0f,  1.0f, -1.0f }, {  0.0f,  1.0f,  0.0f }, { 0.0f, 1.0f } },
+      { { -1.0f,  1.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }, { 0.0f, 0.0f } },
+    },
+    {},
+    {
+      Texture::Load("diffuse", "resources/textures/wood.png"),
+    }
+  };
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 3.0f)};
   Environment environment_{

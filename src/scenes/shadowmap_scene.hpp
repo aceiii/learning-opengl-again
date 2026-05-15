@@ -149,7 +149,7 @@ public:
     float near_plane = 1.0f;
     float far_plane = 7.5f;
 
-    glm::mat4 light_projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+    glm::mat4 light_projection = use_ortho_ ? glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane) : glm::perspective(glm::radians(45.0f), 1.0f, near_plane, far_plane);
     glm::mat4 light_view = glm::lookAt(light_position_, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 light_space_matrix = light_projection * light_view;
 
@@ -175,6 +175,7 @@ public:
       debug_depth_shader_.SetFloat("nearPlane", near_plane);
       debug_depth_shader_.SetFloat("farPlane", far_plane);
       debug_depth_shader_.SetInt("depthMap", 0);
+      debug_depth_shader_.SetBool("isOrtho", use_ortho_);
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, depth_map_);
       RenderQuad();
@@ -207,7 +208,13 @@ public:
 
       if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Show shadow map", &show_depth_map_);
+        ImGui::Checkbox("Use Orthographic shadows", &use_ortho_);
         ImGui::Checkbox("Use PCF", &use_pcf_);
+      }
+
+      if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::DragFloat3("Light position", &light_position_.x, 0.1f, -100.0f, 100.0f);
+        ImGui::ColorEdit3("Light color", &light_color_.x);
       }
 
       if (ImGui::CollapsingHeader("Camera")) {
@@ -572,6 +579,7 @@ private:
   bool flashlight_mode_ = true;
   bool show_depth_map_ = false;
   bool use_pcf_ = true;
+  bool use_ortho_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
 

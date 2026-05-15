@@ -189,6 +189,7 @@ public:
       shader_.SetVec3("lightPos", light_position_);
       shader_.SetVec3("lightColor", light_color_);
       shader_.SetInt("shadowMap", 1);
+      shader_.SetBool("usePCF", use_pcf_);
       RenderScene(shader_);
     }
   }
@@ -206,6 +207,7 @@ public:
 
       if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Show shadow map", &show_depth_map_);
+        ImGui::Checkbox("Use PCF", &use_pcf_);
       }
 
       if (ImGui::CollapsingHeader("Camera")) {
@@ -569,6 +571,7 @@ private:
   bool hide_interface_ = true;
   bool flashlight_mode_ = true;
   bool show_depth_map_ = false;
+  bool use_pcf_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
 

@@ -49,8 +49,11 @@ public:
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, kShadowWidth, kShadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
     glBindFramebuffer(GL_FRAMEBUFFER, depth_map_fbo_);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_map_, 0);
@@ -83,6 +86,8 @@ public:
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glEnable(GL_DEPTH_TEST);
   }
 
   void Update(float dt) override {
@@ -119,7 +124,7 @@ public:
     cube_mesh_.Draw(shader);
 
     model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0f));
+    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0f));
     model = glm::scale(model, glm::vec3(0.5f));
     shader.SetMat4("model", model);
     cube_mesh_.Draw(shader);
@@ -130,8 +135,6 @@ public:
     model = glm::scale(model, glm::vec3(0.5f));
     shader.SetMat4("model", model);
     cube_mesh_.Draw(shader);
-
-    glEnable(GL_DEPTH_TEST);
   }
 
   void RenderQuad() {
@@ -153,15 +156,19 @@ public:
     glViewport(0, 0, kShadowWidth, kShadowHeight);
     glBindFramebuffer(GL_FRAMEBUFFER, depth_map_fbo_);
     glClear(GL_DEPTH_BUFFER_BIT);
+    // glEnable(GL_CULL_FACE);
+    // glCullFace(GL_FRONT);
     simple_depth_shader_.Use();
     simple_depth_shader_.SetMat4("lightSpaceMatrix", light_space_matrix);
     RenderScene(simple_depth_shader_);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // glDisable(GL_CULL_FACE);
 
     int width, height;
     std::tie(width, height) = ctx_->GetFramebufferSize();
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glPolygonMode(GL_FRONT_AND_BACK,  wireframe_ ? GL_LINE : GL_FILL);
 
     if (show_depth_map_) {
       debug_depth_shader_.Use();

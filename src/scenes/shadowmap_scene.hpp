@@ -162,25 +162,28 @@ public:
     std::tie(width, height) = ctx_->GetFramebufferSize();
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, depth_map_);
-    shader_.Use();
-    shader_.SetMat4("lightSpaceMatrix", light_space_matrix);
-    shader_.SetMat4("view", camera_.GetViewMatrix());
-    shader_.SetVec3("viewPos", camera_.position);
-    shader_.SetMat4("projection", projection_);
-    shader_.SetVec3("lightPos", light_position_);
-    shader_.SetVec3("lightColor", light_color_);
-    shader_.SetInt("shadowMap", 1);
-    RenderScene(shader_);
 
-    // debug_depth_shader_.Use();
-    // debug_depth_shader_.SetFloat("nearPlane", near_plane);
-    // debug_depth_shader_.SetFloat("farPlane", far_plane);
-    // debug_depth_shader_.SetInt("depthMap", 0);
-    // glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_2D, depth_map_);
-    // RenderQuad();
+    if (show_depth_map_) {
+      debug_depth_shader_.Use();
+      debug_depth_shader_.SetFloat("nearPlane", near_plane);
+      debug_depth_shader_.SetFloat("farPlane", far_plane);
+      debug_depth_shader_.SetInt("depthMap", 0);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, depth_map_);
+      RenderQuad();
+    } else {
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(GL_TEXTURE_2D, depth_map_);
+      shader_.Use();
+      shader_.SetMat4("lightSpaceMatrix", light_space_matrix);
+      shader_.SetMat4("view", camera_.GetViewMatrix());
+      shader_.SetVec3("viewPos", camera_.position);
+      shader_.SetMat4("projection", projection_);
+      shader_.SetVec3("lightPos", light_position_);
+      shader_.SetVec3("lightColor", light_color_);
+      shader_.SetInt("shadowMap", 1);
+      RenderScene(shader_);
+    }
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -195,14 +198,7 @@ public:
       ImGui::NewLine();
 
       if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
-        if (ImGui::Checkbox("Gamma Correction", &gamma_correct_)) {
-          if (gamma_correct_) {
-            glEnable(GL_FRAMEBUFFER_SRGB);
-          } else {
-            glDisable(GL_FRAMEBUFFER_SRGB);
-          }
-        }
-        ImGui::Checkbox("Blinn-Phong", &use_blinn_phong_);
+        ImGui::Checkbox("Show shadow map", &show_depth_map_);
       }
 
       if (ImGui::CollapsingHeader("Camera")) {
@@ -565,8 +561,7 @@ private:
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
   bool flashlight_mode_ = true;
-  bool use_blinn_phong_ = false;
-  bool gamma_correct_ = false;
+  bool show_depth_map_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
 

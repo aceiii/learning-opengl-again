@@ -42,33 +42,20 @@ public:
     environment_.spot_light.position = camera_.position;
     environment_.spot_light.direction = camera_.front;
 
-    glGenFramebuffers(1, &depth_map_fbo_);
-
-    // glGenTextures(1, &depth_map_);
-    // glBindTexture(GL_TEXTURE_2D, depth_map_);
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, kShadowWidth, kShadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
-    // float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    // glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
     glGenTextures(1, &depth_cube_map_);
     glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cube_map_);
     for (unsigned int i = 0; i < 6; i++) {
       glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, kShadowWidth, kShadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
+    glGenFramebuffers(1, &depth_map_fbo_);
     glBindFramebuffer(GL_FRAMEBUFFER, depth_map_fbo_);
-    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_map_, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_map_, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_cube_map_, 0);
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -121,6 +108,10 @@ public:
     if (flashlight_mode_) {
       environment_.spot_light.position = camera_.position;
       environment_.spot_light.direction = camera_.front;
+    }
+
+    if (animate_light_) {
+      light_position_.z = static_cast<float>(sin(ctx_->GetTime() * 0.5) * 3.0);
     }
   }
 
@@ -175,13 +166,6 @@ public:
   void Render() override {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    // float near_plane = 1.0f;
-    // float far_plane = 7.5f;
-
-    // glm::mat4 light_projection = use_ortho_ ? glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane) : glm::perspective(glm::radians(45.0f), 1.0f, near_plane, far_plane);
-    // glm::mat4 light_view = glm::lookAt(light_position_, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    // glm::mat4 light_space_matrix = light_projection * light_view;
-
     float aspect = static_cast<float>(kShadowWidth) / static_cast<float>(kShadowHeight);
     float near_plane = 1.0f;
     float far_plane = 25.0f;
@@ -202,7 +186,11 @@ public:
     // glEnable(GL_CULL_FACE);
     // glCullFace(GL_FRONT);
     cube_depth_shader_.Use();
-    cube_depth_shader_.SetMat4Span("shadowMatrices", shadow_transforms);
+    cube_depth_shader_.SetFloat("farPlane", far_plane);
+    cube_depth_shader_.SetVec3("lightPos", light_position_);
+    for (unsigned int i = 0; i < 6; i++) {
+      cube_depth_shader_.SetMat4("shadowMatrices[" + std::to_string(i) + "]", shadow_transforms[i]);
+    }
     RenderScene(cube_depth_shader_);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     // glDisable(GL_CULL_FACE);
@@ -213,26 +201,27 @@ public:
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glPolygonMode(GL_FRONT_AND_BACK,  wireframe_ ? GL_LINE : GL_FILL);
 
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cube_map_);
+
     if (show_depth_map_) {
       debug_depth_shader_.Use();
       debug_depth_shader_.SetFloat("nearPlane", near_plane);
       debug_depth_shader_.SetFloat("farPlane", far_plane);
-      debug_depth_shader_.SetInt("depthMap", 0);
+      debug_depth_shader_.SetInt("depthMap", 1);
       debug_depth_shader_.SetBool("isOrtho", use_ortho_);
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cube_map_);
       RenderQuad();
     } else {
-      glActiveTexture(GL_TEXTURE1);
-      glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cube_map_);
       shader_.Use();
-      shader_.SetMat4Span("shadowMatrices", shadow_transforms);
       shader_.SetMat4("view", camera_.GetViewMatrix());
       shader_.SetVec3("viewPos", camera_.position);
       shader_.SetMat4("projection", projection_);
       shader_.SetVec3("lightPos", light_position_);
       shader_.SetVec3("lightColor", light_color_);
-      shader_.SetInt("depthMap", 2);
+      shader_.SetVec3("ambientColor", ambient_color_);
+      shader_.SetFloat("farPlane", far_plane);
+      shader_.SetFloat("nearPlane", near_plane);
+      shader_.SetInt("depthMap", 1);
       shader_.SetBool("usePCF", use_pcf_);
       shader_.SetBool("enableShadows", enable_shadows_);
       RenderScene(shader_);
@@ -255,11 +244,13 @@ public:
         ImGui::Checkbox("Use Orthographic shadows", &use_ortho_);
         ImGui::Checkbox("Use PCF", &use_pcf_);
         ImGui::Checkbox("Shadows", &enable_shadows_);
+        ImGui::Checkbox("Animate light", &animate_light_);
       }
 
       if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::DragFloat3("Light position", &light_position_.x, 0.1f, -100.0f, 100.0f);
-        ImGui::ColorEdit3("Light color", &light_color_.x);
+        ImGui::ColorEdit3("Light color", &light_color_.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+        ImGui::ColorEdit3("Ambient color", &ambient_color_.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
       }
 
       if (ImGui::CollapsingHeader("Camera")) {
@@ -614,6 +605,7 @@ private:
 
   glm::vec3 light_position_ { 0.0f, 0.0f, 0.0f };
   glm::vec3 light_color_ { 1.0f, 1.0f, 1.0f };
+  glm::vec3 ambient_color_ { 0.15f, 0.15f, 0.15f };
 
   bool wireframe_ = false;
   bool auto_rotate_camera_ = false;
@@ -626,11 +618,11 @@ private:
   bool use_pcf_ = true;
   bool use_ortho_ = true;
   bool enable_shadows_ = true;
+  bool animate_light_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
 
   unsigned int depth_map_fbo_;
-  unsigned int depth_map_;
   unsigned int depth_cube_map_;
   unsigned int quad_vao_;
   unsigned int quad_vbo_;

@@ -13,6 +13,7 @@ uniform samplerCube depthMap;
 
 uniform vec3 lightPos;
 uniform vec3 lightColor;
+uniform vec3 ambientColor;
 uniform vec3 viewPos;
 
 uniform float farPlane;
@@ -47,7 +48,6 @@ float ShadowCalculation(vec3 fragPos, vec3 normal, vec3 lightDir) {
     //     shadow = 0.0;
     // }
 
-
     vec3 fragToLight = fragPos - lightPos;
     float closestDepth = texture(depthMap, fragToLight).r;
     closestDepth *= farPlane;
@@ -55,6 +55,9 @@ float ShadowCalculation(vec3 fragPos, vec3 normal, vec3 lightDir) {
     float currentDepth = length(fragToLight);
     float bias = 0.05;
     float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+
+    // FragColor = vec4(vec3(closestDepth), 1.0);
+
     return shadow;
 }
 
@@ -81,7 +84,7 @@ vec3 BlinnPhong(vec3 normal, vec3 fragPos, vec3 lightPos, vec3 lightDir, vec3 li
 void main() {
     vec3 color = texture(texture_diffuse1, fs_in.TexCoords).rgb;
     vec3 normal = normalize(fs_in.Normal);
-    vec3 ambient = 0.15 * lightColor;
+    vec3 ambient = ambientColor;
     vec3 lightDir = normalize(lightPos - fs_in.FragPos);
 
     vec3 lighting = vec3(0.0);

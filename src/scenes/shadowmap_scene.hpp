@@ -113,26 +113,43 @@ public:
   }
 
   void RenderScene(Shader& shader) {
+    glDisable(GL_CULL_FACE);
     glm::mat4 model(1.0f);
+    model = glm::scale(model, glm::vec3(5.0f));
     shader.SetMat4("model", model);
-    plane_mesh_.Draw(shader);
+    shader.SetBool("reverseNormals", true);
+    cube_mesh_.Draw(shader);
+    shader.SetBool("reverseNormals", false);
+    glEnable(GL_CULL_FACE);
 
     model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0f));
+    model = glm::translate(model, glm::vec3(4.0f, -3.5f, 0.0f));
     model = glm::scale(model, glm::vec3(0.5f));
     shader.SetMat4("model", model);
     cube_mesh_.Draw(shader);
 
     model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0f));
+    model = glm::translate(model, glm::vec3(2.0f, 3.0f, 1.0f));
     model = glm::scale(model, glm::vec3(0.5f));
     shader.SetMat4("model", model);
     cube_mesh_.Draw(shader);
 
     model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 1.0f));
+    model = glm::translate(model, glm::vec3(-3.0f, -1.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(0.5f));
+    shader.SetMat4("model", model);
+    cube_mesh_.Draw(shader);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-1.5f, 1.0f, 1.5f));
+    model = glm::scale(model, glm::vec3(0.5f));
+    shader.SetMat4("model", model);
+    cube_mesh_.Draw(shader);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-1.5f, 2.0f, -3.0f));
     model = glm::rotate(model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0f)));
-    model = glm::scale(model, glm::vec3(0.5f));
+    model = glm::scale(model, glm::vec3(0.75f));
     shader.SetMat4("model", model);
     cube_mesh_.Draw(shader);
   }

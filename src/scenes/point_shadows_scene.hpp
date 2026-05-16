@@ -34,7 +34,7 @@ public:
     const auto window_size = ctx_->GetWindowSize();
 
     shader_ = Shader::FromFiles("resources/shaders/point_shadows_scene/main.vs", "resources/shaders/point_shadows_scene/main.fs");
-    simple_depth_shader_ = Shader::FromFiles("resources/shaders/point_shadows_scene/depth.vs", "resources/shaders/point_shadows_scene/depth.fs");
+    cube_depth_shader_ = Shader::FromFiles("resources/shaders/point_shadows_scene/cube_depth.gs", "resources/shaders/point_shadows_scene/cube_depth.vs", "resources/shaders/point_shadows_scene/cube_depth.fs");
     debug_depth_shader_ = Shader::FromFiles("resources/shaders/point_shadows_scene/debug.vs", "resources/shaders/point_shadows_scene/debug.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
@@ -44,19 +44,31 @@ public:
 
     glGenFramebuffers(1, &depth_map_fbo_);
 
-    glGenTextures(1, &depth_map_);
-    glBindTexture(GL_TEXTURE_2D, depth_map_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, kShadowWidth, kShadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    // glGenTextures(1, &depth_map_);
+    // glBindTexture(GL_TEXTURE_2D, depth_map_);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, kShadowWidth, kShadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    // float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    // glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+    glGenTextures(1, &depth_cube_map_);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cube_map_);
+    for (unsigned int i = 0; i < 6; i++) {
+      glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, kShadowWidth, kShadowHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    }
 
     glBindFramebuffer(GL_FRAMEBUFFER, depth_map_fbo_);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_map_, 0);
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_map_, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_map_, 0);
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -113,26 +125,43 @@ public:
   }
 
   void RenderScene(Shader& shader) {
+    glDisable(GL_CULL_FACE);
     glm::mat4 model(1.0f);
+    model = glm::scale(model, glm::vec3(5.0f));
     shader.SetMat4("model", model);
-    plane_mesh_.Draw(shader);
+    shader.SetBool("reverseNormals", true);
+    cube_mesh_.Draw(shader);
+    shader.SetBool("reverseNormals", false);
+    glEnable(GL_CULL_FACE);
 
     model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0f));
+    model = glm::translate(model, glm::vec3(4.0f, -3.5f, 0.0f));
     model = glm::scale(model, glm::vec3(0.5f));
     shader.SetMat4("model", model);
     cube_mesh_.Draw(shader);
 
     model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0f));
+    model = glm::translate(model, glm::vec3(2.0f, 3.0f, 1.0f));
     model = glm::scale(model, glm::vec3(0.5f));
     shader.SetMat4("model", model);
     cube_mesh_.Draw(shader);
 
     model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 1.0f));
+    model = glm::translate(model, glm::vec3(-3.0f, -1.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(0.5f));
+    shader.SetMat4("model", model);
+    cube_mesh_.Draw(shader);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-1.5f, 1.0f, 1.5f));
+    model = glm::scale(model, glm::vec3(0.5f));
+    shader.SetMat4("model", model);
+    cube_mesh_.Draw(shader);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-1.5f, 2.0f, -3.0f));
     model = glm::rotate(model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0f)));
-    model = glm::scale(model, glm::vec3(0.5f));
+    model = glm::scale(model, glm::vec3(0.75f));
     shader.SetMat4("model", model);
     cube_mesh_.Draw(shader);
   }
@@ -146,21 +175,35 @@ public:
   void Render() override {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    float near_plane = 1.0f;
-    float far_plane = 7.5f;
+    // float near_plane = 1.0f;
+    // float far_plane = 7.5f;
 
-    glm::mat4 light_projection = use_ortho_ ? glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane) : glm::perspective(glm::radians(45.0f), 1.0f, near_plane, far_plane);
-    glm::mat4 light_view = glm::lookAt(light_position_, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 light_space_matrix = light_projection * light_view;
+    // glm::mat4 light_projection = use_ortho_ ? glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane) : glm::perspective(glm::radians(45.0f), 1.0f, near_plane, far_plane);
+    // glm::mat4 light_view = glm::lookAt(light_position_, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    // glm::mat4 light_space_matrix = light_projection * light_view;
+
+    float aspect = static_cast<float>(kShadowWidth) / static_cast<float>(kShadowHeight);
+    float near_plane = 1.0f;
+    float far_plane = 25.0f;
+
+    glm::mat4 shadow_projection = glm::perspective(glm::radians(90.0f), aspect, near_plane, far_plane);
+
+    std::vector<glm::mat4> shadow_transforms;
+    shadow_transforms.push_back(shadow_projection * glm::lookAt(light_position_, light_position_ + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)));
+    shadow_transforms.push_back(shadow_projection * glm::lookAt(light_position_, light_position_ + glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)));
+    shadow_transforms.push_back(shadow_projection * glm::lookAt(light_position_, light_position_ + glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)));
+    shadow_transforms.push_back(shadow_projection * glm::lookAt(light_position_, light_position_ + glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)));
+    shadow_transforms.push_back(shadow_projection * glm::lookAt(light_position_, light_position_ + glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)));
+    shadow_transforms.push_back(shadow_projection * glm::lookAt(light_position_, light_position_ + glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f)));
 
     glViewport(0, 0, kShadowWidth, kShadowHeight);
     glBindFramebuffer(GL_FRAMEBUFFER, depth_map_fbo_);
     glClear(GL_DEPTH_BUFFER_BIT);
     // glEnable(GL_CULL_FACE);
     // glCullFace(GL_FRONT);
-    simple_depth_shader_.Use();
-    simple_depth_shader_.SetMat4("lightSpaceMatrix", light_space_matrix);
-    RenderScene(simple_depth_shader_);
+    cube_depth_shader_.Use();
+    cube_depth_shader_.SetMat4Span("shadowMatrices", shadow_transforms);
+    RenderScene(cube_depth_shader_);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     // glDisable(GL_CULL_FACE);
 
@@ -177,20 +220,21 @@ public:
       debug_depth_shader_.SetInt("depthMap", 0);
       debug_depth_shader_.SetBool("isOrtho", use_ortho_);
       glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, depth_map_);
+      glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cube_map_);
       RenderQuad();
     } else {
       glActiveTexture(GL_TEXTURE1);
-      glBindTexture(GL_TEXTURE_2D, depth_map_);
+      glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cube_map_);
       shader_.Use();
-      shader_.SetMat4("lightSpaceMatrix", light_space_matrix);
+      shader_.SetMat4Span("shadowMatrices", shadow_transforms);
       shader_.SetMat4("view", camera_.GetViewMatrix());
       shader_.SetVec3("viewPos", camera_.position);
       shader_.SetMat4("projection", projection_);
       shader_.SetVec3("lightPos", light_position_);
       shader_.SetVec3("lightColor", light_color_);
-      shader_.SetInt("shadowMap", 1);
+      shader_.SetInt("depthMap", 2);
       shader_.SetBool("usePCF", use_pcf_);
+      shader_.SetBool("enableShadows", enable_shadows_);
       RenderScene(shader_);
     }
   }
@@ -210,6 +254,7 @@ public:
         ImGui::Checkbox("Show shadow map", &show_depth_map_);
         ImGui::Checkbox("Use Orthographic shadows", &use_ortho_);
         ImGui::Checkbox("Use PCF", &use_pcf_);
+        ImGui::Checkbox("Shadows", &enable_shadows_);
       }
 
       if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -423,7 +468,7 @@ private:
   };
 
   Shader shader_;
-  Shader simple_depth_shader_;
+  Shader cube_depth_shader_;
   Shader debug_depth_shader_;
 
   Mesh mesh_{
@@ -567,7 +612,7 @@ private:
   glm::vec3 orig_bgcolor_;
   glm::vec2 last_mouse_;
 
-  glm::vec3 light_position_ { -2.0f, 4.0f, -1.0f };
+  glm::vec3 light_position_ { 0.0f, 0.0f, 0.0f };
   glm::vec3 light_color_ { 1.0f, 1.0f, 1.0f };
 
   bool wireframe_ = false;
@@ -580,11 +625,13 @@ private:
   bool show_depth_map_ = false;
   bool use_pcf_ = true;
   bool use_ortho_ = true;
+  bool enable_shadows_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
 
   unsigned int depth_map_fbo_;
   unsigned int depth_map_;
+  unsigned int depth_cube_map_;
   unsigned int quad_vao_;
   unsigned int quad_vbo_;
   unsigned int cube_vao_;

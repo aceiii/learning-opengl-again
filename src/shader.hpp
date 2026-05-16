@@ -38,6 +38,7 @@ public:
   void SetIntSpan(const std::string& name, std::span<const int> span);
   void SetFloatSpan(const std::string& name, std::span<const float> span);
   void SetVec3Span(const std::string& name, std::span<const glm::vec3> span);
+  void SetMat4Span(const std::string& name, std::span<const glm::mat4> span);
 
 private:
   Shader(const std::string& vs_source, const std::string& fs_source);

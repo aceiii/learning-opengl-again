@@ -26,3 +26,4 @@
 #include "scenes/advanced_lighting_scene.hpp"
 #include "scenes/gamma_correction_scene.hpp"
 #include "scenes/shadowmap_scene.hpp"
+#include "scenes/point_shadows_scene.hpp"

@@ -22,29 +22,34 @@ uniform bool usePCF;
 uniform bool enableShadows;
 uniform bool showDepth;
 
+vec3 sampleOffsetDirections[20] = vec3[](
+   vec3(1, 1, 1), vec3( 1,-1, 1), vec3(-1,-1, 1), vec3(-1, 1, 1),
+   vec3(1, 1,-1), vec3( 1,-1,-1), vec3(-1,-1,-1), vec3(-1, 1,-1),
+   vec3(1, 1, 0), vec3( 1,-1, 0), vec3(-1,-1, 0), vec3(-1, 1, 0),
+   vec3(1, 0, 1), vec3(-1, 0, 1), vec3( 1, 0,-1), vec3(-1, 0,-1),
+   vec3(0, 1, 1), vec3( 0,-1, 1), vec3( 0,-1,-1), vec3( 0, 1,-1)
+);
+
 float ShadowCalculation(vec3 fragPos, vec3 normal, vec3 lightDir) {
     vec3 fragToLight = fragPos - lightPos;
 
+    int samples = 20;
     float shadow = 0.0;
     float currentDepth = length(fragToLight);
     float bias = 0.05;
-    float samples = 4.0;
     float offset = 0.1;
+    float viewDistance = length(viewPos - fragPos);
+    float diskRadius = (1.0 + (viewDistance / farPlane)) / 25.0;
 
     if (usePCF && !showDepth) {
-        for (float x = -offset; x < offset; x+= offset / (samples * 0.5)) {
-            for (float y = -offset; y < offset; y += offset / (samples * 0.5)) {
-                for (float z = -offset; z < offset; z += offset / (samples * 0.5)) {
-                    float closestDepth = texture(depthMap, fragToLight + vec3(x, y, z)).r;
-                    closestDepth *= farPlane;
-                    if (currentDepth - bias > closestDepth) {
-                        shadow += 1.0;
-                    }
-                }
+        for (int i = 0; i < samples; i++) {
+            float closestDepth = texture(depthMap, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
+            closestDepth *= farPlane;
+            if (currentDepth - bias > closestDepth) {
+                shadow += 1.0;
             }
         }
-
-        shadow /= (samples * samples * samples);
+        shadow /= float(samples);
     } else {
         float closestDepth = texture(depthMap, fragToLight).r;
         closestDepth *= farPlane;

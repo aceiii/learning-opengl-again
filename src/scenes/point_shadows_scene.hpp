@@ -35,7 +35,6 @@ public:
 
     shader_ = Shader::FromFiles("resources/shaders/point_shadows_scene/main.vs", "resources/shaders/point_shadows_scene/main.fs");
     cube_depth_shader_ = Shader::FromFiles("resources/shaders/point_shadows_scene/cube_depth.gs", "resources/shaders/point_shadows_scene/cube_depth.vs", "resources/shaders/point_shadows_scene/cube_depth.fs");
-    debug_depth_shader_ = Shader::FromFiles("resources/shaders/point_shadows_scene/debug.vs", "resources/shaders/point_shadows_scene/debug.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
 
@@ -204,28 +203,20 @@ public:
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cube_map_);
 
-    if (show_depth_map_) {
-      debug_depth_shader_.Use();
-      debug_depth_shader_.SetFloat("nearPlane", near_plane);
-      debug_depth_shader_.SetFloat("farPlane", far_plane);
-      debug_depth_shader_.SetInt("depthMap", 1);
-      debug_depth_shader_.SetBool("isOrtho", use_ortho_);
-      RenderQuad();
-    } else {
-      shader_.Use();
-      shader_.SetMat4("view", camera_.GetViewMatrix());
-      shader_.SetVec3("viewPos", camera_.position);
-      shader_.SetMat4("projection", projection_);
-      shader_.SetVec3("lightPos", light_position_);
-      shader_.SetVec3("lightColor", light_color_);
-      shader_.SetVec3("ambientColor", ambient_color_);
-      shader_.SetFloat("farPlane", far_plane);
-      shader_.SetFloat("nearPlane", near_plane);
-      shader_.SetInt("depthMap", 1);
-      shader_.SetBool("usePCF", use_pcf_);
-      shader_.SetBool("enableShadows", enable_shadows_);
-      RenderScene(shader_);
-    }
+    shader_.Use();
+    shader_.SetMat4("view", camera_.GetViewMatrix());
+    shader_.SetVec3("viewPos", camera_.position);
+    shader_.SetMat4("projection", projection_);
+    shader_.SetVec3("lightPos", light_position_);
+    shader_.SetVec3("lightColor", light_color_);
+    shader_.SetVec3("ambientColor", ambient_color_);
+    shader_.SetFloat("farPlane", far_plane);
+    shader_.SetFloat("nearPlane", near_plane);
+    shader_.SetInt("depthMap", 1);
+    shader_.SetBool("usePCF", use_pcf_);
+    shader_.SetBool("enableShadows", enable_shadows_);
+    shader_.SetBool("showDepth", show_depth_map_);
+    RenderScene(shader_);
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -241,7 +232,6 @@ public:
 
       if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Show shadow map", &show_depth_map_);
-        ImGui::Checkbox("Use Orthographic shadows", &use_ortho_);
         ImGui::Checkbox("Use PCF", &use_pcf_);
         ImGui::Checkbox("Shadows", &enable_shadows_);
         ImGui::Checkbox("Animate light", &animate_light_);
@@ -460,7 +450,6 @@ private:
 
   Shader shader_;
   Shader cube_depth_shader_;
-  Shader debug_depth_shader_;
 
   Mesh mesh_{
     {
@@ -616,7 +605,6 @@ private:
   bool flashlight_mode_ = true;
   bool show_depth_map_ = false;
   bool use_pcf_ = true;
-  bool use_ortho_ = true;
   bool enable_shadows_ = true;
   bool animate_light_ = true;
 

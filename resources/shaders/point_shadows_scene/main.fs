@@ -20,6 +20,7 @@ uniform float farPlane;
 
 uniform bool usePCF;
 uniform bool enableShadows;
+uniform bool showDepth;
 
 float ShadowCalculation(vec3 fragPos, vec3 normal, vec3 lightDir) {
     // float shadow = 0.0;
@@ -56,7 +57,9 @@ float ShadowCalculation(vec3 fragPos, vec3 normal, vec3 lightDir) {
     float bias = 0.05;
     float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
 
-    // FragColor = vec4(vec3(closestDepth), 1.0);
+    if (showDepth) {
+        FragColor = vec4(vec3(closestDepth / farPlane), 1.0);
+    }
 
     return shadow;
 }
@@ -93,5 +96,7 @@ void main() {
     float shadow = enableShadows ? ShadowCalculation(fs_in.FragPos, normal, lightDir) : 0.0;
     color *= ambient + (1.0 - shadow) * lighting;
 
-    FragColor= vec4(color, 1.0);
+    if (!showDepth) {
+        FragColor= vec4(color, 1.0);
+    }
 }

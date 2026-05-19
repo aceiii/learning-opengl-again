@@ -92,6 +92,7 @@ std::expected<void, std::string> Application::Init() {
   scenes_.push_back(std::make_shared<GammaCorrectionScene>());
   scenes_.push_back(std::make_shared<ShadowMapScene>());
   scenes_.push_back(std::make_shared<PointShadowsScene>());
+  scenes_.push_back(std::make_shared<NormalMapScene>());
 
   return {};
 }

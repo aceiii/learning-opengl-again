@@ -35,6 +35,7 @@ public:
     const auto window_size = ctx_->GetWindowSize();
 
     shader_ = Shader::FromFiles("resources/shaders/normal_map_scene/main.vs", "resources/shaders/normal_map_scene/main.fs");
+    cube_shader_ = Shader::FromFiles("resources/shaders/normal_map_scene/light.vs", "resources/shaders/normal_map_scene/light.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
 
@@ -63,9 +64,9 @@ public:
 
     float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
 
-    tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.x * edge2.x);
-    tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.x * edge2.y);
-    tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.x * edge2.z);
+    tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+    tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+    tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
 
     bitangent1.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
     bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
@@ -166,6 +167,19 @@ public:
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, texture_normal_.id);
     RenderQuad();
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, light_position_);
+    model = glm::scale(model, glm::vec3(0.05f));
+
+    cube_shader_.Use();
+    cube_shader_.SetMat4("model", model);
+    cube_shader_.SetMat4("view", camera_.GetViewMatrix());
+    cube_shader_.SetMat4("projection", projection_);
+    cube_shader_.SetVec3("viewPos", camera_.position);
+    cube_shader_.SetVec3("lightPos", light_position_);
+    cube_shader_.SetVec3("lightColor", light_color_);
+    cube_mesh_.Draw(cube_shader_);
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -329,59 +343,6 @@ private:
   inline static const float kMinPitch = -89.0f;
   inline static const float kMaxPitch = 89.0f;
 
-  /*
-  inline static const std::array kQuadVertices = {
-    -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-    -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-     1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-     1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-  };
-
-  inline static const std::array kCubeVertices = {
-    -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-     1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-     1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right
-     1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-    -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-    -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
-    // front face
-    -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-     1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
-     1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-     1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-    -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
-    -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-    // left face
-    -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-    -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
-    -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-    -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-    -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-    -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-    // right face
-     1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-     1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-     1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right
-     1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-     1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-     1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left
-    // bottom face
-    -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-     1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
-     1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-     1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-    -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-    -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-    // top face
-    -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-     1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-     1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right
-     1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-    -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-    -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left
-  };
-  */
-
   inline static const std::array kLightPositions = {
     glm::vec3(-3.0f, 0.0f, 0.0f),
     glm::vec3(-1.0f, 0.0f, 0.0f),
@@ -397,7 +358,7 @@ private:
   };
 
   Shader shader_;
-  Shader cube_depth_shader_;
+  Shader cube_shader_;
 
   Mesh mesh_{
     {
@@ -467,10 +428,6 @@ private:
       { {  1.0f,  1.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }, { 1.0f, 0.0f } },
       { { -1.0f,  1.0f, -1.0f }, {  0.0f,  1.0f,  0.0f }, { 0.0f, 1.0f } },
       { { -1.0f,  1.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }, { 0.0f, 0.0f } },
-    },
-    {},
-    {
-      Texture::Load("diffuse", "resources/textures/wood.png"),
     }
   };
 
@@ -545,7 +502,7 @@ private:
 
   glm::vec3 light_position_ { 0.0f, 0.0f, 0.0f };
   glm::vec3 light_color_ { 1.0f, 1.0f, 1.0f };
-  glm::vec3 ambient_color_ { 0.15f, 0.15f, 0.15f };
+  glm::vec3 ambient_color_ { 0.1f, 0.1f, 0.1f };
 
   bool wireframe_ = false;
   bool auto_rotate_camera_ = false;

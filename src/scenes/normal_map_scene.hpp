@@ -151,6 +151,11 @@ public:
   void Render() override {
     glPolygonMode(GL_FRONT_AND_BACK,  wireframe_ ? GL_LINE : GL_FILL);
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_diffuse_.id);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture_normal_.id);
+
     glm::mat4 model(1.0f);
     model = glm::rotate(model, glm::radians(ctx_->GetTime() * -10.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
 
@@ -162,10 +167,8 @@ public:
     shader_.SetVec3("lightPos", light_position_);
     shader_.SetVec3("lightColor", light_color_);
     shader_.SetVec3("ambientColor", ambient_color_);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture_diffuse_.id);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, texture_normal_.id);
+    shader_.SetInt("texture_diffuse", 0);
+    shader_.SetInt("texture_normal", 1);
     RenderQuad();
 
     model = glm::mat4(1.0f);

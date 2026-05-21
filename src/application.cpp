@@ -93,6 +93,7 @@ std::expected<void, std::string> Application::Init() {
   scenes_.push_back(std::make_shared<ShadowMapScene>());
   scenes_.push_back(std::make_shared<PointShadowsScene>());
   scenes_.push_back(std::make_shared<NormalMapScene>());
+  scenes_.push_back(std::make_shared<ParallaxMapScene>());
 
   return {};
 }

@@ -28,3 +28,4 @@
 #include "scenes/shadowmap_scene.hpp"
 #include "scenes/point_shadows_scene.hpp"
 #include "scenes/normal_map_scene.hpp"
+#include "scenes/parallax_map_scene.hpp"

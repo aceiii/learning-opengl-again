@@ -208,7 +208,7 @@ public:
       if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Animate light", &animate_light_);
         ImGui::Checkbox("Animate quad", &animate_quad_);
-        ImGui::DragFloat("Height scale", &height_scale_, 0.01f, 0.0f, 10.0f);
+        ImGui::DragFloat("Height scale", &height_scale_, 0.01f, 0.0f, 1.0f);
       }
 
       if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {

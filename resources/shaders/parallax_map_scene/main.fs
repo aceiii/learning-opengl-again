@@ -12,20 +12,24 @@ in VS_OUT {
 
 uniform sampler2D texture_diffuse;
 uniform sampler2D texture_normal;
+uniform sampler2D texture_depth;
 
 uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform vec3 ambientColor;
-// uniform vec3 viewPos;
 
+uniform float heightScale;
 
-vec3 BlinnPhong(vec3 normal, vec3 fragPos, vec3 lightPos, vec3 lightDir, vec3 lightColor) {
+vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
+    float height = texture(texture_depth, texCoords).r;
+    vec2 p = viewDir.xy / viewDir.z * (height * heightScale);
+    return texCoords - p;
+}
+
+vec3 BlinnPhong(vec3 normal, vec3 fragPos, vec3 viewDir, vec3 lightPos, vec3 lightDir, vec3 lightColor) {
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 diffuse = diff * lightColor;
-
-    vec3 viewDir = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
-
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
     vec3 specular = spec * vec3(0.2);
@@ -40,12 +44,14 @@ vec3 BlinnPhong(vec3 normal, vec3 fragPos, vec3 lightPos, vec3 lightDir, vec3 li
 }
 
 void main() {
-    vec3 color = texture(texture_diffuse, fs_in.TexCoords).rgb;
-    vec3 normal = normalize(texture(texture_normal, fs_in.TexCoords).rgb * 2.0 - 1.0);
+    vec3 viewDir = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
+    vec2 texCoords = ParallaxMapping(fs_in.TexCoords, viewDir);
+    vec3 color = texture(texture_diffuse, texCoords).rgb;
+    vec3 normal = normalize(texture(texture_normal, texCoords).rgb * 2.0 - 1.0);
     vec3 ambient = ambientColor;
     vec3 lightDir = normalize(fs_in.TangentLightPos - fs_in.TangentFragPos);
 
-    vec3 lighting = BlinnPhong(normal, fs_in.FragPos, lightPos, lightDir, lightColor);
+    vec3 lighting = BlinnPhong(normal, fs_in.FragPos, viewDir, lightPos, lightDir, lightColor);
     color *= ambient + lighting;
 
     FragColor = vec4(color, 1.0);

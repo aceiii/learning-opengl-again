@@ -173,7 +173,7 @@ public:
     shader_.SetFloat("heightScale", height_scale_);
     shader_.SetInt("texture_diffuse", 0);
     shader_.SetInt("texture_normal", 1);
-    shader_.SetInt("texture_normal", 2);
+    shader_.SetInt("texture_depth", 2);
     RenderQuad();
 
     model = glm::mat4(1.0f);

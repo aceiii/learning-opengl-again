@@ -25,11 +25,9 @@ void main() {
     vs_out.FragPos = vec3(model * vec4(aPos, 1.0));
     vs_out.TexCoords = aTexCoords;
 
-    mat3 normalMatrix = transpose(inverse(mat3(model)));
-    vec3 T = normalize(normalMatrix * aTangent);
-    vec3 N = normalize(normalMatrix * aNormal);
-    T = normalize(T - dot(T, N) * N);
-    vec3 B = cross(N, T);
+    vec3 T = normalize(mat3(model) * aTangent);
+    vec3 N = normalize(mat3(model) * aNormal);
+    vec3 B = normalize(mat3(model) * aBitangent);
 
     mat3 TBN = transpose(mat3(T, B, N));
     vs_out.TangentLightPos = TBN * lightPos;

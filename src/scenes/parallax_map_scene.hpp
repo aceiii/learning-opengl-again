@@ -35,8 +35,8 @@ public:
 
     const auto window_size = ctx_->GetWindowSize();
 
-    shader_ = Shader::FromFiles("resources/shaders/normal_map_scene/main.vs", "resources/shaders/normal_map_scene/main.fs");
-    cube_shader_ = Shader::FromFiles("resources/shaders/normal_map_scene/light.vs", "resources/shaders/normal_map_scene/light.fs");
+    shader_ = Shader::FromFiles("resources/shaders/parallax_map_scene/main.vs", "resources/shaders/parallax_map_scene/main.fs");
+    cube_shader_ = Shader::FromFiles("resources/shaders/parallax_map_scene/light.vs", "resources/shaders/parallax_map_scene/light.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
 

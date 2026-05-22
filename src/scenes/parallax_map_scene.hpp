@@ -141,6 +141,10 @@ public:
     if (animate_light_) {
       light_position_.z = static_cast<float>(sin(ctx_->GetTime() * 0.5) * 3.0);
     }
+
+    if (animate_quad_) {
+      quad_rotation_ += ctx_->GetFrameTime();
+    }
   }
 
   void RenderQuad() {
@@ -160,7 +164,7 @@ public:
     glBindTexture(GL_TEXTURE_2D, texture_depth_.id);
 
     glm::mat4 model(1.0f);
-    model = glm::rotate(model, glm::radians(ctx_->GetTime() * -10.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
+    model = glm::rotate(model, glm::radians(quad_rotation_ * -10.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
 
     shader_.Use();
     shader_.SetMat4("model", model);
@@ -203,6 +207,7 @@ public:
 
       if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Animate light", &animate_light_);
+        ImGui::Checkbox("Animate quad", &animate_quad_);
         ImGui::DragFloat("Height scale", &height_scale_, 0.01f, 0.0f, 10.0f);
       }
 
@@ -522,9 +527,11 @@ private:
   bool hide_interface_ = true;
   bool flashlight_mode_ = true;
   bool animate_light_ = true;
+  bool animate_quad_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float height_scale_ = 0.1f;
+  float quad_rotation_ = 0.0f;
 
   unsigned int quad_vao_;
   unsigned int quad_vbo_;

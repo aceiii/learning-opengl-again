@@ -46,6 +46,10 @@ vec3 BlinnPhong(vec3 normal, vec3 fragPos, vec3 viewDir, vec3 lightPos, vec3 lig
 void main() {
     vec3 viewDir = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
     vec2 texCoords = ParallaxMapping(fs_in.TexCoords, viewDir);
+    if (texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0) {
+        discard;
+    }
+
     vec3 color = texture(texture_diffuse, texCoords).rgb;
     vec3 normal = normalize(texture(texture_normal, texCoords).rgb * 2.0 - 1.0);
     vec3 ambient = ambientColor;

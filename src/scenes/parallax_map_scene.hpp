@@ -156,12 +156,13 @@ public:
   void Render() override {
     glPolygonMode(GL_FRONT_AND_BACK,  wireframe_ ? GL_LINE : GL_FILL);
 
+    auto& texture_group = kTextureGroups[selected_texture_idx_];
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture_diffuse_.id);
+    glBindTexture(GL_TEXTURE_2D,  texture_group.diffuse.id);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, texture_normal_.id);
+    glBindTexture(GL_TEXTURE_2D, texture_group.normal.id);
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, texture_depth_.id);
+    glBindTexture(GL_TEXTURE_2D, texture_group.depth.id);
 
     glm::mat4 model(1.0f);
     model = glm::rotate(model, glm::radians(quad_rotation_ * -10.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
@@ -209,6 +210,14 @@ public:
         ImGui::Checkbox("Animate light", &animate_light_);
         ImGui::Checkbox("Animate quad", &animate_quad_);
         ImGui::DragFloat("Height scale", &height_scale_, 0.01f, 0.0f, 1.0f);
+        // if (ImGui::BeginCombo("Textures", kTextureGroups[selected_texture_idx_].name.c_str())) {
+        //   for (int idx = 0; idx < kTextureGroups.size(); idx++) {
+        //     if (ImGui::Selectable(kTextureGroups[idx].name.c_str(), idx == selected_texture_idx_)) {
+        //       selected_texture_idx_ = idx;
+        //     }
+        //   }
+        //   ImGui::EndCombo();
+        // }
       }
 
       if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -350,6 +359,13 @@ private:
     std::array<float, 9> kernel;
   };
 
+  struct TextureGroup {
+    std::string name;
+    Texture diffuse;
+    Texture normal;
+    Texture depth;
+  };
+
   IAppContext* ctx_ = nullptr;
 
   inline static const float kDefaultYaw = -90.0f;
@@ -357,19 +373,38 @@ private:
   inline static const float kMinPitch = -89.0f;
   inline static const float kMaxPitch = 89.0f;
 
-  inline static const std::array kLightPositions = {
+  inline static const std::array kLightPositions{
     glm::vec3(-3.0f, 0.0f, 0.0f),
     glm::vec3(-1.0f, 0.0f, 0.0f),
     glm::vec3( 1.0f, 0.0f, 0.0f),
     glm::vec3( 3.0f, 0.0f, 0.0f),
   };
 
-  inline static const std::array kLightColors = {
+  inline static const std::array kLightColors{
     glm::vec3(0.25f),
     glm::vec3(0.50f),
     glm::vec3(0.75f),
     glm::vec3(1.00f),
   };
+
+  inline static const std::array kTextureGroups{
+    TextureGroup{
+      .name = "Bricks",
+      .diffuse = Texture::Load("diffuse", "resources/textures/bricks2.jpg"),
+      .normal = Texture::Load("normal", "resources/textures/bricks2_normal.jpg"),
+      .depth = Texture::Load("depth", "resources/textures/bricks2_disp.jpg"),
+    },
+    TextureGroup{
+      .name = "Toy Box",
+      .diffuse = Texture::Load("diffuse", "resources/textures/wood.png"),
+      .normal = Texture::Load("normal", "resources/textures/toy_box_normal.png"),
+      .depth = Texture::Load("depth", "resources/textures/toy_box_disp.png"),
+    },
+  };
+
+  // Texture texture_diffuse_ = Texture::Load("diffuse", "resources/textures/bricks2.jpg");
+  // Texture texture_normal_ = Texture::Load("normal", "resources/textures/bricks2_normal.jpg");
+  // Texture texture_depth_ = Texture::Load("normal", "resources/textures/bricks2_disp.jpg");
 
   Shader shader_;
   Shader cube_shader_;
@@ -507,10 +542,6 @@ private:
     },
   };
 
-  Texture texture_diffuse_ = Texture::Load("diffuse", "resources/textures/bricks2.jpg");
-  Texture texture_normal_ = Texture::Load("normal", "resources/textures/bricks2_normal.jpg");
-  Texture texture_depth_ = Texture::Load("normal", "resources/textures/bricks2_disp.jpg");
-
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;
   glm::vec2 last_mouse_;
@@ -535,4 +566,6 @@ private:
 
   unsigned int quad_vao_;
   unsigned int quad_vbo_;
+
+  int selected_texture_idx_ = 0;
 };

@@ -20,10 +20,31 @@ uniform vec3 ambientColor;
 
 uniform float heightScale;
 
+uniform bool useSteepMapping;
+uniform int numLayers;
+
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
-    float height = texture(texture_depth, texCoords).r;
-    vec2 p = viewDir.xy / viewDir.z * (height * heightScale);
-    return texCoords - p;
+    if (useSteepMapping) {
+        float layerDepth = 1.0 / numLayers;
+        float currentLayerDepth = 0.0;
+        vec2 p = viewDir.xy * heightScale;
+        vec2 deltaTexCoords = p / numLayers;
+
+        vec2 currentTexCoords = texCoords;
+        float currentDepthMapValue = texture(texture_depth, currentTexCoords).r;
+
+        while (currentLayerDepth < currentDepthMapValue) {
+            currentTexCoords -= deltaTexCoords;
+            currentDepthMapValue = texture(texture_depth, currentTexCoords).r;
+            currentLayerDepth += layerDepth;
+        }
+
+        return currentTexCoords;
+    } else {
+        float height = texture(texture_depth, texCoords).r;
+        vec2 p = viewDir.xy / viewDir.z * (height * heightScale);
+        return texCoords - p;
+    }
 }
 
 vec3 BlinnPhong(vec3 normal, vec3 fragPos, vec3 viewDir, vec3 lightPos, vec3 lightDir, vec3 lightColor) {

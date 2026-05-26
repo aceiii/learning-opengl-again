@@ -179,6 +179,8 @@ public:
     shader_.SetInt("texture_diffuse", 0);
     shader_.SetInt("texture_normal", 1);
     shader_.SetInt("texture_depth", 2);
+    shader_.SetBool("useSteepMapping", use_steep_mapping_);
+    shader_.SetInt("numLayers", num_layers_);
     RenderQuad();
 
     model = glm::mat4(1.0f);
@@ -210,14 +212,18 @@ public:
         ImGui::Checkbox("Animate light", &animate_light_);
         ImGui::Checkbox("Animate quad", &animate_quad_);
         ImGui::DragFloat("Height scale", &height_scale_, 0.01f, 0.0f, 1.0f);
-        // if (ImGui::BeginCombo("Textures", kTextureGroups[selected_texture_idx_].name.c_str())) {
-        //   for (int idx = 0; idx < kTextureGroups.size(); idx++) {
-        //     if (ImGui::Selectable(kTextureGroups[idx].name.c_str(), idx == selected_texture_idx_)) {
-        //       selected_texture_idx_ = idx;
-        //     }
-        //   }
-        //   ImGui::EndCombo();
-        // }
+        ImGui::NewLine();
+        ImGui::Checkbox("Use steep parallax mapping", &use_steep_mapping_);
+        ImGui::DragInt("Layer Count", &num_layers_, 1, 1, 32);
+        ImGui::NewLine();
+        if (ImGui::BeginCombo("Textures", kTextureGroups[selected_texture_idx_].name.c_str())) {
+          for (int idx = 0; idx < kTextureGroups.size(); idx++) {
+            if (ImGui::Selectable(kTextureGroups[idx].name.c_str(), idx == selected_texture_idx_)) {
+              selected_texture_idx_ = idx;
+            }
+          }
+          ImGui::EndCombo();
+        }
       }
 
       if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -555,6 +561,7 @@ private:
   bool flashlight_mode_ = true;
   bool animate_light_ = true;
   bool animate_quad_ = true;
+  bool use_steep_mapping_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float height_scale_ = 0.1f;
@@ -564,4 +571,5 @@ private:
   unsigned int quad_vbo_;
 
   int selected_texture_idx_ = 0;
+  int num_layers_ = 10;
 };

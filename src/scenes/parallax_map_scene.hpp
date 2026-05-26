@@ -387,7 +387,7 @@ private:
     glm::vec3(1.00f),
   };
 
-  inline static const std::array kTextureGroups{
+  const std::array<TextureGroup, 2> kTextureGroups{
     TextureGroup{
       .name = "Bricks",
       .diffuse = Texture::Load("diffuse", "resources/textures/bricks2.jpg"),
@@ -401,10 +401,6 @@ private:
       .depth = Texture::Load("depth", "resources/textures/toy_box_disp.png"),
     },
   };
-
-  // Texture texture_diffuse_ = Texture::Load("diffuse", "resources/textures/bricks2.jpg");
-  // Texture texture_normal_ = Texture::Load("normal", "resources/textures/bricks2_normal.jpg");
-  // Texture texture_depth_ = Texture::Load("normal", "resources/textures/bricks2_disp.jpg");
 
   Shader shader_;
   Shader cube_shader_;

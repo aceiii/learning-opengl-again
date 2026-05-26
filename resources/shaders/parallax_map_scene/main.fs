@@ -21,14 +21,25 @@ uniform vec3 ambientColor;
 uniform float heightScale;
 
 uniform bool useSteepMapping;
+uniform bool useAdaptiveLayers;
 uniform int numLayers;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
     if (useSteepMapping) {
-        float layerDepth = 1.0 / numLayers;
+        float fNumLayers; //= float(numLayers);
+
+        if (useAdaptiveLayers) {
+            const float minLayers = 8;
+            const float maxLayers = 32;
+            fNumLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));
+        } else {
+            fNumLayers = float(numLayers);
+        }
+
+        float layerDepth = 1.0 / fNumLayers;
         float currentLayerDepth = 0.0;
         vec2 p = viewDir.xy * heightScale;
-        vec2 deltaTexCoords = p / numLayers;
+        vec2 deltaTexCoords = p / fNumLayers;
 
         vec2 currentTexCoords = texCoords;
         float currentDepthMapValue = texture(texture_depth, currentTexCoords).r;

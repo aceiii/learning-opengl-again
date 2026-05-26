@@ -181,6 +181,7 @@ public:
     shader_.SetInt("texture_depth", 2);
     shader_.SetBool("useSteepMapping", use_steep_mapping_);
     shader_.SetBool("useAdaptiveLayers", use_adaptive_layers_);
+    shader_.SetBool("useOcclusionMapping", use_occlusion_mapping_);
     shader_.SetInt("numLayers", num_layers_);
     RenderQuad();
 
@@ -215,6 +216,7 @@ public:
         ImGui::DragFloat("Height scale", &height_scale_, 0.01f, 0.0f, 1.0f);
         ImGui::NewLine();
         ImGui::Checkbox("Use steep parallax mapping", &use_steep_mapping_);
+        ImGui::Checkbox("Use occlusion parallax mapping", &use_occlusion_mapping_);
         ImGui::Checkbox("Use adaptive layer count", &use_adaptive_layers_);
         if (!use_adaptive_layers_) {
           ImGui::DragInt("Layer Count", &num_layers_, 1, 1, 32);
@@ -567,6 +569,7 @@ private:
   bool animate_quad_ = true;
   bool use_steep_mapping_ = false;
   bool use_adaptive_layers_ = false;
+  bool use_occlusion_mapping_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float height_scale_ = 0.1f;

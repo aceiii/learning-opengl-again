@@ -22,6 +22,7 @@ uniform float heightScale;
 
 uniform bool useSteepMapping;
 uniform bool useAdaptiveLayers;
+uniform bool useOcclusionMapping;
 uniform int numLayers;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
@@ -50,7 +51,20 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
             currentLayerDepth += layerDepth;
         }
 
-        return currentTexCoords;
+        if (useOcclusionMapping) {
+            vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+
+            float afterDepth = currentDepthMapValue - currentLayerDepth;
+            float beforeDepth = texture(texture_depth, prevTexCoords).r - currentLayerDepth + layerDepth;
+            float weight = afterDepth / (afterDepth - beforeDepth);
+
+            vec2 finalTextCoords = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+
+            return finalTextCoords;
+        } else {
+            return currentTexCoords;
+        }
+
     } else {
         float height = texture(texture_depth, texCoords).r;
         vec2 p = viewDir.xy / viewDir.z * (height * heightScale);

@@ -27,7 +27,7 @@ uniform int numLayers;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
     if (useSteepMapping) {
-        float fNumLayers; //= float(numLayers);
+        float fNumLayers;
 
         if (useAdaptiveLayers) {
             const float minLayers = 8;

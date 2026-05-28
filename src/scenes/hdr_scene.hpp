@@ -139,6 +139,8 @@ public:
     glBindTexture(GL_TEXTURE_2D, hdr_color_buffer_texture_);
     hdr_shader_.Use();
     hdr_shader_.SetInt("hdrBuffer", 0);
+    hdr_shader_.SetFloat("exposure", exposure_);
+    hdr_shader_.SetBool("enableHDR", enable_hdr_);
     RenderQuad();
   }
 
@@ -152,6 +154,8 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
+      ImGui::Checkbox("Enable HDR", &enable_hdr_);
+      ImGui::DragFloat("Exposure", &exposure_, 0.01f, 0.0f, 100.f);
 
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -374,8 +378,10 @@ private:
   bool capture_hold_ = false;
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
+  bool enable_hdr_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
+  float exposure_ = 1.0f;
 
   unsigned int quad_vao_;
   unsigned int quad_vbo_;

@@ -33,11 +33,10 @@ vec3 BlinnPhong(vec3 color, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 lightP
     diffuse *= attenuation;
     specular *= attenuation;
 
-    // return diffuse + specular;
-    return diffuse;
+    return diffuse + specular;
 }
 
-void main2() {
+void main() {
     vec3 viewDir = normalize(viewPos - fs_in.FragPos);
     vec3 color = texture(texture_diffuse, fs_in.TexCoords).rgb;
     vec3 ambient = ambientColor;
@@ -47,30 +46,6 @@ void main2() {
         Light light = lights[i];
         vec3 lightDir = normalize(light.Position - fs_in.FragPos);
         lighting += BlinnPhong(color, fs_in.Normal, fs_in.FragPos, viewDir, light.Position, lightDir, light.Color);
-    }
-    FragColor = vec4(ambient + lighting, 1.0);
-}
-
-void main()
-{
-    vec3 color = texture(texture_diffuse, fs_in.TexCoords).rgb;
-    vec3 normal = normalize(fs_in.Normal);
-    // ambient
-    vec3 ambient = 0.0 * color;
-    // lighting
-    vec3 lighting = vec3(0.0);
-    for(int i = 0; i < 16; i++)
-    {
-        // diffuse
-        vec3 lightDir = normalize(lights[i].Position - fs_in.FragPos);
-        float diff = max(dot(lightDir, normal), 0.0);
-        vec3 diffuse = lights[i].Color * diff * color;
-        vec3 result = diffuse;
-        // attenuation (use quadratic as we have gamma correction)
-        float distance = length(fs_in.FragPos - lights[i].Position);
-        result *= 1.0 / distance; //(distance * distance);
-        lighting += result;
-
     }
     FragColor = vec4(ambient + lighting, 1.0);
 }

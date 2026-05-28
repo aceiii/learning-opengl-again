@@ -9,5 +9,6 @@ uniform sampler2D hdrBuffer;
 void main() {
     const float gamma = 2.2;
     vec3 hdrColor = texture(hdrBuffer, TexCoords).rgb;
-    FragColor = vec4(pow(hdrColor, vec3(1.0 / gamma)), 1.0);
+    vec3 result = pow(hdrColor, vec3(1.0 / gamma));
+    FragColor = vec4(result, 1.0);
 }

@@ -31,7 +31,7 @@ public:
     ctx_ = ctx;
 
     orig_bgcolor_ = ctx_->GetBackgroundColor();
-    ctx_->SetBackgroundColor(environment_.bg_color);
+    ctx_->SetBackgroundColor(bg_color_);
 
     const auto window_size = ctx_->GetWindowSize();
 
@@ -39,9 +39,9 @@ public:
     hdr_shader_ = Shader::FromFiles("resources/shaders/hdr_scene/hdr.vs", "resources/shaders/hdr_scene/hdr.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
-
-    environment_.spot_light.position = camera_.position;
-    environment_.spot_light.direction = camera_.front;
+    camera_.yaw = -255.0f;
+    camera_.pitch = 10.0f;
+    camera_.UpdateCameraVectors();
 
     std::array quad_vertices{
       -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
@@ -62,7 +62,6 @@ public:
     glBindVertexArray(0);
 
     glGenFramebuffers(1, &hdr_fbo_);
-
 
     auto [window_width, window_height] = ctx_->GetWindowSize();
 
@@ -136,9 +135,10 @@ public:
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    hdr_shader_.Use();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, hdr_color_buffer_texture_);
+    hdr_shader_.Use();
+    hdr_shader_.SetInt("hdrBuffer", 0);
     RenderQuad();
   }
 
@@ -363,81 +363,19 @@ private:
   };
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 5.0f)};
-  Environment environment_{
-    .name = "Default",
-    .bg_color = glm::vec3(0.0f, 0.0f, 0.0f),
-    .directional_light = {
-      .direction = glm::vec3(-0.2f, -1.0f, -0.3f),
-      .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
-      .diffuse = glm::vec3(0.4f, 0.4f, 0.4f),
-      .specular = glm::vec3(0.5f, 0.5f, 0.5f),
-    },
-    .spot_light = {
-      .position = glm::vec3(0.0f, 0.0f, 0.0f),
-      .direction = glm::vec3(0.0f, 0.0f, 0.0f),
-      .ambient = glm::vec3(0.0f, 0.0f, 0.0f),
-      .diffuse = glm::vec3(1.0f, 1.0f, 1.0f),
-      .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-      .constant = 1.0f,
-      .linear = 0.09f,
-      .quadratic = 0.032f,
-      .cutOff = glm::cos(glm::radians(12.5f)),
-      .outerCutOff = glm::cos(glm::radians(15.0f)),
-    },
-    .point_lights = {
-      PointLight{
-        .position = glm::vec3(0.7f,  0.2f,  2.0f),
-        .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
-        .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
-        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-        .constant = 1.0f,
-        .linear = 0.09f,
-        .quadratic = 0.032f,
-      },
-      PointLight{
-        .position = glm::vec3(2.3f, -3.3f, -4.0f),
-        .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
-        .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
-        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-        .constant = 1.0f,
-        .linear = 0.09f,
-        .quadratic = 0.032f,
-      },
-      PointLight{
-        .position = glm::vec3(-4.0f,  2.0f, -12.0f),
-        .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
-        .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
-        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-        .constant = 1.0f,
-        .linear = 0.09f,
-        .quadratic = 0.032f,
-      },
-      PointLight{
-        .position = glm::vec3(0.0f,  0.0f, -3.0f),
-        .ambient = glm::vec3(0.05f, 0.05f, 0.05f),
-        .diffuse = glm::vec3(0.8f, 0.8f, 0.8f),
-        .specular = glm::vec3(1.0f, 1.0f, 1.0f),
-        .constant = 1.0f,
-        .linear = 0.09f,
-        .quadratic = 0.032f,
-      },
-    },
-  };
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;
+  glm::vec3 bg_color_{0.0f, 0.0f, 0.0f};
   glm::vec2 last_mouse_;
 
   bool wireframe_ = false;
-  bool auto_rotate_camera_ = false;
   bool capture_mouse_ = false;
   bool capture_hold_ = false;
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
-  float height_scale_ = 0.1f;
-  float quad_rotation_ = 0.0f;
 
   unsigned int quad_vao_;
   unsigned int quad_vbo_;

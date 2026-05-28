@@ -30,3 +30,4 @@
 #include "scenes/normal_map_scene.hpp"
 #include "scenes/parallax_map_scene.hpp"
 #include "scenes/hdr_scene.hpp"
+#include "scenes/bloom_scene.hpp"

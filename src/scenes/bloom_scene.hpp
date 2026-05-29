@@ -37,9 +37,11 @@ public:
 
     shader_ = Shader::FromFiles("resources/shaders/bloom_scene/main.vs", "resources/shaders/bloom_scene/main.fs");
     hdr_shader_ = Shader::FromFiles("resources/shaders/bloom_scene/hdr.vs", "resources/shaders/bloom_scene/hdr.fs");
+    light_shader_ = Shader::FromFiles("resources/shaders/bloom_scene/light.vs", "resources/shaders/bloom_scene/light.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
-    camera_.yaw = -255.0f;
+    camera_.position = glm::vec3(9.5f, 1.0f, 6.0f);
+    camera_.yaw = -140.0f;
     camera_.pitch = 10.0f;
     camera_.UpdateCameraVectors();
 
@@ -109,22 +111,76 @@ public:
     glPolygonMode(GL_FRONT_AND_BACK,  wireframe_ ? GL_LINE : GL_FILL);
 
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 25.0f));
-    model = glm::scale(model, glm::vec3(2.5f, 2.5f, 27.5f));
 
     shader_.Use();
-    shader_.SetMat4("model", model);
     shader_.SetMat4("view", camera_.GetViewMatrix());
     shader_.SetMat4("projection", projection_);
     shader_.SetVec3("viewPos", camera_.position);
-    shader_.SetBool("inverseNormals", true);
 
     for (unsigned int i = 0; i < kLightPositions.size(); i++) {
       shader_.SetVec3("lights[" + std::to_string(i) + "].Position", kLightPositions[i]);
       shader_.SetVec3("lights[" + std::to_string(i) + "].Color", kLightColors[i]);
     }
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_wood_.id);
+
+    model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(12.5f, 0.5f, 12.5f));
+    shader_.SetMat4("model", model);
     cube_mesh_.Draw(shader_);
+
+    // glBindTexture(GL_TEXTURE_2D, texture_container_.id);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0f));
+    model = glm::scale(model, glm::vec3(0.5f));
+    shader_.SetMat4("model", model);
+    cube_mesh_.Draw(shader_);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0f));
+    model = glm::scale(model, glm::vec3(0.5f));
+    shader_.SetMat4("model", model);
+    cube_mesh_.Draw(shader_);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-1.0f, -1.0f, 2.0f));
+    model = glm::rotate(model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
+    shader_.SetMat4("model", model);
+    cube_mesh_.Draw(shader_);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 2.7f, 4.0f));
+    model = glm::rotate(model, glm::radians(23.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
+    model = glm::scale(model, glm::vec3(1.25f));
+    shader_.SetMat4("model", model);
+    cube_mesh_.Draw(shader_);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-2.0f, 1.0f, -3.0f));
+    model = glm::rotate(model, glm::radians(124.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
+    shader_.SetMat4("model", model);
+    cube_mesh_.Draw(shader_);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-3.0f, 0.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(0.5f));
+    shader_.SetMat4("model", model);
+    cube_mesh_.Draw(shader_);
+
+    light_shader_.Use();
+    light_shader_.SetMat4("view", camera_.GetViewMatrix());
+    light_shader_.SetMat4("projection", projection_);
+    light_shader_.SetVec3("viewPos", camera_.position);
+    for (auto idx = 0; idx < kLightPositions.size(); idx++) {
+      model = glm::mat4(1.0f);
+      model = glm::translate(model, kLightPositions[idx]);
+      model = glm::scale(model, glm::vec3(0.25f));
+      light_shader_.SetMat4("model", model);
+      light_shader_.SetVec3("lightColor", kLightColors[idx]);
+      cube_mesh_.Draw(light_shader_);
+    }
   }
 
   void Render() override {
@@ -305,21 +361,22 @@ private:
   inline static const float kMaxPitch = 89.0f;
 
   inline static const std::array kLightPositions{
-    glm::vec3( 0.0f, 0.0f, 49.5f),
-    glm::vec3(-1.4f,-1.9f, 9.0f),
-    glm::vec3( 0.0f,-1.8f, 4.0f),
-    glm::vec3( 0.8f,-1.7f, 6.0f),
+    glm::vec3( 0.0f, 0.5f,  1.5f),
+    glm::vec3(-4.0f, 0.5f, -3.0f),
+    glm::vec3( 3.0f, 0.5f,  1.0f),
+    glm::vec3(-0.8f, 2.4f,-1.0f),
   };
 
   inline static const std::array kLightColors{
-    glm::vec3(200.0f, 200.0f, 200.0f),
-    glm::vec3(0.1f, 0.0f, 0.0f),
-    glm::vec3(0.0f, 0.0f, 0.2f),
-    glm::vec3(0.0f, 0.1f, 0.0f),
+    glm::vec3(5.0f, 5.0f, 5.0f),
+    glm::vec3(10.0f, 0.0f, 0.0f),
+    glm::vec3(0.0f, 0.0f, 15.0f),
+    glm::vec3(0.0f, 5.0f, 0.0f),
   };
 
   Shader shader_;
   Shader hdr_shader_;
+  Shader light_shader_;
 
   Mesh cube_mesh_{
     {
@@ -359,12 +416,11 @@ private:
       { {  1.0f,  1.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }, { 1.0f, 0.0f } },
       { { -1.0f,  1.0f, -1.0f }, {  0.0f,  1.0f,  0.0f }, { 0.0f, 1.0f } },
       { { -1.0f,  1.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }, { 0.0f, 0.0f } },
-    },
-    {},
-    {
-      Texture::Load("diffuse", "resources/textures/wood.png", { .linear = true }),
     }
   };
+
+  Texture texture_wood_ = Texture::Load("diffuse", "resources/textures/wood.png");
+  Texture texture_container_ = Texture::Load("diffuse", "resources/textures/container.jpg");
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 5.0f)};
 

@@ -63,22 +63,30 @@ public:
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glBindVertexArray(0);
 
-    glGenFramebuffers(1, &hdr_fbo_);
-
     auto [window_width, window_height] = ctx_->GetWindowSize();
 
-    glGenTextures(1, &hdr_color_buffer_texture_);
-    glBindTexture(GL_TEXTURE_2D, hdr_color_buffer_texture_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_width, window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glGenFramebuffers(1, &hdr_fbo_);
+    glBindFramebuffer(GL_FRAMEBUFFER, hdr_fbo_);
+
+    glGenTextures(2, color_buffers_.data());
+    for (auto idx = 0; idx < color_buffers_.size(); idx++) {
+      glBindTexture(GL_TEXTURE_2D, color_buffers_[idx]);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_width, window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + idx, GL_TEXTURE_2D, color_buffers_[idx], 0);
+    }
 
     glGenRenderbuffers(1, &depth_rbo_);
     glBindRenderbuffer(GL_RENDERBUFFER, depth_rbo_);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, window_width, window_height);
-    glBindFramebuffer(GL_FRAMEBUFFER, hdr_fbo_);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdr_color_buffer_texture_, 0);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rbo_);
+
+    std::array<GLenum, 2> attachments{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments.data());
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glEnable(GL_DEPTH_TEST);
@@ -192,7 +200,7 @@ public:
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, hdr_color_buffer_texture_);
+    glBindTexture(GL_TEXTURE_2D, color_buffers_[0]);
     hdr_shader_.Use();
     hdr_shader_.SetInt("hdrBuffer", 0);
     hdr_shader_.SetFloat("exposure", exposure_);
@@ -419,8 +427,8 @@ private:
     }
   };
 
-  Texture texture_wood_ = Texture::Load("diffuse", "resources/textures/wood.png");
-  Texture texture_container_ = Texture::Load("diffuse", "resources/textures/container.jpg");
+  Texture texture_wood_ = Texture::Load("diffuse", "resources/textures/wood.png", { .linear = true });
+  Texture texture_container_ = Texture::Load("diffuse", "resources/textures/container.jpg", { .linear = true });
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 5.0f)};
 
@@ -442,6 +450,6 @@ private:
   unsigned int quad_vao_;
   unsigned int quad_vbo_;
   unsigned int hdr_fbo_;
-  unsigned int hdr_color_buffer_texture_;
   unsigned int depth_rbo_;
+  std::array<unsigned int, 2> color_buffers_;
 };

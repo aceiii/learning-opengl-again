@@ -48,5 +48,14 @@ void main() {
         vec3 lightDir = normalize(light.Position - fs_in.FragPos);
         lighting += BlinnPhong(color, fs_in.Normal, fs_in.FragPos, viewDir, light.Position, lightDir, light.Color);
     }
-    FragColor = vec4(ambient + lighting, 1.0);
+
+    vec3 result = ambient + lighting;
+    FragColor = vec4(result, 1.0);
+
+    float brightness = dot(result, vec3(0.2126, 0.7152, 0.0722));
+    if (brightness > 1.0) {
+        BrightColor = vec4(result, 1.0);
+    } else {
+        BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
+    }
 }

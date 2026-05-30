@@ -33,8 +33,6 @@ public:
     orig_bgcolor_ = ctx_->GetBackgroundColor();
     ctx_->SetBackgroundColor(bg_color_);
 
-    const auto window_size = ctx_->GetWindowSize();
-
     shader_ = Shader::FromFiles("resources/shaders/hdr_scene/main.vs", "resources/shaders/hdr_scene/main.fs");
     hdr_shader_ = Shader::FromFiles("resources/shaders/hdr_scene/hdr.vs", "resources/shaders/hdr_scene/hdr.fs");
 
@@ -63,7 +61,7 @@ public:
 
     glGenFramebuffers(1, &hdr_fbo_);
 
-    auto [window_width, window_height] = ctx_->GetWindowSize();
+    auto [window_width, window_height] = ctx_->GetFramebufferSize();
 
     glGenTextures(1, &hdr_color_buffer_texture_);
     glBindTexture(GL_TEXTURE_2D, hdr_color_buffer_texture_);

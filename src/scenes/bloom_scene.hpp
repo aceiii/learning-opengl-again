@@ -33,11 +33,10 @@ public:
     orig_bgcolor_ = ctx_->GetBackgroundColor();
     ctx_->SetBackgroundColor(bg_color_);
 
-    const auto window_size = ctx_->GetWindowSize();
-
     shader_ = Shader::FromFiles("resources/shaders/bloom_scene/main.vs", "resources/shaders/bloom_scene/main.fs");
-    hdr_shader_ = Shader::FromFiles("resources/shaders/bloom_scene/hdr.vs", "resources/shaders/bloom_scene/hdr.fs");
     light_shader_ = Shader::FromFiles("resources/shaders/bloom_scene/light.vs", "resources/shaders/bloom_scene/light.fs");
+    blur_shader_ = Shader::FromFiles("resources/shaders/bloom_scene/blur.vs", "resources/shaders/bloom_scene/blur.fs");
+    bloom_shader_ = Shader::FromFiles("resources/shaders/bloom_scene/bloom.vs", "resources/shaders/bloom_scene/bloom.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
     camera_.position = glm::vec3(9.5f, 1.0f, 6.0f);
@@ -63,7 +62,7 @@ public:
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glBindVertexArray(0);
 
-    auto [window_width, window_height] = ctx_->GetWindowSize();
+    auto [window_width, window_height] = ctx_->GetFramebufferSize();
 
     glGenFramebuffers(1, &hdr_fbo_);
     glBindFramebuffer(GL_FRAMEBUFFER, hdr_fbo_);
@@ -87,9 +86,30 @@ public:
     std::array<GLenum, 2> attachments{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
     glDrawBuffers(2, attachments.data());
 
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+      LogWarning("Framebuffer not complete: hdr_fbo_");
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glEnable(GL_DEPTH_TEST);
+    glGenFramebuffers(2, pingpong_fbo_.data());
+    glGenTextures(2, pingpong_color_buffers_.data());
+    for (auto idx = 0; idx < pingpong_fbo_.size(); idx++) {
+      glBindFramebuffer(GL_FRAMEBUFFER, pingpong_fbo_[idx]);
+      glBindTexture(GL_TEXTURE_2D, pingpong_color_buffers_[idx]);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_width, window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpong_color_buffers_[idx], 0);
+      glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+      if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        LogWarning("Framebuffer not complete: pingpong_fbo_[%d]", idx);
+      }
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 
   void Update(float dt) override {
@@ -192,19 +212,47 @@ public:
   }
 
   void Render() override {
-    glPolygonMode(GL_FRONT_AND_BACK,  wireframe_ ? GL_LINE : GL_FILL);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
     glBindFramebuffer(GL_FRAMEBUFFER, hdr_fbo_);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     RenderScene();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    bool horizontal = true;
+    bool first_iteration = true;
+    const unsigned int amount = 10;
+    blur_shader_.Use();
+    for (auto idx = 0; idx < amount; idx++) {
+      glBindFramebuffer(GL_FRAMEBUFFER, pingpong_fbo_[horizontal]);
+      glClear(GL_COLOR_BUFFER_BIT);
+      blur_shader_.SetBool("horizontal", horizontal);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, first_iteration ? color_buffers_[1] : pingpong_color_buffers_[!horizontal]);
+      blur_shader_.SetInt("image", 0);
+      RenderQuad();
+
+      horizontal = !horizontal;
+      first_iteration = false;
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, color_buffers_[0]);
-    hdr_shader_.Use();
-    hdr_shader_.SetInt("hdrBuffer", 0);
-    hdr_shader_.SetFloat("exposure", exposure_);
-    hdr_shader_.SetBool("enableHDR", enable_hdr_);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, pingpong_color_buffers_[!horizontal]);
+    bloom_shader_.Use();
+    bloom_shader_.SetInt("texture_scene", 0);
+    bloom_shader_.SetInt("texture_blur", 1);
+    bloom_shader_.SetFloat("exposure", exposure_);
+    bloom_shader_.SetBool("enableBloom", enable_bloom_);
+    bloom_shader_.SetBool("enableScene", enable_scene_);
     RenderQuad();
   }
 
@@ -218,7 +266,8 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
-      ImGui::Checkbox("Enable HDR", &enable_hdr_);
+      ImGui::Checkbox("Enable Scene", &enable_scene_);
+      ImGui::Checkbox("Enable Bloom", &enable_bloom_);
       ImGui::DragFloat("Exposure", &exposure_, 0.01f, 0.0f, 100.f);
 
       if (ImGui::CollapsingHeader("Camera")) {
@@ -383,8 +432,9 @@ private:
   };
 
   Shader shader_;
-  Shader hdr_shader_;
   Shader light_shader_;
+  Shader blur_shader_;
+  Shader bloom_shader_;
 
   Mesh cube_mesh_{
     {
@@ -442,7 +492,8 @@ private:
   bool capture_hold_ = false;
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
-  bool enable_hdr_ = true;
+  bool enable_bloom_ = true;
+  bool enable_scene_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float exposure_ = 1.0f;
@@ -452,4 +503,6 @@ private:
   unsigned int hdr_fbo_;
   unsigned int depth_rbo_;
   std::array<unsigned int, 2> color_buffers_;
+  std::array<unsigned int, 2> pingpong_fbo_;
+  std::array<unsigned int, 2> pingpong_color_buffers_;
 };

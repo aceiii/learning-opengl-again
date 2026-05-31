@@ -96,6 +96,7 @@ std::expected<void, std::string> Application::Init() {
   scenes_.push_back(std::make_shared<ParallaxMapScene>());
   scenes_.push_back(std::make_shared<HDRScene>());
   scenes_.push_back(std::make_shared<BloomScene>());
+  scenes_.push_back(std::make_shared<DeferredShadingScene>());
 
   return {};
 }

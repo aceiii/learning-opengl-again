@@ -20,7 +20,7 @@
 #include "../texture.hpp"
 
 
-class BloomScene final : public Scene {
+class DeferredShadingScene final : public Scene {
 public:
   static constexpr unsigned int kShadowWidth = 1024;
   static constexpr unsigned int kShadowHeight = 1024;
@@ -31,10 +31,10 @@ public:
     orig_bgcolor_ = ctx_->GetBackgroundColor();
     ctx_->SetBackgroundColor(bg_color_);
 
-    shader_ = Shader::FromFiles("resources/shaders/bloom_scene/main.vs", "resources/shaders/bloom_scene/main.fs");
-    light_shader_ = Shader::FromFiles("resources/shaders/bloom_scene/light.vs", "resources/shaders/bloom_scene/light.fs");
-    blur_shader_ = Shader::FromFiles("resources/shaders/bloom_scene/blur.vs", "resources/shaders/bloom_scene/blur.fs");
-    bloom_shader_ = Shader::FromFiles("resources/shaders/bloom_scene/bloom.vs", "resources/shaders/bloom_scene/bloom.fs");
+    shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/main.vs", "resources/shaders/deferred_shading_scene/main.fs");
+    light_shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/light.vs", "resources/shaders/deferred_shading_scene/light.fs");
+    blur_shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/blur.vs", "resources/shaders/deferred_shading_scene/blur.fs");
+    bloom_shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/bloom.vs", "resources/shaders/deferred_shading_scene/bloom.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
     camera_.position = glm::vec3(9.5f, 1.0f, 6.0f);
@@ -258,7 +258,7 @@ public:
     constexpr auto padding = 5.0f;
     constexpr auto menu_bar_height = 32.0f;
 
-    ImGui::PushID("Bloom");
+    ImGui::PushID("DeferredShading");
     ImGui::SetNextWindowPos(ImVec2(window_width - padding, menu_bar_height - padding), ImGuiCond_FirstUseEver, ImVec2(1.0f, 0.0f));
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
@@ -297,7 +297,7 @@ public:
   }
 
   std::string Name() const override {
-    return "Bloom";
+    return "Deferred Shading";
   }
 
   void OnMouseMoveEvent(float x, float y) override {

@@ -80,7 +80,7 @@ public:
 
     glGenTextures(1, &g_albedo_spec_);
     glBindTexture(GL_TEXTURE_2D, g_albedo_spec_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frame_width, frame_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, frame_width, frame_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, g_albedo_spec_, 0);
@@ -137,11 +137,6 @@ public:
     shader_.SetInt("texture_diffuse", 0);
     shader_.SetInt("texture_specular", 0);
 
-    // for (unsigned int i = 0; i < kLightPositions.size(); i++) {
-    //   shader_.SetVec3("lights[" + std::to_string(i) + "].Position", kLightPositions[i]);
-    //   shader_.SetVec3("lights[" + std::to_string(i) + "].Color", kLightColors[i]);
-    // }
-
     model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
     model = glm::scale(model, glm::vec3(12.5f, 0.5f, 12.5f));
     shader_.SetMat4("model", model);
@@ -189,7 +184,7 @@ public:
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
-    glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     RenderScene();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -197,6 +192,7 @@ public:
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_position_);
@@ -210,6 +206,13 @@ public:
     lighting_shader_.SetInt("texture_normal", 1);
     lighting_shader_.SetInt("texture_albedo_spec", 2);
     lighting_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
+    lighting_shader_.SetVec3("viewPos", camera_.position);
+
+    for (unsigned int i = 0; i < kLightPositions.size(); i++) {
+      lighting_shader_.SetVec3("lights[" + std::to_string(i) + "].Position", kLightPositions[i]);
+      lighting_shader_.SetVec3("lights[" + std::to_string(i) + "].Color", kLightColors[i]);
+    }
+
     RenderQuad();
   }
 
@@ -448,8 +451,8 @@ private:
     }
   };
 
-  Texture texture_wood_ = Texture::Load("diffuse", "resources/textures/wood.png", { .linear = false });
-  Texture texture_container_ = Texture::Load("diffuse", "resources/textures/container.jpg", { .linear = false });
+  Texture texture_wood_ = Texture::Load("diffuse", "resources/textures/wood.png", { .linear = true });
+  Texture texture_container_ = Texture::Load("diffuse", "resources/textures/container.jpg", { .linear = true });
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 5.0f)};
 
@@ -463,7 +466,7 @@ private:
   bool capture_hold_ = false;
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
-  bool enable_debug_ = true;
+  bool enable_debug_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
 

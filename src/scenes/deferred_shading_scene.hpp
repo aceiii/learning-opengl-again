@@ -19,6 +19,7 @@
 #include "../model.hpp"
 #include "../texture.hpp"
 
+using namespace std::string_literals;
 
 class DeferredShadingScene final : public Scene {
 public:
@@ -31,10 +32,8 @@ public:
     orig_bgcolor_ = ctx_->GetBackgroundColor();
     ctx_->SetBackgroundColor(bg_color_);
 
-    shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/main.vs", "resources/shaders/deferred_shading_scene/main.fs");
-    light_shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/light.vs", "resources/shaders/deferred_shading_scene/light.fs");
-    blur_shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/blur.vs", "resources/shaders/deferred_shading_scene/blur.fs");
-    bloom_shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/bloom.vs", "resources/shaders/deferred_shading_scene/bloom.fs");
+    shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/geom.vs", "resources/shaders/deferred_shading_scene/geom.fs");
+    lighting_shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/lighting.vs", "resources/shaders/deferred_shading_scene/lighting.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
     camera_.position = glm::vec3(9.5f, 1.0f, 6.0f);
@@ -60,53 +59,44 @@ public:
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glBindVertexArray(0);
 
-    auto [window_width, window_height] = ctx_->GetFramebufferSize();
+    auto [frame_width, frame_height] = ctx_->GetFramebufferSize();
 
-    glGenFramebuffers(1, &hdr_fbo_);
-    glBindFramebuffer(GL_FRAMEBUFFER, hdr_fbo_);
+    glGenFramebuffers(1, &g_buffer_);
+    glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
 
-    glGenTextures(2, color_buffers_.data());
-    for (auto idx = 0; idx < color_buffers_.size(); idx++) {
-      glBindTexture(GL_TEXTURE_2D, color_buffers_[idx]);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_width, window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + idx, GL_TEXTURE_2D, color_buffers_[idx], 0);
-    }
+    glGenTextures(1, &g_position_);
+    glBindTexture(GL_TEXTURE_2D, g_position_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, frame_width, frame_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_position_, 0);
+
+    glGenTextures(1, &g_normal_);
+    glBindTexture(GL_TEXTURE_2D, g_normal_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, frame_width, frame_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, g_normal_, 0);
+
+    glGenTextures(1, &g_albedo_spec_);
+    glBindTexture(GL_TEXTURE_2D, g_albedo_spec_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frame_width, frame_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, g_albedo_spec_, 0);
 
     glGenRenderbuffers(1, &depth_rbo_);
     glBindRenderbuffer(GL_RENDERBUFFER, depth_rbo_);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, window_width, window_height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, frame_width, frame_width);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rbo_);
 
-    std::array<GLenum, 2> attachments{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-    glDrawBuffers(2, attachments.data());
+    std::array<GLenum, 3> attachments{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+    glDrawBuffers(attachments.size(), attachments.data());
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-      LogWarning("Framebuffer not complete: hdr_fbo_");
+      LogWarning("Framebuffer not complete: g_buffer_");
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glGenFramebuffers(2, pingpong_fbo_.data());
-    glGenTextures(2, pingpong_color_buffers_.data());
-    for (auto idx = 0; idx < pingpong_fbo_.size(); idx++) {
-      glBindFramebuffer(GL_FRAMEBUFFER, pingpong_fbo_[idx]);
-      glBindTexture(GL_TEXTURE_2D, pingpong_color_buffers_[idx]);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, window_width, window_height, 0, GL_RGBA, GL_FLOAT, nullptr);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpong_color_buffers_[idx], 0);
-      glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-      if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        LogWarning("Framebuffer not complete: pingpong_fbo_[%d]", idx);
-      }
-    }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 
@@ -135,6 +125,8 @@ public:
 
   void RenderScene() {
     glPolygonMode(GL_FRONT_AND_BACK,  wireframe_ ? GL_LINE : GL_FILL);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_wood_.id);
 
     glm::mat4 model = glm::mat4(1.0f);
 
@@ -142,21 +134,18 @@ public:
     shader_.SetMat4("view", camera_.GetViewMatrix());
     shader_.SetMat4("projection", projection_);
     shader_.SetVec3("viewPos", camera_.position);
+    shader_.SetInt("texture_diffuse", 0);
+    shader_.SetInt("texture_specular", 0);
 
-    for (unsigned int i = 0; i < kLightPositions.size(); i++) {
-      shader_.SetVec3("lights[" + std::to_string(i) + "].Position", kLightPositions[i]);
-      shader_.SetVec3("lights[" + std::to_string(i) + "].Color", kLightColors[i]);
-    }
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture_wood_.id);
+    // for (unsigned int i = 0; i < kLightPositions.size(); i++) {
+    //   shader_.SetVec3("lights[" + std::to_string(i) + "].Position", kLightPositions[i]);
+    //   shader_.SetVec3("lights[" + std::to_string(i) + "].Color", kLightColors[i]);
+    // }
 
     model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
     model = glm::scale(model, glm::vec3(12.5f, 0.5f, 12.5f));
     shader_.SetMat4("model", model);
     cube_mesh_.Draw(shader_);
-
-    // glBindTexture(GL_TEXTURE_2D, texture_container_.id);
 
     model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0f));
@@ -194,25 +183,13 @@ public:
     model = glm::scale(model, glm::vec3(0.5f));
     shader_.SetMat4("model", model);
     cube_mesh_.Draw(shader_);
-
-    light_shader_.Use();
-    light_shader_.SetMat4("view", camera_.GetViewMatrix());
-    light_shader_.SetMat4("projection", projection_);
-    light_shader_.SetVec3("viewPos", camera_.position);
-    for (auto idx = 0; idx < kLightPositions.size(); idx++) {
-      model = glm::mat4(1.0f);
-      model = glm::translate(model, kLightPositions[idx]);
-      model = glm::scale(model, glm::vec3(0.25f));
-      light_shader_.SetMat4("model", model);
-      light_shader_.SetVec3("lightColor", kLightColors[idx]);
-      cube_mesh_.Draw(light_shader_);
-    }
   }
 
   void Render() override {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
-    glBindFramebuffer(GL_FRAMEBUFFER, hdr_fbo_);
+    glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
+    glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     RenderScene();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -221,36 +198,18 @@ public:
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    bool horizontal = true;
-    bool first_iteration = true;
-    const unsigned int amount = 10;
-    blur_shader_.Use();
-    for (auto idx = 0; idx < amount; idx++) {
-      glBindFramebuffer(GL_FRAMEBUFFER, pingpong_fbo_[horizontal]);
-      glClear(GL_COLOR_BUFFER_BIT);
-      blur_shader_.SetBool("horizontal", horizontal);
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, first_iteration ? color_buffers_[1] : pingpong_color_buffers_[!horizontal]);
-      blur_shader_.SetInt("image", 0);
-      RenderQuad();
-
-      horizontal = !horizontal;
-      first_iteration = false;
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, color_buffers_[0]);
+    glBindTexture(GL_TEXTURE_2D, g_position_);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, pingpong_color_buffers_[!horizontal]);
-    bloom_shader_.Use();
-    bloom_shader_.SetInt("texture_scene", 0);
-    bloom_shader_.SetInt("texture_blur", 1);
-    bloom_shader_.SetFloat("exposure", exposure_);
-    bloom_shader_.SetBool("enableBloom", enable_bloom_);
-    bloom_shader_.SetBool("enableScene", enable_scene_);
+    glBindTexture(GL_TEXTURE_2D, g_normal_);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, g_albedo_spec_);
+
+    lighting_shader_.Use();
+    lighting_shader_.SetInt("texture_position", 0);
+    lighting_shader_.SetInt("texture_normal", 1);
+    lighting_shader_.SetInt("texture_albedo_spec", 2);
+    lighting_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
     RenderQuad();
   }
 
@@ -264,9 +223,18 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
-      ImGui::Checkbox("Enable Scene", &enable_scene_);
-      ImGui::Checkbox("Enable Bloom", &enable_bloom_);
-      ImGui::DragFloat("Exposure", &exposure_, 0.01f, 0.0f, 100.f);
+      ImGui::Checkbox("Debug", &enable_debug_);
+      if (enable_debug_) {
+        if (ImGui::BeginCombo("Debug Mode", kDebugModes[debug_mode_-1].c_str())) {
+          for (auto idx = 0; idx < kDebugModes.size(); idx++) {
+            if (ImGui::Selectable(kDebugModes[idx].c_str(), idx + 1 == debug_mode_)) {
+              debug_mode_ = idx + 1;
+            }
+          }
+          ImGui::EndCombo();
+        }
+      }
+      ImGui::NewLine();
 
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -429,10 +397,15 @@ private:
     glm::vec3(0.0f, 5.0f, 0.0f),
   };
 
+  inline static const std::array kDebugModes{
+    "Position"s,
+    "Normal"s,
+    "Albedo"s,
+    "Specular"s,
+  };
+
   Shader shader_;
-  Shader light_shader_;
-  Shader blur_shader_;
-  Shader bloom_shader_;
+  Shader lighting_shader_;
 
   Mesh cube_mesh_{
     {
@@ -475,8 +448,8 @@ private:
     }
   };
 
-  Texture texture_wood_ = Texture::Load("diffuse", "resources/textures/wood.png", { .linear = true });
-  Texture texture_container_ = Texture::Load("diffuse", "resources/textures/container.jpg", { .linear = true });
+  Texture texture_wood_ = Texture::Load("diffuse", "resources/textures/wood.png", { .linear = false });
+  Texture texture_container_ = Texture::Load("diffuse", "resources/textures/container.jpg", { .linear = false });
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 5.0f)};
 
@@ -490,17 +463,17 @@ private:
   bool capture_hold_ = false;
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
-  bool enable_bloom_ = true;
-  bool enable_scene_ = true;
+  bool enable_debug_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
-  float exposure_ = 1.0f;
 
   unsigned int quad_vao_;
   unsigned int quad_vbo_;
-  unsigned int hdr_fbo_;
+  unsigned int g_buffer_;
+  unsigned int g_position_;
+  unsigned int g_normal_;
+  unsigned int g_albedo_spec_;
   unsigned int depth_rbo_;
-  std::array<unsigned int, 2> color_buffers_;
-  std::array<unsigned int, 2> pingpong_fbo_;
-  std::array<unsigned int, 2> pingpong_color_buffers_;
+
+  int debug_mode_ = 1;
 };

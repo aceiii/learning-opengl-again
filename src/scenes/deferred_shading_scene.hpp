@@ -18,6 +18,7 @@
 #include "../camera.hpp"
 #include "../model.hpp"
 #include "../texture.hpp"
+#include "../random.hpp"
 
 using namespace std::string_literals;
 
@@ -36,10 +37,26 @@ public:
     lighting_shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/lighting.vs", "resources/shaders/deferred_shading_scene/lighting.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
-    camera_.position = glm::vec3(9.5f, 1.0f, 6.0f);
-    camera_.yaw = -140.0f;
-    camera_.pitch = 10.0f;
+    camera_.position = glm::vec3(9.5f, 0.5f, 5.0f);
+    camera_.yaw = -148.0f;
+    camera_.pitch = -4.5f;
     camera_.UpdateCameraVectors();
+
+    auto rand = Random::RandFloat();
+
+    const auto num_lights = 32;
+    for (auto idx = 0; idx < num_lights; idx++) {
+      float x = rand.Next() * 6.0 - 3.0;
+      float y = rand.Next() * 6.0 - 4.0;
+      float z = rand.Next() * 6.0 - 3.0;
+      float r = (rand.Next() / 2.0) + 0.5f;
+      float g = (rand.Next() / 2.0) + 0.5f;
+      float b = (rand.Next() / 2.0) + 0.5f;
+      lights.push_back({
+        .position = glm::vec3(x, y, z),
+        .color = glm::vec3(r, g, b),
+      });
+    }
 
     std::array quad_vertices{
       -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
@@ -125,59 +142,20 @@ public:
 
   void RenderScene() {
     glPolygonMode(GL_FRONT_AND_BACK,  wireframe_ ? GL_LINE : GL_FILL);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture_wood_.id);
-
-    glm::mat4 model = glm::mat4(1.0f);
 
     shader_.Use();
     shader_.SetMat4("view", camera_.GetViewMatrix());
     shader_.SetMat4("projection", projection_);
     shader_.SetVec3("viewPos", camera_.position);
-    shader_.SetInt("texture_diffuse", 0);
-    shader_.SetInt("texture_specular", 0);
 
-    model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(12.5f, 0.5f, 12.5f));
-    shader_.SetMat4("model", model);
-    cube_mesh_.Draw(shader_);
-
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0f));
-    model = glm::scale(model, glm::vec3(0.5f));
-    shader_.SetMat4("model", model);
-    cube_mesh_.Draw(shader_);
-
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0f));
-    model = glm::scale(model, glm::vec3(0.5f));
-    shader_.SetMat4("model", model);
-    cube_mesh_.Draw(shader_);
-
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-1.0f, -1.0f, 2.0f));
-    model = glm::rotate(model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
-    shader_.SetMat4("model", model);
-    cube_mesh_.Draw(shader_);
-
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 2.7f, 4.0f));
-    model = glm::rotate(model, glm::radians(23.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
-    model = glm::scale(model, glm::vec3(1.25f));
-    shader_.SetMat4("model", model);
-    cube_mesh_.Draw(shader_);
-
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-2.0f, 1.0f, -3.0f));
-    model = glm::rotate(model, glm::radians(124.0f), glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f)));
-    shader_.SetMat4("model", model);
-    cube_mesh_.Draw(shader_);
-
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-3.0f, 0.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(0.5f));
-    shader_.SetMat4("model", model);
-    cube_mesh_.Draw(shader_);
+    glm::mat4 model;
+    for (const auto& pos : kObjectPositions) {
+      model = glm::mat4(1.0f);
+      model = glm::translate(model, pos);
+      model = glm::scale(model, glm::vec3(0.5f));
+      shader_.SetMat4("model", model);
+      backpack_.Draw(shader_);
+    }
   }
 
   void Render() override {
@@ -208,9 +186,10 @@ public:
     lighting_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
     lighting_shader_.SetVec3("viewPos", camera_.position);
 
-    for (unsigned int i = 0; i < kLightPositions.size(); i++) {
-      lighting_shader_.SetVec3("lights[" + std::to_string(i) + "].Position", kLightPositions[i]);
-      lighting_shader_.SetVec3("lights[" + std::to_string(i) + "].Color", kLightColors[i]);
+    for (unsigned int i = 0; i < lights.size(); i++) {
+      const auto& light = lights[i];
+      lighting_shader_.SetVec3("lights[" + std::to_string(i) + "].Position", light.position);
+      lighting_shader_.SetVec3("lights[" + std::to_string(i) + "].Color", light.color);
     }
 
     RenderQuad();
@@ -324,59 +303,9 @@ private:
     }
   }
 
-  struct DirectionalLight {
-      glm::vec3 direction;
-      glm::vec3 ambient;
-      glm::vec3 diffuse;
-      glm::vec3 specular;
-  };
-
-  struct PointLight {
-      glm::vec3 position;
-      glm::vec3 ambient;
-      glm::vec3 diffuse;
-      glm::vec3 specular;
-      float constant;
-      float linear;
-      float quadratic;
-  };
-
-  struct SpotLight {
+  struct Light {
     glm::vec3 position;
-    glm::vec3 direction;
-    glm::vec3 ambient;
-    glm::vec3 diffuse;
-    glm::vec3 specular;
-    float constant;
-    float linear;
-    float quadratic;
-    float cutOff;
-    float outerCutOff;
-  };
-
-  struct Environment {
-    std::string name;
-    glm::vec3 bg_color;
-    DirectionalLight directional_light;
-    SpotLight spot_light;
-    std::array<PointLight, 4> point_lights;
-  };
-
-  struct NamedEnum {
-    std::string name;
-    GLenum func;
-  };
-
-  struct KernelMode {
-    std::string name;
-    std::array<float, 9> kernel;
-  };
-
-  struct TextureGroup {
-    std::string name;
-    Texture diffuse;
-    Texture normal;
-    Texture depth;
+    glm::vec3 color;
   };
 
   IAppContext* ctx_ = nullptr;
@@ -386,20 +315,6 @@ private:
   inline static const float kMinPitch = -89.0f;
   inline static const float kMaxPitch = 89.0f;
 
-  inline static const std::array kLightPositions{
-    glm::vec3( 0.0f, 0.5f,  1.5f),
-    glm::vec3(-4.0f, 0.5f, -3.0f),
-    glm::vec3( 3.0f, 0.5f,  1.0f),
-    glm::vec3(-0.8f, 2.4f,-1.0f),
-  };
-
-  inline static const std::array kLightColors{
-    glm::vec3(5.0f, 5.0f, 5.0f),
-    glm::vec3(10.0f, 0.0f, 0.0f),
-    glm::vec3(0.0f, 0.0f, 15.0f),
-    glm::vec3(0.0f, 5.0f, 0.0f),
-  };
-
   inline static const std::array kDebugModes{
     "Position"s,
     "Normal"s,
@@ -407,8 +322,22 @@ private:
     "Specular"s,
   };
 
+  inline static const std::array kObjectPositions{
+    glm::vec3(-3.0,  -0.5, -3.0),
+    glm::vec3( 0.0,  -0.5, -3.0),
+    glm::vec3( 3.0,  -0.5, -3.0),
+    glm::vec3(-3.0,  -0.5,  0.0),
+    glm::vec3( 0.0,  -0.5,  0.0),
+    glm::vec3( 3.0,  -0.5,  0.0),
+    glm::vec3(-3.0,  -0.5,  3.0),
+    glm::vec3( 0.0,  -0.5,  3.0),
+    glm::vec3( 3.0,  -0.5,  3.0),
+  };
+
   Shader shader_;
   Shader lighting_shader_;
+
+  Model backpack_ = Model::Load("resources/models/backpack/backpack.obj");
 
   Mesh cube_mesh_{
     {
@@ -451,15 +380,14 @@ private:
     }
   };
 
-  Texture texture_wood_ = Texture::Load("diffuse", "resources/textures/wood.png", { .linear = true });
-  Texture texture_container_ = Texture::Load("diffuse", "resources/textures/container.jpg", { .linear = true });
-
   Camera camera_{glm::vec3(0.0f, 0.0f, 5.0f)};
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;
   glm::vec3 bg_color_{0.0f, 0.0f, 0.0f};
   glm::vec2 last_mouse_;
+
+  std::vector<Light> lights;
 
   bool wireframe_ = false;
   bool capture_mouse_ = false;

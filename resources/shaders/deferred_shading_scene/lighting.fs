@@ -23,9 +23,6 @@ uniform vec3 viewPos;
 vec3 BlinnPhong(vec3 color, float spec, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 lightPos, vec3 lightDir, vec3 lightColor) {
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 diffuse = diff * lightColor * color;
-    // vec3 reflectDir = reflect(-lightDir, normal);
-    // vec3 halfwayDir = normalize(lightDir + viewDir);
-    // float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
     vec3 specular = spec * vec3(0.2);
 
     float distance = length(fragPos - lightPos);

@@ -35,6 +35,7 @@ public:
 
     shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/geom.vs", "resources/shaders/deferred_shading_scene/geom.fs");
     lighting_shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/lighting.vs", "resources/shaders/deferred_shading_scene/lighting.fs");
+    light_shader_ = Shader::FromFiles("resources/shaders/deferred_shading_scene/light.vs", "resources/shaders/deferred_shading_scene/light.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
     camera_.position = glm::vec3(9.5f, 0.5f, 5.0f);
@@ -52,10 +53,16 @@ public:
       float r = (rand.Next() / 2.0) + 0.5f;
       float g = (rand.Next() / 2.0) + 0.5f;
       float b = (rand.Next() / 2.0) + 0.5f;
-      lights.push_back({
+
+      Light light{
         .position = glm::vec3(x, y, z),
         .color = glm::vec3(r, g, b),
-      });
+      };
+      lights.push_back(light);
+
+      LogInfo("Adding light at pos=({}, {}, {}), color=({}, {}, {})",
+        light.position.x, light.position.y, light.position.z,
+        light.color.r, light.color.g, light.color.b);
     }
 
     std::array quad_vertices{
@@ -193,6 +200,30 @@ public:
     }
 
     RenderQuad();
+
+    auto [width, height] = ctx_->GetFramebufferSize();
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, g_buffer_);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glEnable(GL_DEPTH_TEST);
+
+    light_shader_.Use();
+    light_shader_.SetMat4("view", camera_.GetViewMatrix());
+    light_shader_.SetMat4("projection", projection_);
+
+    glm::mat4 model;
+    for (unsigned int i = 0; i < lights.size(); i++) {
+      const auto& light = lights[i];
+      model = glm::mat4(1.0f);
+      model = glm::translate(model, light.position);
+      model = glm::scale(model, glm::vec3(0.125f));
+      light_shader_.SetMat4("model", model);
+      light_shader_.SetVec3("lightColor", light.color);
+      cube_mesh_.Draw(light_shader_);
+    }
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -336,6 +367,7 @@ private:
 
   Shader shader_;
   Shader lighting_shader_;
+  Shader light_shader_;
 
   Model backpack_ = Model::Load("resources/models/backpack/backpack.obj");
 

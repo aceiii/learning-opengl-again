@@ -8,8 +8,9 @@
 #include "logger.hpp"
 
 
-Model Model::Load(std::string_view path) {
-  Model model{};
+Model Model::Load(std::string_view path, ModelOptions options) {
+  Model model;
+  model.options_ = options;
   model.LoadModel(path);
   return model;
 }
@@ -113,7 +114,7 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial* mat, aiTextureType 
     }
 
     if (!skip) {
-      Texture texture = Texture::Load(type_name, path);
+      Texture texture = Texture::Load(type_name, path, options_.texture_options);
       new_textures.push_back(texture);
       textures.push_back(texture);
     }

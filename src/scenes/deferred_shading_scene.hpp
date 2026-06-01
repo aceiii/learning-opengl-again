@@ -111,7 +111,7 @@ public:
 
     glGenTextures(1, &g_albedo_spec_);
     glBindTexture(GL_TEXTURE_2D, g_albedo_spec_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, frame_width, frame_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, frame_width, frame_height, 0, GL_RGBA, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, g_albedo_spec_, 0);
@@ -378,7 +378,7 @@ private:
   Shader lighting_shader_;
   Shader light_shader_;
 
-  Model backpack_ = Model::Load("resources/models/backpack/backpack.obj");
+  Model backpack_ = Model::Load("resources/models/backpack/backpack.obj", { .texture_options = { .linear = true }});
 
   Mesh cube_mesh_{
     {

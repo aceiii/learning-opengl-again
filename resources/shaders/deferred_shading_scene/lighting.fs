@@ -13,6 +13,7 @@ uniform sampler2D texture_albedo_spec;
 struct Light {
     vec3 Position;
     vec3 Color;
+    float Radius;
 };
 
 const int NUM_LIGHTS = 32;
@@ -56,6 +57,12 @@ void main() {
 
     for (int i = 0; i < NUM_LIGHTS; i++) {
         Light light = lights[i];
+
+        float distance = length(light.Position - position);
+        if (distance >= light.Radius) {
+            continue;
+        }
+
         vec3 lightDir = normalize(light.Position - position);
         lighting += BlinnPhong(albedo, spec, normal, position, viewDir, light.Position, lightDir, light.Color);
     }

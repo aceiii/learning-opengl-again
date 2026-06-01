@@ -54,9 +54,16 @@ public:
       float g = (rand.Next() / 2.0) + 0.5f;
       float b = (rand.Next() / 2.0) + 0.5f;
 
+      float constant = 1.0f;
+      float linear = 0.7f;
+      float quadratic = 1.8f;
+      float light_max = std::fmaxf(std::fmaxf(r, b), b);
+      float radius = (-linear +  std::sqrtf(linear * linear - 4 * quadratic * (constant - (256.0f / 5.0f) * light_max))) / (2 * quadratic);
+
       Light light{
         .position = glm::vec3(x, y, z),
         .color = glm::vec3(r, g, b),
+        .radius = radius,
       };
       lights.push_back(light);
 
@@ -197,6 +204,7 @@ public:
       const auto& light = lights[i];
       lighting_shader_.SetVec3("lights[" + std::to_string(i) + "].Position", light.position);
       lighting_shader_.SetVec3("lights[" + std::to_string(i) + "].Color", light.color);
+      lighting_shader_.SetFloat("lights[" + std::to_string(i) + "].Radius", light.radius);
     }
 
     RenderQuad();
@@ -337,6 +345,7 @@ private:
   struct Light {
     glm::vec3 position;
     glm::vec3 color;
+    float radius;
   };
 
   IAppContext* ctx_ = nullptr;

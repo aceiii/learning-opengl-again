@@ -22,7 +22,7 @@ namespace Random {
   public:
     RandFloat(float min = 0.0f, float max = 1.0f): gen_{rd_()}, distrib_{min, max} {}
 
-    int Next() {
+    float Next() {
       return distrib_(gen_);
     }
 

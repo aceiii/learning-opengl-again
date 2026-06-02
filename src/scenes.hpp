@@ -32,3 +32,4 @@
 #include "scenes/hdr_scene.hpp"
 #include "scenes/bloom_scene.hpp"
 #include "scenes/deferred_shading_scene.hpp"
+#include "scenes/ssao_scene.hpp"

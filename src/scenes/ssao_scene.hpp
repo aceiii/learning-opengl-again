@@ -19,6 +19,7 @@
 #include "../model.hpp"
 #include "../texture.hpp"
 #include "../random.hpp"
+#include "../util.hpp"
 
 using namespace std::string_literals;
 
@@ -34,6 +35,7 @@ public:
     ctx_->SetBackgroundColor(bg_color_);
 
     shader_ = Shader::FromFiles("resources/shaders/ssao_scene/geom.vs", "resources/shaders/ssao_scene/geom.fs");
+    ssao_shader_ = Shader::FromFiles("resources/shaders/ssao_scene/ssao.vs", "resources/shaders/ssao_scene/ssao.fs");
     lighting_shader_ = Shader::FromFiles("resources/shaders/ssao_scene/lighting.vs", "resources/shaders/ssao_scene/lighting.fs");
     light_shader_ = Shader::FromFiles("resources/shaders/ssao_scene/light.vs", "resources/shaders/ssao_scene/light.fs");
 
@@ -65,11 +67,26 @@ public:
         .color = glm::vec3(r, g, b),
         .radius = radius,
       };
-      lights.push_back(light);
+      lights_.push_back(light);
 
       LogInfo("Adding light at pos=({}, {}, {}), color=({}, {}, {})",
         light.position.x, light.position.y, light.position.z,
         light.color.r, light.color.g, light.color.b);
+    }
+
+    for (auto idx = 0; idx < 64; idx++) {
+      glm::vec3 sample(
+        rand.Next() * 2.0 - 1.0,
+        rand.Next() * 2.0 - 1.0,
+        rand.Next()
+      );
+      sample = glm::normalize(sample);
+      sample *= rand.Next();
+
+      float scale = static_cast<float>(idx) / 64.0f;
+      scale = Util::Lerp(0.1f, 1.0f, scale * scale);
+      sample *= scale;
+      ssao_kernel_.push_back(sample);
     }
 
     std::array quad_vertices{
@@ -100,6 +117,8 @@ public:
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, frame_width, frame_height, 0, GL_RGBA, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_position_, 0);
 
     glGenTextures(1, &g_normal_);
@@ -129,6 +148,25 @@ public:
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    std::vector<glm::vec3> ssao_noise;
+    for (auto idx = 0; idx < 16; idx++) {
+      glm::vec3 noise(
+        rand.Next() * 2.0 - 1.0,
+        rand.Next() * 2.0 - 1.0,
+        0.0f
+      );
+
+      ssao_noise.push_back(noise);
+    }
+
+    glGenTextures(1, &noise_texture_);
+    glBindTexture(GL_TEXTURE_2D, noise_texture_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, ssao_noise.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   }
 
   void Update(float dt) override {
@@ -156,20 +194,27 @@ public:
 
   void RenderScene() {
     glPolygonMode(GL_FRONT_AND_BACK,  wireframe_ ? GL_LINE : GL_FILL);
+    glm::mat4 model;
 
     shader_.Use();
     shader_.SetMat4("view", camera_.GetViewMatrix());
     shader_.SetMat4("projection", projection_);
     shader_.SetVec3("viewPos", camera_.position);
 
-    glm::mat4 model;
-    for (const auto& pos : kObjectPositions) {
-      model = glm::mat4(1.0f);
-      model = glm::translate(model, pos);
-      model = glm::scale(model, glm::vec3(0.5f));
-      shader_.SetMat4("model", model);
-      backpack_.Draw(shader_);
-    }
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 7.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(7.5f));
+    shader_.SetMat4("model", model);
+    shader_.SetBool("inverseNormals", true);
+    cube_mesh_.Draw(shader_);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
+    model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(0.5f));
+    shader_.SetMat4("model", model);
+    shader_.SetBool("inverseNormals", false);
+    backpack_.Draw(shader_);
   }
 
   void Render() override {
@@ -193,19 +238,21 @@ public:
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, g_albedo_spec_);
 
-    lighting_shader_.Use();
-    lighting_shader_.SetInt("texture_position", 0);
-    lighting_shader_.SetInt("texture_normal", 1);
-    lighting_shader_.SetInt("texture_albedo_spec", 2);
-    lighting_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
-    lighting_shader_.SetVec3("viewPos", camera_.position);
+    ssao_shader_.Use();
+    ssao_shader_.SetInt("texture_position", 0);
+    ssao_shader_.SetInt("texture_normal", 1);
+    ssao_shader_.SetInt("texture_albedo_spec", 2);
+    ssao_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
+    ssao_shader_.SetVec3("viewPos", camera_.position);
 
-    for (unsigned int i = 0; i < lights.size(); i++) {
-      const auto& light = lights[i];
+    /*
+    for (unsigned int i = 0; i < lights_.size(); i++) {
+      const auto& light = lights_[i];
       lighting_shader_.SetVec3("lights[" + std::to_string(i) + "].Position", light.position);
       lighting_shader_.SetVec3("lights[" + std::to_string(i) + "].Color", light.color);
       lighting_shader_.SetFloat("lights[" + std::to_string(i) + "].Radius", light.radius);
     }
+    */
 
     RenderQuad();
 
@@ -218,13 +265,14 @@ public:
 
     glEnable(GL_DEPTH_TEST);
 
+    /*
     light_shader_.Use();
     light_shader_.SetMat4("view", camera_.GetViewMatrix());
     light_shader_.SetMat4("projection", projection_);
 
     glm::mat4 model;
-    for (unsigned int i = 0; i < lights.size(); i++) {
-      const auto& light = lights[i];
+    for (unsigned int i = 0; i < lights_.size(); i++) {
+      const auto& light = lights_[i];
       model = glm::mat4(1.0f);
       model = glm::translate(model, light.position);
       model = glm::scale(model, glm::vec3(0.125f));
@@ -232,6 +280,7 @@ public:
       light_shader_.SetVec3("lightColor", light.color);
       cube_mesh_.Draw(light_shader_);
     }
+    */
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -376,6 +425,7 @@ private:
 
   Shader shader_;
   Shader lighting_shader_;
+  Shader ssao_shader_;
   Shader light_shader_;
 
   Model backpack_ = Model::Load("resources/models/backpack/backpack.obj", { .texture_options = { .linear = true }});
@@ -428,7 +478,8 @@ private:
   glm::vec3 bg_color_{0.0f, 0.0f, 0.0f};
   glm::vec2 last_mouse_;
 
-  std::vector<Light> lights;
+  std::vector<Light> lights_;
+  std::vector<glm::vec3> ssao_kernel_;
 
   bool wireframe_ = false;
   bool capture_mouse_ = false;
@@ -446,6 +497,7 @@ private:
   unsigned int g_normal_;
   unsigned int g_albedo_spec_;
   unsigned int depth_rbo_;
+  unsigned int noise_texture_;
 
   int debug_mode_ = 1;
 };

@@ -16,6 +16,5 @@ uniform sampler2D texture_specular;
 void main() {
     gPosition = fs_in.FragPos;
     gNormal = normalize(fs_in.Normal);
-    gAlbedoSpec.rgb = texture(texture_diffuse, fs_in.TexCoords).rgb;
-    gAlbedoSpec.a = texture(texture_specular, fs_in.TexCoords).r;
+    gAlbedoSpec.rgb = vec3(0.95);
 }

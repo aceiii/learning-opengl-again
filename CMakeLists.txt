@@ -39,6 +39,7 @@ set(SOURCE_FILES
     src/stb_impl.cpp
     src/texture.cpp
     src/texture.hpp
+    src/util.hpp
 )
 
 file(GLOB SCENE_SOURCE_FILES "src/scenes/*")

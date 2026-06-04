@@ -45,5 +45,4 @@ void main() {
 
     occlusion = 1.0 - (occlusion / NUM_SAMPLES);
     FragColor = occlusion;
-
 }

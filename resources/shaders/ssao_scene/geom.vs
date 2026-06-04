@@ -17,7 +17,7 @@ uniform mat4 projection;
 uniform bool inverseNormals;
 
 void main() {
-    vs_out.FragPos = vec3(model * vec4(aPos, 1.0));
+    vs_out.FragPos = vec3(view * model * vec4(aPos, 1.0));
     vs_out.TexCoords = aTexCoords;
 
     vec3 n = inverseNormals ? -aNormal : aNormal;

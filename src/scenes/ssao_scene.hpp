@@ -167,6 +167,16 @@ public:
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glGenFramebuffers(1, &ssao_fbo_);
+    glBindFramebuffer(GL_FRAMEBUFFER, ssao_fbo_);
+    glGenTextures(1, &ssao_color_buffer_);
+    glBindTexture(GL_TEXTURE_2D, ssao_color_buffer_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, frame_width, frame_height, 0, GL_RED, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_color_buffer_, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 
   void Update(float dt) override {
@@ -220,8 +230,9 @@ public:
   void Render() override {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
     glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     RenderScene();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -229,8 +240,10 @@ public:
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
+    glBindFramebuffer(GL_FRAMEBUFFER, ssao_fbo_);
+    glClear(GL_COLOR_BUFFER_BIT);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_position_);
     glActiveTexture(GL_TEXTURE1);
@@ -244,43 +257,25 @@ public:
     ssao_shader_.SetInt("texture_albedo_spec", 2);
     ssao_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
     ssao_shader_.SetVec3("viewPos", camera_.position);
-
-    /*
-    for (unsigned int i = 0; i < lights_.size(); i++) {
-      const auto& light = lights_[i];
-      lighting_shader_.SetVec3("lights[" + std::to_string(i) + "].Position", light.position);
-      lighting_shader_.SetVec3("lights[" + std::to_string(i) + "].Color", light.color);
-      lighting_shader_.SetFloat("lights[" + std::to_string(i) + "].Radius", light.radius);
+    ssao_shader_.SetMat4("projection", projection_);
+    for (auto idx = 0; idx < ssao_kernel_.size(); idx++) {
+      ssao_shader_.SetVec3("samples[" + std::to_string(idx) + "]", ssao_kernel_.data());
     }
-    */
-
     RenderQuad();
-
-    auto [width, height] = ctx_->GetFramebufferSize();
-
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, g_buffer_);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glEnable(GL_DEPTH_TEST);
-
-    /*
-    light_shader_.Use();
-    light_shader_.SetMat4("view", camera_.GetViewMatrix());
-    light_shader_.SetMat4("projection", projection_);
-
-    glm::mat4 model;
-    for (unsigned int i = 0; i < lights_.size(); i++) {
-      const auto& light = lights_[i];
-      model = glm::mat4(1.0f);
-      model = glm::translate(model, light.position);
-      model = glm::scale(model, glm::vec3(0.125f));
-      light_shader_.SetMat4("model", model);
-      light_shader_.SetVec3("lightColor", light.color);
-      cube_mesh_.Draw(light_shader_);
-    }
-    */
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, ssao_color_buffer_);
+    lighting_shader_.Use();
+    lighting_shader_.SetInt("texture_position", 0);
+    lighting_shader_.SetInt("texture_normal", 1);
+    lighting_shader_.SetInt("texture_albedo_spec", 2);
+    lighting_shader_.SetInt("texture_ssao", 3);
+    lighting_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
+    lighting_shader_.SetVec3("viewPos", camera_.position);
+    lighting_shader_.SetMat4("projection", projection_);
+    RenderQuad();
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -498,6 +493,8 @@ private:
   unsigned int g_albedo_spec_;
   unsigned int depth_rbo_;
   unsigned int noise_texture_;
+  unsigned int ssao_fbo_;
+  unsigned int ssao_color_buffer_;
 
   int debug_mode_ = 1;
 };

@@ -36,6 +36,7 @@ public:
 
     shader_ = Shader::FromFiles("resources/shaders/ssao_scene/geom.vs", "resources/shaders/ssao_scene/geom.fs");
     ssao_shader_ = Shader::FromFiles("resources/shaders/ssao_scene/ssao.vs", "resources/shaders/ssao_scene/ssao.fs");
+    blur_shader_ = Shader::FromFiles("resources/shaders/ssao_scene/blur.vs", "resources/shaders/ssao_scene/blur.fs");
     lighting_shader_ = Shader::FromFiles("resources/shaders/ssao_scene/lighting.vs", "resources/shaders/ssao_scene/lighting.fs");
     light_shader_ = Shader::FromFiles("resources/shaders/ssao_scene/light.vs", "resources/shaders/ssao_scene/light.fs");
 
@@ -177,6 +178,16 @@ public:
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_color_buffer_, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glGenFramebuffers(1, &ssao_blur_fbo_);
+    glBindFramebuffer(GL_FRAMEBUFFER, ssao_blur_fbo_);
+    glGenTextures(1, &ssao_blur_color_buffer_);
+    glBindTexture(GL_TEXTURE_2D, ssao_blur_color_buffer_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, frame_width, frame_height, 0, GL_RED, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_blur_color_buffer_, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 
   void Update(float dt) override {
@@ -216,12 +227,14 @@ public:
     model = glm::scale(model, glm::vec3(7.5f));
     shader_.SetMat4("model", model);
     shader_.SetBool("inverseNormals", true);
+    glEnable(GL_CULL_FACE);
     cube_mesh_.Draw(shader_);
+    glDisable(GL_CULL_FACE);
 
     model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
     model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(0.5f));
+    model = glm::scale(model, glm::vec3(1.0f));
     shader_.SetMat4("model", model);
     shader_.SetBool("inverseNormals", false);
     backpack_.Draw(shader_);
@@ -229,7 +242,6 @@ public:
 
   void Render() override {
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
     glCullFace(GL_FRONT);
     glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -241,7 +253,6 @@ public:
     glDisable(GL_CULL_FACE);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-
     glBindFramebuffer(GL_FRAMEBUFFER, ssao_fbo_);
     glClear(GL_COLOR_BUFFER_BIT);
     glActiveTexture(GL_TEXTURE0);
@@ -249,12 +260,12 @@ public:
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, g_normal_);
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, g_albedo_spec_);
+    glBindTexture(GL_TEXTURE_2D, noise_texture_);
 
     ssao_shader_.Use();
     ssao_shader_.SetInt("texture_position", 0);
     ssao_shader_.SetInt("texture_normal", 1);
-    ssao_shader_.SetInt("texture_albedo_spec", 2);
+    ssao_shader_.SetInt("texture_noise", 2);
     ssao_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
     ssao_shader_.SetVec3("viewPos", camera_.position);
     ssao_shader_.SetMat4("projection", projection_);
@@ -264,9 +275,25 @@ public:
     RenderQuad();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glActiveTexture(GL_TEXTURE3);
+    glBindFramebuffer(GL_FRAMEBUFFER, ssao_blur_fbo_);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, ssao_color_buffer_);
+
+    blur_shader_.Use();
+    blur_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
+    RenderQuad();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, g_position_);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, g_normal_);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, g_albedo_spec_);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, ssao_blur_color_buffer_);
     lighting_shader_.Use();
     lighting_shader_.SetInt("texture_position", 0);
     lighting_shader_.SetInt("texture_normal", 1);
@@ -419,8 +446,9 @@ private:
   };
 
   Shader shader_;
-  Shader lighting_shader_;
   Shader ssao_shader_;
+  Shader blur_shader_;
+  Shader lighting_shader_;
   Shader light_shader_;
 
   Model backpack_ = Model::Load("resources/models/backpack/backpack.obj", { .texture_options = { .linear = true }});
@@ -495,6 +523,8 @@ private:
   unsigned int noise_texture_;
   unsigned int ssao_fbo_;
   unsigned int ssao_color_buffer_;
+  unsigned int ssao_blur_fbo_;
+  unsigned int ssao_blur_color_buffer_;
 
   int debug_mode_ = 1;
 };

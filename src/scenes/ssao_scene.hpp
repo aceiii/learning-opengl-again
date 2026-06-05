@@ -259,7 +259,7 @@ public:
     ssao_shader_.SetVec3("viewPos", camera_.position);
     ssao_shader_.SetMat4("projection", projection_);
     for (auto idx = 0; idx < ssao_kernel_.size(); idx++) {
-      ssao_shader_.SetVec3("samples[" + std::to_string(idx) + "]", ssao_kernel_.data());
+      ssao_shader_.SetVec3("samples[" + std::to_string(idx) + "]", ssao_kernel_[idx]);
     }
     RenderQuad();
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

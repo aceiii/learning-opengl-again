@@ -37,7 +37,7 @@ public:
     shader_ = Shader::FromFiles("resources/shaders/ssao_scene/geom.vs", "resources/shaders/ssao_scene/geom.fs");
     ssao_shader_ = Shader::FromFiles("resources/shaders/ssao_scene/ssao.vs", "resources/shaders/ssao_scene/ssao.fs");
     blur_shader_ = Shader::FromFiles("resources/shaders/ssao_scene/blur.vs", "resources/shaders/ssao_scene/blur.fs");
-    lighting_shader_ = Shader::FromFiles("resources/shaders/ssao_scene/lighting.vs", "resources/shaders/ssao_scene/lighting.fs");
+    lighting_shader_ = Shader::FromFiles("resources/shaders/ssao_scene/main.vs", "resources/shaders/ssao_scene/main.fs");
     light_shader_ = Shader::FromFiles("resources/shaders/ssao_scene/light.vs", "resources/shaders/ssao_scene/light.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
@@ -307,6 +307,9 @@ public:
     lighting_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
     lighting_shader_.SetVec3("viewPos", camera_.position);
     lighting_shader_.SetMat4("projection", projection_);
+    lighting_shader_.SetVec3("ambientColor", glm::vec3(0.1f));
+    lighting_shader_.SetVec3("lights[0].Position", glm::vec3(0.0f, 5.0f, 0.3f));
+    lighting_shader_.SetVec3("lights[0].Color", glm::vec3(100.0f));
     RenderQuad();
   }
 
@@ -501,6 +504,10 @@ private:
       { {  1.0f,  1.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }, { 1.0f, 0.0f } },
       { { -1.0f,  1.0f, -1.0f }, {  0.0f,  1.0f,  0.0f }, { 0.0f, 1.0f } },
       { { -1.0f,  1.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }, { 0.0f, 0.0f } },
+    },
+    {},
+    {
+      Texture::Load("diffuse", "resources/textures/wood.png", { .linear = true }),
     }
   };
 

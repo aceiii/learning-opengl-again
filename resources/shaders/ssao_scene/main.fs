@@ -1,13 +1,8 @@
 #version 330 core
 
-layout (location = 0) out vec4 FragColor;
-layout (location = 1) out vec4 BrightColor;
+out vec4 FragColor;
 
-in VS_OUT {
-    vec3 FragPos;
-    vec3 Normal;
-    vec2 TexCoords;
-} fs_in;
+in vec2 TexCoords;
 
 struct Light {
     vec3 Position;
@@ -18,14 +13,17 @@ uniform Light lights[16];
 uniform vec3 ambientColor;
 uniform vec3 viewPos;
 
-uniform sampler2D texture_diffuse;
+uniform sampler2D texture_position;
+uniform sampler2D texture_normal;
+uniform sampler2D texture_albedo_spec;
+uniform sampler2D texture_ssao;
 
-vec3 BlinnPhong(vec3 color, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 lightPos, vec3 lightDir, vec3 lightColor) {
+vec3 BlinnPhong(vec3 color, float spec, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 lightPos, vec3 lightDir, vec3 lightColor) {
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 diffuse = diff * lightColor * color;
     vec3 reflectDir = reflect(-lightDir, normal);
     vec3 halfwayDir = normalize(lightDir + viewDir);
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
+    // float spec1 = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
     vec3 specular = spec * vec3(0.2);
 
     float distance = length(fragPos - lightPos);
@@ -34,28 +32,27 @@ vec3 BlinnPhong(vec3 color, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 lightP
     diffuse *= attenuation;
     specular *= attenuation;
 
-    return diffuse + specular;
+    return diffuse;// + specular;
 }
 
 void main() {
-    vec3 viewDir = normalize(viewPos - fs_in.FragPos);
-    vec3 color = texture(texture_diffuse, fs_in.TexCoords).rgb;
-    vec3 ambient = ambientColor;
+    vec3 fragPos = texture(texture_position, TexCoords).rgb;
+    vec3 viewDir = normalize(viewPos - fragPos);
+    vec3 color = texture(texture_albedo_spec, TexCoords).rgb;
+    float spec = texture(texture_albedo_spec, TexCoords).a;
+    vec3 normal = texture(texture_normal, TexCoords).rgb;
+    float occlusion = texture(texture_ssao, TexCoords).r;
+    vec3 ambient = ambientColor * occlusion * color;
     vec3 lighting = vec3(0.0);
 
     for (int i = 0; i < 16; i++) {
         Light light = lights[i];
-        vec3 lightDir = normalize(light.Position - fs_in.FragPos);
-        lighting += BlinnPhong(color, fs_in.Normal, fs_in.FragPos, viewDir, light.Position, lightDir, light.Color);
+        vec3 lightDir = normalize(light.Position - fragPos);
+        lighting += BlinnPhong(color, spec, normal, fragPos, viewDir, light.Position, lightDir, light.Color);
     }
 
+    // float occlusion = texture(texture_ssao, TexCoords).r;
+    // vec3 result = texture(texture_albedo_spec, TexCoords).rgb * occlusion;
     vec3 result = ambient + lighting;
     FragColor = vec4(result, 1.0);
-
-    float brightness = dot(result, vec3(0.2126, 0.7152, 0.0722));
-    if (brightness > 1.0) {
-        BrightColor = vec4(result, 1.0);
-    } else {
-        BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
-    }
 }

@@ -269,6 +269,11 @@ public:
     ssao_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
     ssao_shader_.SetVec3("viewPos", camera_.position);
     ssao_shader_.SetMat4("projection", projection_);
+    ssao_shader_.SetMat4("radius", projection_);
+    ssao_shader_.SetInt("kernelSize", std::clamp(ssao_kernel_size_, 1, static_cast<int>(ssao_kernel_.size())));
+    ssao_shader_.SetFloat("radius", ssao_radius_);
+    ssao_shader_.SetFloat("bias", ssao_bias_);
+
     for (auto idx = 0; idx < ssao_kernel_.size(); idx++) {
       ssao_shader_.SetVec3("samples[" + std::to_string(idx) + "]", ssao_kernel_[idx]);
     }
@@ -327,6 +332,11 @@ public:
         }
       }
       ImGui::NewLine();
+      if (ImGui::CollapsingHeader("SSAO", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::DragInt("Kernel size", &ssao_kernel_size_, 1.0, 1, 64);
+        ImGui::DragFloat("Kernel radius", &ssao_radius_, 0.1f, 0.0f, 1.0f);
+        ImGui::DragFloat("Kernel bias", &ssao_bias_, 0.005f, 0.0f, 1.0f);
+      }
 
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -512,6 +522,8 @@ private:
   bool enable_debug_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
+  float ssao_radius_ = 0.5f;
+  float ssao_bias_ = 0.025f;
 
   unsigned int quad_vao_;
   unsigned int quad_vbo_;
@@ -527,4 +539,5 @@ private:
   unsigned int ssao_blur_color_buffer_;
 
   int debug_mode_ = 1;
+  int ssao_kernel_size_ = 64;
 };

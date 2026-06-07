@@ -47,34 +47,6 @@ public:
     camera_.UpdateCameraVectors();
 
     auto rand = Random::RandFloat();
-
-    const auto num_lights = 32;
-    for (auto idx = 0; idx < num_lights; idx++) {
-      float x = rand.Next() * 6.0 - 3.0;
-      float y = rand.Next() * 6.0 - 4.0;
-      float z = rand.Next() * 6.0 - 3.0;
-      float r = (rand.Next() / 2.0) + 0.5f;
-      float g = (rand.Next() / 2.0) + 0.5f;
-      float b = (rand.Next() / 2.0) + 0.5f;
-
-      float constant = 1.0f;
-      float linear = 0.7f;
-      float quadratic = 1.8f;
-      float light_max = std::fmaxf(std::fmaxf(r, b), b);
-      float radius = (-linear +  std::sqrtf(linear * linear - 4 * quadratic * (constant - (256.0f / 5.0f) * light_max))) / (2 * quadratic);
-
-      Light light{
-        .position = glm::vec3(x, y, z),
-        .color = glm::vec3(r, g, b),
-        .radius = radius,
-      };
-      lights_.push_back(light);
-
-      LogInfo("Adding light at pos=({}, {}, {}), color=({}, {}, {})",
-        light.position.x, light.position.y, light.position.z,
-        light.color.r, light.color.g, light.color.b);
-    }
-
     for (auto idx = 0; idx < 64; idx++) {
       glm::vec3 sample(
         rand.Next() * 2.0 - 1.0,
@@ -305,11 +277,12 @@ public:
     lighting_shader_.SetInt("texture_albedo_spec", 2);
     lighting_shader_.SetInt("texture_ssao", 3);
     lighting_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
+    lighting_shader_.SetInt("ssao", enable_ssao_);
     lighting_shader_.SetVec3("viewPos", camera_.position);
     lighting_shader_.SetMat4("projection", projection_);
-    lighting_shader_.SetVec3("ambientColor", glm::vec3(0.1f));
-    lighting_shader_.SetVec3("lights[0].Position", glm::vec3(0.0f, 5.0f, 0.3f));
-    lighting_shader_.SetVec3("lights[0].Color", glm::vec3(100.0f));
+    lighting_shader_.SetVec3("ambientColor", glm::vec3(0.02f));
+    lighting_shader_.SetVec3("lights[0].Position", light_.position);
+    lighting_shader_.SetVec3("lights[0].Color", light_.color);
     RenderQuad();
   }
 
@@ -324,6 +297,7 @@ public:
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
       ImGui::Checkbox("Debug", &enable_debug_);
+      ImGui::Checkbox("Enable SSAO", &enable_ssao_);
       if (enable_debug_) {
         if (ImGui::BeginCombo("Debug Mode", kDebugModes[debug_mode_-1].c_str())) {
           for (auto idx = 0; idx < kDebugModes.size(); idx++) {
@@ -339,6 +313,10 @@ public:
         ImGui::DragInt("Kernel size", &ssao_kernel_size_, 1.0, 1, 64);
         ImGui::DragFloat("Kernel radius", &ssao_radius_, 0.1f, 0.0f, 1.0f);
         ImGui::DragFloat("Kernel bias", &ssao_bias_, 0.005f, 0.0f, 1.0f);
+      }
+      if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::DragFloat3("Position##Light", glm::value_ptr(light_.position), 0.01f, -100.0f, 100.0f);
+        ImGui::ColorEdit3("Color##Light", glm::value_ptr(light_.color), ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_Float);
       }
 
       if (ImGui::CollapsingHeader("Camera")) {
@@ -444,6 +422,7 @@ private:
     "Normal"s,
     "Albedo"s,
     "Specular"s,
+    "Ambient Occlusion"s,
   };
 
   inline static const std::array kObjectPositions{
@@ -508,17 +487,21 @@ private:
     {},
     {
       Texture::Load("diffuse", "resources/textures/wood.png", { .linear = true }),
+      Texture::Load("specular", "resources/textures/wood.png", { .linear = false }),
     }
   };
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 5.0f)};
+  Light light_{
+    .position = glm::vec3(0.0f, 10.0f, 5.0f),
+    .color = glm::vec3(500.0f),
+  };
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;
   glm::vec3 bg_color_{0.0f, 0.0f, 0.0f};
   glm::vec2 last_mouse_;
 
-  std::vector<Light> lights_;
   std::vector<glm::vec3> ssao_kernel_;
 
   bool wireframe_ = false;
@@ -527,6 +510,7 @@ private:
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
   bool enable_debug_ = false;
+  bool enable_ssao_ = true;
 
   float aspect_ratio_ = 800.0f / 600.0f;
   float ssao_radius_ = 0.5f;

@@ -98,6 +98,7 @@ std::expected<void, std::string> Application::Init() {
   scenes_.push_back(std::make_shared<BloomScene>());
   scenes_.push_back(std::make_shared<DeferredShadingScene>());
   scenes_.push_back(std::make_shared<SSAOScene>());
+  scenes_.push_back(std::make_shared<PBRScene>());
 
   return {};
 }

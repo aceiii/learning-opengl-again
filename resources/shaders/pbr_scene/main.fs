@@ -23,6 +23,24 @@ float DistributeGGX(vec3 N, vec3 H, float a) {
     return nom / denom;
 }
 
+float GeometrySchlickGGX(float NdotV, float k) {
+    float nom = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+    return nom / denom;
+}
+
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float k) {
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx1 = GeometrySchlickGGX(NdotV, k);
+    float ggx2 = GeometrySchlickGGX(NdotL, k);
+    return ggx1 * ggx2;
+}
+
+vec3 FresnelSchlick(float cosTheta, vec3 F0) {
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
 float sphere(vec2 p, float r) {
     return length(p) - r;
 }

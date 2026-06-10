@@ -161,6 +161,91 @@ public:
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_blur_color_buffer_, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    InitSphere();
+  }
+
+  void InitSphere() {
+    glGenVertexArrays(1, &sphere_vao_);
+
+    unsigned int vbo, ebo;
+    glGenBuffers(1, &vbo);
+    glGenBuffers(1, &ebo);
+
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec2> uv;
+    std::vector<glm::vec3> normals;
+    std::vector<unsigned int> indices;
+
+    const unsigned int x_segments = 64;
+    const unsigned int y_segments = 64;
+
+    for (auto x = 0; x <= x_segments; x++) {
+      for (auto y = 0; y <= y_segments; y++) {
+        float x_segment = static_cast<float>(x) / static_cast<float>(x_segments);
+        float y_segment = static_cast<float>(x) / static_cast<float>(y_segments);
+        float x_pos = std::cos(x_segment * 2.0f * M_PI) * std::sin(y_segment * M_PI);
+        float y_pos = std::cos(y_segment * M_PI);
+        float z_pos = std::sin(x_segment * 2.0 * M_PI) * std::sin(y_segment * M_PI);
+
+        positions.push_back(glm::vec3(x_pos, y_pos, z_pos));
+        uv.push_back(glm::vec2(x_segment, y_segment));
+        normals.push_back(glm::vec3(x_pos, y_pos, z_pos));
+
+      }
+    }
+
+    bool odd_row = false;
+    for (auto y = 0; y < y_segments; y++) {
+      if (!odd_row) {
+        for (auto x = 0; x <= x_segments; x++) {
+          indices.push_back(y * (x_segments + 1) + x);
+          indices.push_back((y + 1) * (x_segments + 1) + x);
+        }
+      } else {
+        for (auto x = x_segments; x >= 0; --x) {
+          indices.push_back((y + 1) * (x_segments + 1) + x);
+          indices.push_back(y * (x_segments + 1) + x);
+        }
+      }
+      odd_row = !odd_row;
+    }
+
+    sphere_index_count_ = static_cast<unsigned int>(indices.size());
+
+    std::vector<float> data;
+    for (auto i = 0; i < positions.size(); i++) {
+      data.push_back(positions[i].x);
+      data.push_back(positions[i].y);
+      data.push_back(positions[i].z);
+
+      if (normals.size() > 0) {
+        data.push_back(normals[i].x);
+        data.push_back(normals[i].y);
+        data.push_back(normals[i].z);
+      }
+
+      if (uv.size() > 0) {
+        data.push_back(uv[i].x);
+        data.push_back(uv[i].y);
+      }
+    }
+
+    glBindVertexArray(sphere_vao_);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    unsigned int stride = (3 + 2 + 3) * sizeof(float);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, 0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
+
+    glBindVertexArray(0);
   }
 
   void Update(float dt) override {
@@ -213,91 +298,25 @@ public:
     backpack_.Draw(shader_);
   }
 
+  void RenderSphere() {
+    glBindVertexArray(sphere_vao_);
+    glDrawElements(GL_TRIANGLE_STRIP, sphere_index_count_, GL_UNSIGNED_INT, 0);
+  }
+
   void Render() override {
-    /*
-    glEnable(GL_DEPTH_TEST);
-    glCullFace(GL_FRONT);
-    glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    RenderScene();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, ssao_fbo_);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, g_position_);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, g_normal_);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, noise_texture_);
-
-    ssao_shader_.Use();
-    ssao_shader_.SetInt("texture_position", 0);
-    ssao_shader_.SetInt("texture_normal", 1);
-    ssao_shader_.SetInt("texture_noise", 2);
-    ssao_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
-    ssao_shader_.SetVec3("viewPos", camera_.position);
-    ssao_shader_.SetMat4("projection", projection_);
-    ssao_shader_.SetMat4("radius", projection_);
-    ssao_shader_.SetInt("kernelSize", std::clamp(ssao_kernel_size_, 1, static_cast<int>(ssao_kernel_.size())));
-    ssao_shader_.SetFloat("radius", ssao_radius_);
-    ssao_shader_.SetFloat("bias", ssao_bias_);
-
-    for (auto idx = 0; idx < ssao_kernel_.size(); idx++) {
-      ssao_shader_.SetVec3("samples[" + std::to_string(idx) + "]", ssao_kernel_[idx]);
-    }
-    RenderQuad();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, ssao_blur_fbo_);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, ssao_color_buffer_);
-
-    blur_shader_.Use();
-    blur_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
-    RenderQuad();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, g_position_);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, g_normal_);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, g_albedo_spec_);
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, ssao_blur_color_buffer_);
-    lighting_shader_.Use();
-    lighting_shader_.SetInt("texture_position", 0);
-    lighting_shader_.SetInt("texture_normal", 1);
-    lighting_shader_.SetInt("texture_albedo_spec", 2);
-    lighting_shader_.SetInt("texture_ssao", 3);
-    lighting_shader_.SetInt("debug", enable_debug_ ? debug_mode_ : 0);
-    lighting_shader_.SetInt("ssao", enable_ssao_);
-    lighting_shader_.SetVec3("viewPos", camera_.position);
-    lighting_shader_.SetMat4("projection", projection_);
-    lighting_shader_.SetVec3("ambientColor", glm::vec3(0.02f));
-    lighting_shader_.SetVec3("lights[0].Position", light_.position);
-    lighting_shader_.SetVec3("lights[0].Color", light_.color);
-    RenderQuad();
-    */
-
-
-    auto [frame_width, frame_height] = ctx_->GetFramebufferSize();
-
+    glm::mat4 view = camera_.GetViewMatrix();
     shader_.Use();
-    shader_.SetInt("width", frame_width);
-    shader_.SetInt("height", frame_height);
-    shader_.SetMat4("view", camera_.GetViewMatrix());
-    shader_.SetMat4("projection", projection_);
+    shader_.SetMat4("view", view);
     shader_.SetVec3("viewPos", camera_.position);
-    RenderQuad();
+    shader_.SetFloat("metallic", 0.1f);
+    shader_.SetFloat("roughness", 0.05f);
+
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f));
+    model = glm::scale(model, glm::vec3(1.0f));
+    shader_.SetMat4("model", model);
+    shader_.SetMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+    RenderSphere();
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -542,7 +561,9 @@ private:
   unsigned int ssao_color_buffer_;
   unsigned int ssao_blur_fbo_;
   unsigned int ssao_blur_color_buffer_;
+  unsigned int sphere_vao_;
 
   int debug_mode_ = 1;
   int ssao_kernel_size_ = 64;
+  int sphere_index_count_ = 0;
 };

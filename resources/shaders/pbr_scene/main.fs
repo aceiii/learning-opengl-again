@@ -1,5 +1,7 @@
 #version 330 core
 
+#define PI 3.1415926535897932384626433832795
+
 out vec4 FragColor;
 
 in vec2 TexCoords;
@@ -10,6 +12,16 @@ uniform mat4 view;
 uniform mat4 projection;
 
 uniform vec3 viewPos;
+
+float DistributeGGX(vec3 N, vec3 H, float a) {
+    float a2 = a * a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+    float nom = a2;
+    float denom = NdotH2 * (a2 - 1.0) + 1.0;
+    denom = PI * denom * denom;
+    return nom / denom;
+}
 
 float sphere(vec2 p, float r) {
     return length(p) - r;

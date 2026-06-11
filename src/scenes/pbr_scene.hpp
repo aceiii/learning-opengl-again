@@ -285,8 +285,6 @@ public:
     shader_.SetVec3("viewPos", camera_.position);
 
     shader_.SetVec3("albedo", glm::vec3(0.5f, 0.0f, 0.0f));
-    shader_.SetFloat("metallic", 0.01f);
-    shader_.SetFloat("roughness", 0.5f);
     shader_.SetFloat("ao", 1.0f);
 
     for (auto idx = 0; idx < lights_.size(); idx++) {
@@ -295,11 +293,25 @@ public:
     }
 
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f));
-    model = glm::scale(model, glm::vec3(1.0f));
-    shader_.SetMat4("model", model);
-    shader_.SetMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
-    RenderSphere();
+
+    const int num_rows = 7;
+    const int num_columns = 7;
+    const float spacing = 2.5f;
+
+    for (int row = 0; row < num_rows; row++) {
+      shader_.SetFloat("metallic", static_cast<float>(row) / static_cast<float>(num_rows));
+      for (int col = 0; col < num_columns; col++) {
+        shader_.SetFloat("roughness", glm::clamp(static_cast<float>(col) / static_cast<float>(num_columns), 0.05f, 1.0f));
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3((col - (num_columns / 2)) * spacing, (row - (num_rows / 2)) * spacing, 0.0f));
+        model = glm::scale(model, glm::vec3(1.0f));
+        shader_.SetMat4("model", model);
+        shader_.SetMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+        RenderSphere();
+      }
+    }
+
   }
 
   void RenderInterface(int window_width, int window_height) override {

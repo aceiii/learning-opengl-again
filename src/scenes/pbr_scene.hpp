@@ -47,120 +47,120 @@ public:
     camera_.pitch = -4.5f;
     camera_.UpdateCameraVectors();
 
-    auto rand = Random::RandFloat();
-    for (auto idx = 0; idx < 64; idx++) {
-      glm::vec3 sample(
-        rand.Next() * 2.0 - 1.0,
-        rand.Next() * 2.0 - 1.0,
-        rand.Next()
-      );
-      sample = glm::normalize(sample);
-      sample *= rand.Next();
+    // auto rand = Random::RandFloat();
+    // for (auto idx = 0; idx < 64; idx++) {
+    //   glm::vec3 sample(
+    //     rand.Next() * 2.0 - 1.0,
+    //     rand.Next() * 2.0 - 1.0,
+    //     rand.Next()
+    //   );
+    //   sample = glm::normalize(sample);
+    //   sample *= rand.Next();
 
-      float scale = static_cast<float>(idx) / 64.0f;
-      scale = Util::Lerp(0.1f, 1.0f, scale * scale);
-      sample *= scale;
-      ssao_kernel_.push_back(sample);
-    }
+    //   float scale = static_cast<float>(idx) / 64.0f;
+    //   scale = Util::Lerp(0.1f, 1.0f, scale * scale);
+    //   sample *= scale;
+    //   ssao_kernel_.push_back(sample);
+    // }
 
-    std::array quad_vertices{
-      -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-      -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-       1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-       1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-    };
+    // std::array quad_vertices{
+    //   -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+    //   -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+    //    1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+    //    1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+    // };
 
-    glGenVertexArrays(1, &quad_vao_);
-    glGenBuffers(1, &quad_vbo_);
-    glBindVertexArray(quad_vao_);
-    glBindBuffer(GL_ARRAY_BUFFER, quad_vbo_);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices.data(), GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glBindVertexArray(0);
+    // glGenVertexArrays(1, &quad_vao_);
+    // glGenBuffers(1, &quad_vbo_);
+    // glBindVertexArray(quad_vao_);
+    // glBindBuffer(GL_ARRAY_BUFFER, quad_vbo_);
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices.data(), GL_STATIC_DRAW);
+    // glEnableVertexAttribArray(0);
+    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+    // glEnableVertexAttribArray(1);
+    // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    // glBindVertexArray(0);
 
-    auto [frame_width, frame_height] = ctx_->GetFramebufferSize();
+    // auto [frame_width, frame_height] = ctx_->GetFramebufferSize();
 
-    glGenFramebuffers(1, &g_buffer_);
-    glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
+    // glGenFramebuffers(1, &g_buffer_);
+    // glBindFramebuffer(GL_FRAMEBUFFER, g_buffer_);
 
-    glGenTextures(1, &g_position_);
-    glBindTexture(GL_TEXTURE_2D, g_position_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, frame_width, frame_height, 0, GL_RGBA, GL_FLOAT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_position_, 0);
+    // glGenTextures(1, &g_position_);
+    // glBindTexture(GL_TEXTURE_2D, g_position_);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, frame_width, frame_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_position_, 0);
 
-    glGenTextures(1, &g_normal_);
-    glBindTexture(GL_TEXTURE_2D, g_normal_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, frame_width, frame_height, 0, GL_RGBA, GL_FLOAT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, g_normal_, 0);
+    // glGenTextures(1, &g_normal_);
+    // glBindTexture(GL_TEXTURE_2D, g_normal_);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, frame_width, frame_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, g_normal_, 0);
 
-    glGenTextures(1, &g_albedo_spec_);
-    glBindTexture(GL_TEXTURE_2D, g_albedo_spec_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, frame_width, frame_height, 0, GL_RGBA, GL_FLOAT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, g_albedo_spec_, 0);
+    // glGenTextures(1, &g_albedo_spec_);
+    // glBindTexture(GL_TEXTURE_2D, g_albedo_spec_);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, frame_width, frame_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, g_albedo_spec_, 0);
 
-    glGenRenderbuffers(1, &depth_rbo_);
-    glBindRenderbuffer(GL_RENDERBUFFER, depth_rbo_);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, frame_width, frame_width);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rbo_);
+    // glGenRenderbuffers(1, &depth_rbo_);
+    // glBindRenderbuffer(GL_RENDERBUFFER, depth_rbo_);
+    // glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, frame_width, frame_width);
+    // glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rbo_);
 
-    std::array<GLenum, 3> attachments{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-    glDrawBuffers(attachments.size(), attachments.data());
+    // std::array<GLenum, 3> attachments{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+    // glDrawBuffers(attachments.size(), attachments.data());
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-      LogWarning("Framebuffer not complete: g_buffer_");
-    }
+    // if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+    //   LogWarning("Framebuffer not complete: g_buffer_");
+    // }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    std::vector<glm::vec3> ssao_noise;
-    for (auto idx = 0; idx < 16; idx++) {
-      glm::vec3 noise(
-        rand.Next() * 2.0 - 1.0,
-        rand.Next() * 2.0 - 1.0,
-        0.0f
-      );
+    // std::vector<glm::vec3> ssao_noise;
+    // for (auto idx = 0; idx < 16; idx++) {
+    //   glm::vec3 noise(
+    //     rand.Next() * 2.0 - 1.0,
+    //     rand.Next() * 2.0 - 1.0,
+    //     0.0f
+    //   );
 
-      ssao_noise.push_back(noise);
-    }
+    //   ssao_noise.push_back(noise);
+    // }
 
-    glGenTextures(1, &noise_texture_);
-    glBindTexture(GL_TEXTURE_2D, noise_texture_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, ssao_noise.data());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // glGenTextures(1, &noise_texture_);
+    // glBindTexture(GL_TEXTURE_2D, noise_texture_);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, ssao_noise.data());
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glGenFramebuffers(1, &ssao_fbo_);
-    glBindFramebuffer(GL_FRAMEBUFFER, ssao_fbo_);
-    glGenTextures(1, &ssao_color_buffer_);
-    glBindTexture(GL_TEXTURE_2D, ssao_color_buffer_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, frame_width, frame_height, 0, GL_RED, GL_FLOAT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_color_buffer_, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // glGenFramebuffers(1, &ssao_fbo_);
+    // glBindFramebuffer(GL_FRAMEBUFFER, ssao_fbo_);
+    // glGenTextures(1, &ssao_color_buffer_);
+    // glBindTexture(GL_TEXTURE_2D, ssao_color_buffer_);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, frame_width, frame_height, 0, GL_RED, GL_FLOAT, nullptr);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_color_buffer_, 0);
+    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glGenFramebuffers(1, &ssao_blur_fbo_);
-    glBindFramebuffer(GL_FRAMEBUFFER, ssao_blur_fbo_);
-    glGenTextures(1, &ssao_blur_color_buffer_);
-    glBindTexture(GL_TEXTURE_2D, ssao_blur_color_buffer_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, frame_width, frame_height, 0, GL_RED, GL_FLOAT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_blur_color_buffer_, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // glGenFramebuffers(1, &ssao_blur_fbo_);
+    // glBindFramebuffer(GL_FRAMEBUFFER, ssao_blur_fbo_);
+    // glGenTextures(1, &ssao_blur_color_buffer_);
+    // glBindTexture(GL_TEXTURE_2D, ssao_blur_color_buffer_);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, frame_width, frame_height, 0, GL_RED, GL_FLOAT, nullptr);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssao_blur_color_buffer_, 0);
+    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     InitSphere();
   }
@@ -270,33 +270,6 @@ public:
     glBindVertexArray(0);
   }
 
-  void RenderScene() {
-    glPolygonMode(GL_FRONT_AND_BACK,  wireframe_ ? GL_LINE : GL_FILL);
-    glm::mat4 model;
-
-    shader_.Use();
-    shader_.SetMat4("view", camera_.GetViewMatrix());
-    shader_.SetMat4("projection", projection_);
-    shader_.SetVec3("viewPos", camera_.position);
-
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 7.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(7.5f));
-    shader_.SetMat4("model", model);
-    shader_.SetBool("inverseNormals", true);
-    glEnable(GL_CULL_FACE);
-    cube_mesh_.Draw(shader_);
-    glDisable(GL_CULL_FACE);
-
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0f));
-    model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(1.0f));
-    shader_.SetMat4("model", model);
-    shader_.SetBool("inverseNormals", false);
-    backpack_.Draw(shader_);
-  }
-
   void RenderSphere() {
     glBindVertexArray(sphere_vao_);
     glDrawElements(GL_TRIANGLE_STRIP, sphere_index_count_, GL_UNSIGNED_INT, 0);
@@ -309,8 +282,15 @@ public:
     shader_.SetMat4("projection", projection_);
     shader_.SetVec3("viewPos", camera_.position);
 
-    shader_.SetFloat("metallic", 0.1f);
-    shader_.SetFloat("roughness", 0.05f);
+    shader_.SetVec3("albedo", glm::vec3(0.5f, 0.0f, 0.0f));
+    shader_.SetFloat("metallic", 0.01f);
+    shader_.SetFloat("roughness", 0.5f);
+    shader_.SetFloat("ao", 1.0f);
+
+    for (auto idx = 0; idx < lights_.size(); idx++) {
+      shader_.SetVec3("lights[" + std::to_string(idx) + "].Position", lights_[idx].position);
+      shader_.SetVec3("lights[" + std::to_string(idx) + "].Color", lights_[idx].color);
+    }
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f));
@@ -330,28 +310,6 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::NewLine();
-      ImGui::Checkbox("Debug", &enable_debug_);
-      ImGui::Checkbox("Enable SSAO", &enable_ssao_);
-      if (enable_debug_) {
-        if (ImGui::BeginCombo("Debug Mode", kDebugModes[debug_mode_-1].c_str())) {
-          for (auto idx = 0; idx < kDebugModes.size(); idx++) {
-            if (ImGui::Selectable(kDebugModes[idx].c_str(), idx + 1 == debug_mode_)) {
-              debug_mode_ = idx + 1;
-            }
-          }
-          ImGui::EndCombo();
-        }
-      }
-      ImGui::NewLine();
-      if (ImGui::CollapsingHeader("SSAO", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::DragInt("Kernel size", &ssao_kernel_size_, 1.0, 1, 64);
-        ImGui::DragFloat("Kernel radius", &ssao_radius_, 0.1f, 0.0f, 1.0f);
-        ImGui::DragFloat("Kernel bias", &ssao_bias_, 0.005f, 0.0f, 1.0f);
-      }
-      if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::DragFloat3("Position##Light", glm::value_ptr(light_.position), 0.01f, -100.0f, 100.0f);
-        ImGui::ColorEdit3("Color##Light", glm::value_ptr(light_.color), ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_Float);
-      }
 
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -526,10 +484,25 @@ private:
   };
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 5.0f)};
-  Light light_{
-    .position = glm::vec3(0.0f, 10.0f, 5.0f),
-    .color = glm::vec3(500.0f),
-  };
+
+  std::vector<Light> lights_ = {{
+    Light{
+      .position = glm::vec3(-10.0f, 10.0f, 10.0f),
+      .color = glm::vec3(300.0f, 300.0f, 300.0f),
+    },
+    Light{
+      .position = glm::vec3(10.0f, 10.0f, 10.0f),
+      .color = glm::vec3(300.0f, 300.0f, 300.0f),
+    },
+    Light{
+      .position = glm::vec3(-10.0f, -10.0f, 10.0f),
+      .color = glm::vec3(300.0f, 300.0f, 300.0f),
+    },
+    Light{
+      .position = glm::vec3(10.0f, -10.0f, 10.0f),
+      .color = glm::vec3(300.0f, 300.0f, 300.0f),
+    },
+  }};
 
   glm::mat4 projection_;
   glm::vec3 orig_bgcolor_;

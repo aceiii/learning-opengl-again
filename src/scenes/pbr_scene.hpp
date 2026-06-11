@@ -180,10 +180,10 @@ public:
     const unsigned int x_segments = 64;
     const unsigned int y_segments = 64;
 
-    for (auto x = 0; x <= x_segments; x++) {
-      for (auto y = 0; y <= y_segments; y++) {
+    for (int x = 0; x <= x_segments; x++) {
+      for (int y = 0; y <= y_segments; y++) {
         float x_segment = static_cast<float>(x) / static_cast<float>(x_segments);
-        float y_segment = static_cast<float>(x) / static_cast<float>(y_segments);
+        float y_segment = static_cast<float>(y) / static_cast<float>(y_segments);
         float x_pos = std::cos(x_segment * 2.0f * M_PI) * std::sin(y_segment * M_PI);
         float y_pos = std::cos(y_segment * M_PI);
         float z_pos = std::sin(x_segment * 2.0 * M_PI) * std::sin(y_segment * M_PI);
@@ -191,19 +191,18 @@ public:
         positions.push_back(glm::vec3(x_pos, y_pos, z_pos));
         uv.push_back(glm::vec2(x_segment, y_segment));
         normals.push_back(glm::vec3(x_pos, y_pos, z_pos));
-
       }
     }
 
     bool odd_row = false;
-    for (auto y = 0; y < y_segments; y++) {
+    for (int y = 0; y < y_segments; y++) {
       if (!odd_row) {
-        for (auto x = 0; x <= x_segments; x++) {
+        for (int x = 0; x <= x_segments; x++) {
           indices.push_back(y * (x_segments + 1) + x);
           indices.push_back((y + 1) * (x_segments + 1) + x);
         }
       } else {
-        for (auto x = x_segments; x >= 0; --x) {
+        for (int x = x_segments; x >= 0; --x) {
           indices.push_back((y + 1) * (x_segments + 1) + x);
           indices.push_back(y * (x_segments + 1) + x);
         }
@@ -307,7 +306,9 @@ public:
     glm::mat4 view = camera_.GetViewMatrix();
     shader_.Use();
     shader_.SetMat4("view", view);
+    shader_.SetMat4("projection", projection_);
     shader_.SetVec3("viewPos", camera_.position);
+
     shader_.SetFloat("metallic", 0.1f);
     shader_.SetFloat("roughness", 0.05f);
 

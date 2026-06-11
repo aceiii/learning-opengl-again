@@ -98,41 +98,41 @@ Light lights[NUM_LIGHTS];
 
 
 void main() {
-    vec3 N = normalize(Normal);
-    vec3 V = normalize(viewPos - WorldPos);
+    // vec3 N = normalize(Normal);
+    // vec3 V = normalize(viewPos - WorldPos);
 
-    vec3 Lo = vec3(0.0);
-    for (int i = 0; i < NUM_LIGHTS; i++) {
-        vec3 L = normalize(lights[i].Position - WorldPos);
-        vec3 H = normalize(V + L);
+    // vec3 Lo = vec3(0.0);
+    // for (int i = 0; i < NUM_LIGHTS; i++) {
+    //     vec3 L = normalize(lights[i].Position - WorldPos);
+    //     vec3 H = normalize(V + L);
 
-        float distance = length(lights[i].Position - WorldPos);
-        float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = lights[i].Color * attenuation;
+    //     float distance = length(lights[i].Position - WorldPos);
+    //     float attenuation = 1.0 / (distance * distance);
+    //     vec3 radiance = lights[i].Color * attenuation;
 
-        vec3 F0 = vec3(0.04);
-        F0 = mix(F0, albedo, metallic);
-        vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
+    //     vec3 F0 = vec3(0.04);
+    //     F0 = mix(F0, albedo, metallic);
+    //     vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
 
-        float NDF = DistributionGGX(N, H, roughness);
-        float G = GeometrySmith(N, V, L, roughness);
+    //     float NDF = DistributionGGX(N, H, roughness);
+    //     float G = GeometrySmith(N, V, L, roughness);
 
-        vec3 numerator = NDF * G * F;
-        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
-        vec3 specular = numerator / denominator;
+    //     vec3 numerator = NDF * G * F;
+    //     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    //     vec3 specular = numerator / denominator;
 
-        vec3 kS = F;
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;
+    //     vec3 kS = F;
+    //     vec3 kD = vec3(1.0) - kS;
+    //     kD *= 1.0 - metallic;
 
-        float NdotL = max(dot(N, L), 0.0);
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-    }
+    //     float NdotL = max(dot(N, L), 0.0);
+    //     Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+    // }
 
-    vec3 ambient = vec3(0.3) * albedo * ao;
-    vec3 color = ambient + Lo;
-    color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / 2.2));
+    // vec3 ambient = vec3(0.3) * albedo * ao;
+    // vec3 color = ambient + Lo;
+    // color = color / (color + vec3(1.0));
+    // color = pow(color, vec3(1.0 / 2.2));
 
-    FragColor = vec4(color, 1.0);
+    FragColor = vec4(vec3(1.0), 1.0);
 }

@@ -36,6 +36,7 @@ public:
     ctx_->SetBackgroundColor(bg_color_);
 
     shader_ = Shader::FromFiles("resources/shaders/pbr_scene/main.vs", "resources/shaders/pbr_scene/main.fs");
+    textured_shader_ = Shader::FromFiles("resources/shaders/pbr_scene/textured.vs", "resources/shaders/pbr_scene/textured.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
     camera_.position = glm::vec3(9.5f, 0.5f, 5.0f);
@@ -44,6 +45,17 @@ public:
     camera_.UpdateCameraVectors();
 
     InitSphere();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_albedo_.id);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture_normal_.id);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, texture_metallic_.id);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, texture_roughness_.id);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, texture_ao_.id);
 
     glEnable(GL_DEPTH_TEST);
   }
@@ -147,12 +159,6 @@ public:
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
   }
 
-  void RenderQuad() {
-    glBindVertexArray(quad_vao_);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(0);
-  }
-
   void RenderSphere() {
     glBindVertexArray(sphere_vao_);
     glDrawElements(GL_TRIANGLE_STRIP, sphere_index_count_, GL_UNSIGNED_INT, 0);
@@ -160,17 +166,25 @@ public:
 
   void Render() override {
     glm::mat4 view = camera_.GetViewMatrix();
-    shader_.Use();
-    shader_.SetMat4("view", view);
-    shader_.SetMat4("projection", projection_);
-    shader_.SetVec3("viewPos", camera_.position);
 
-    shader_.SetVec3("albedo", glm::vec3(0.5f, 0.0f, 0.0f));
-    shader_.SetFloat("ao", 1.0f);
+    auto& shader = show_textured_ ? textured_shader_ : shader_;
+
+    shader.Use();
+    shader.SetInt("texture_albedo", 0);
+    shader.SetInt("texture_normal", 1);
+    shader.SetInt("texture_metallic", 2);
+    shader.SetInt("texture_roughness", 3);
+    shader.SetInt("texture_ao", 4);
+    shader.SetMat4("view", view);
+    shader.SetMat4("projection", projection_);
+    shader.SetVec3("viewPos", camera_.position);
+
+    shader.SetVec3("albedo", glm::vec3(0.5f, 0.0f, 0.0f));
+    shader.SetFloat("ao", 1.0f);
 
     for (auto idx = 0; idx < lights_.size(); idx++) {
-      shader_.SetVec3("lights[" + std::to_string(idx) + "].Position", lights_[idx].position);
-      shader_.SetVec3("lights[" + std::to_string(idx) + "].Color", lights_[idx].color);
+      shader.SetVec3("lights[" + std::to_string(idx) + "].Position", lights_[idx].position);
+      shader.SetVec3("lights[" + std::to_string(idx) + "].Color", lights_[idx].color);
     }
 
     glm::mat4 model = glm::mat4(1.0f);
@@ -180,15 +194,15 @@ public:
     const float spacing = 2.5f;
 
     for (int row = 0; row < num_rows; row++) {
-      shader_.SetFloat("metallic", static_cast<float>(row) / static_cast<float>(num_rows));
+      shader.SetFloat("metallic", static_cast<float>(row) / static_cast<float>(num_rows));
       for (int col = 0; col < num_columns; col++) {
-        shader_.SetFloat("roughness", glm::clamp(static_cast<float>(col) / static_cast<float>(num_columns), 0.05f, 1.0f));
+        shader.SetFloat("roughness", glm::clamp(static_cast<float>(col) / static_cast<float>(num_columns), 0.05f, 1.0f));
 
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3((col - (num_columns / 2)) * spacing, (row - (num_rows / 2)) * spacing, 0.0f));
         model = glm::scale(model, glm::vec3(1.0f));
-        shader_.SetMat4("model", model);
-        shader_.SetMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+        shader.SetMat4("model", model);
+        shader.SetMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
         RenderSphere();
       }
     }
@@ -203,6 +217,7 @@ public:
     ImGui::SetNextWindowSize(ImVec2(), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
+      ImGui::Checkbox("Use textures", &show_textured_);
       ImGui::NewLine();
 
       if (ImGui::CollapsingHeader("Camera")) {
@@ -231,6 +246,7 @@ public:
     }
 
     shader_.Destroy();
+    textured_shader_.Destroy();
   }
 
   std::string Name() const override {
@@ -324,10 +340,13 @@ private:
   };
 
   Shader shader_;
-  Shader ssao_shader_;
-  Shader blur_shader_;
-  Shader lighting_shader_;
-  Shader light_shader_;
+  Shader textured_shader_;
+
+  Texture texture_albedo_ = Texture::Load("albedo", "resources/textures/rustediron1-alt2-bl/rustediron2_basecolor.png");
+  Texture texture_normal_ = Texture::Load("normal", "resources/textures/rustediron1-alt2-bl/rustediron2_normal.png");
+  Texture texture_metallic_ = Texture::Load("metallic", "resources/textures/rustediron1-alt2-bl/rustediron2_metallic.png");
+  Texture texture_roughness_ = Texture::Load("roughness", "resources/textures/rustediron1-alt2-bl/rustediron2_roughness.png");
+  Texture texture_ao_ = Texture::Load("ao", "resources/textures/1x1-black.png");
 
   Model backpack_ = Model::Load("resources/models/backpack/backpack.obj", { .texture_options = { .linear = true }});
 
@@ -410,28 +429,11 @@ private:
   bool capture_hold_ = false;
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
-  bool enable_debug_ = false;
-  bool enable_ssao_ = true;
+  bool show_textured_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
-  float ssao_radius_ = 0.5f;
-  float ssao_bias_ = 0.025f;
 
-  unsigned int quad_vao_;
-  unsigned int quad_vbo_;
-  unsigned int g_buffer_;
-  unsigned int g_position_;
-  unsigned int g_normal_;
-  unsigned int g_albedo_spec_;
-  unsigned int depth_rbo_;
-  unsigned int noise_texture_;
-  unsigned int ssao_fbo_;
-  unsigned int ssao_color_buffer_;
-  unsigned int ssao_blur_fbo_;
-  unsigned int ssao_blur_color_buffer_;
   unsigned int sphere_vao_;
 
-  int debug_mode_ = 1;
-  int ssao_kernel_size_ = 64;
   int sphere_index_count_ = 0;
 };

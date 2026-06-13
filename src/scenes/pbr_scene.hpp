@@ -179,7 +179,7 @@ public:
     shader.SetMat4("projection", projection_);
     shader.SetVec3("viewPos", camera_.position);
 
-    shader.SetVec3("albedo", glm::vec3(0.5f, 0.0f, 0.0f));
+    shader.SetVec3("albedo", albedo_);
     shader.SetFloat("ao", 1.0f);
 
     for (auto idx = 0; idx < lights_.size(); idx++) {
@@ -219,6 +219,9 @@ public:
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::Checkbox("Use textures", &show_textured_);
       ImGui::NewLine();
+      if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::ColorEdit3("Albedo", glm::value_ptr(albedo_));
+      }
 
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
@@ -422,7 +425,7 @@ private:
   glm::vec3 bg_color_{0.0f, 0.0f, 0.0f};
   glm::vec2 last_mouse_;
 
-  std::vector<glm::vec3> ssao_kernel_;
+  glm::vec3 albedo_ = glm::vec3(0.5f, 0.0f, 0.0f);
 
   bool wireframe_ = false;
   bool capture_mouse_ = false;

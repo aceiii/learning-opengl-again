@@ -223,6 +223,17 @@ public:
         ImGui::ColorEdit3("Albedo", glm::value_ptr(albedo_));
       }
 
+      if (ImGui::CollapsingHeader("Lights")) {
+        for (auto idx = 0; idx < lights_.size(); idx++) {
+          auto& light = lights_[idx];
+          ImGui::PushID(("Light##" + std::to_string(idx)).c_str());
+          ImGui::Text("Light %d", idx+1);
+          ImGui::DragFloat3("Position", glm::value_ptr(light.position));
+          ImGui::ColorEdit3("Color", glm::value_ptr(light.color), ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+          ImGui::PopID();
+        }
+      }
+
       if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Checkbox("Hide UI During Capture", &hide_interface_);
         ImGui::Checkbox("Hold Capture on mouse press", &capture_hold_);

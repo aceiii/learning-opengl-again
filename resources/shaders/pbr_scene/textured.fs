@@ -24,6 +24,7 @@ struct Light {
 const int NUM_LIGHTS = 4;
 
 uniform Light lights[NUM_LIGHTS];
+uniform vec3 ambient;
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
@@ -128,8 +129,7 @@ void main() {
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    vec3 ambient = vec3(0.03) * albedo * ao;
-    vec3 color = ambient + Lo;
+    vec3 color = (ambient * albedo * ao) + Lo;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / 2.2));
 

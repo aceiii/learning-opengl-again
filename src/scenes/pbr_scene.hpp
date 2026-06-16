@@ -174,6 +174,7 @@ public:
     shader.SetVec3("albedo", albedo_);
     shader.SetFloat("ao", 1.0f);
 
+    shader.SetVec3("ambient", ambient_);
     for (auto idx = 0; idx < lights_.size(); idx++) {
       shader.SetVec3("lights[" + std::to_string(idx) + "].Position", lights_[idx].position);
       shader.SetVec3("lights[" + std::to_string(idx) + "].Color", lights_[idx].color);
@@ -228,6 +229,8 @@ public:
       }
 
       if (ImGui::CollapsingHeader("Lights")) {
+        ImGui::ColorEdit3("Ambient", glm::value_ptr(ambient_), ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+        ImGui::NewLine();
         for (auto idx = 0; idx < lights_.size(); idx++) {
           auto& light = lights_[idx];
           ImGui::PushID(("Light##" + std::to_string(idx)).c_str());
@@ -508,6 +511,7 @@ private:
   glm::vec2 last_mouse_;
 
   glm::vec3 albedo_ = glm::vec3(0.5f, 0.0f, 0.0f);
+  glm::vec3 ambient_ = glm::vec3(0.3f);
 
   bool wireframe_ = false;
   bool capture_mouse_ = false;

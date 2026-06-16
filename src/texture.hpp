@@ -13,9 +13,10 @@ struct TextureOptions {
 };
 
 struct Texture {
-  unsigned int id;
+  unsigned int id = 0;
   std::string type;
   std::string path;
 
   static Texture Load(std::string_view type, std::string_view path, TextureOptions options = {});
+  void Unload();
 };

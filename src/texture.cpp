@@ -59,3 +59,12 @@ Texture Texture::Load(std::string_view type, std::string_view path, TextureOptio
     .path = std::string{path},
   };
 }
+
+void Texture::Unload() {
+  if (!id) {
+    return;
+  }
+
+  glDeleteTextures(1, &id);
+  id = 0;
+}

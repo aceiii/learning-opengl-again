@@ -46,16 +46,8 @@ public:
 
     InitSphere();
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture_albedo_.id);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, texture_normal_.id);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, texture_metallic_.id);
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, texture_roughness_.id);
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, texture_ao_.id);
+    LoadTextureGroup();
+    BindTextureGroup();
 
     glEnable(GL_DEPTH_TEST);
   }
@@ -218,6 +210,18 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::Checkbox("Use textures", &show_textured_);
+      if (ImGui::BeginCombo("Texture", kTextureGroups[selected_texture_idx_].name.c_str())) {
+        for (auto idx = 0; idx < kTextureGroups.size(); idx++) {
+          auto& texture_group = kTextureGroups[idx];
+          if (ImGui::Selectable(texture_group.name.c_str(), idx == selected_texture_idx_) && idx != selected_texture_idx_) {
+            UnloadTextureGroup();
+            selected_texture_idx_ = idx;
+            LoadTextureGroup();
+            BindTextureGroup();
+          }
+        }
+        ImGui::EndCombo();
+      }
       ImGui::NewLine();
       if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::ColorEdit3("Albedo", glm::value_ptr(albedo_));
@@ -320,10 +324,50 @@ private:
     }
   }
 
+  void BindTextureGroup() {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_albedo_.id);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture_normal_.id);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, texture_metallic_.id);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, texture_roughness_.id);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, texture_ao_.id);
+  }
+
+  void LoadTextureGroup() {
+    auto& texture_group = kTextureGroups[selected_texture_idx_];
+    texture_albedo_ = Texture::Load("albedo", texture_group.albedo);
+    texture_normal_ = Texture::Load("normal", texture_group.normal);
+    texture_metallic_ = Texture::Load("metallic", texture_group.metallic);
+    texture_roughness_ = Texture::Load("roughness", texture_group.roughness);
+    texture_ao_ = Texture::Load("ao", texture_group.ao);
+  }
+
+  void UnloadTextureGroup() {
+    texture_albedo_.Unload();
+    texture_normal_.Unload();
+    texture_metallic_.Unload();
+    texture_roughness_.Unload();
+    texture_ao_.Unload();
+  }
+
   struct Light {
     glm::vec3 position;
     glm::vec3 color;
     float radius;
+  };
+
+  struct TextureGroup {
+    std::string name;
+    std::string path;
+    std::string albedo;
+    std::string normal;
+    std::string metallic;
+    std::string roughness;
+    std::string ao;
   };
 
   IAppContext* ctx_ = nullptr;
@@ -353,14 +397,41 @@ private:
     glm::vec3( 3.0,  -0.5,  3.0),
   };
 
+  inline static const std::array kTextureGroups{
+    TextureGroup{
+      .name = "rustediron",
+      .albedo = "resources/textures/rustediron-streaks2-bl/rustediron-streaks_basecolor.png",
+      .normal = "resources/textures/rustediron-streaks2-bl/rustediron-streaks_normal.png",
+      .metallic = "resources/textures/rustediron-streaks2-bl/rustediron-streaks_metallic.png",
+      .roughness = "resources/textures/rustediron-streaks2-bl/rustediron-streaks_roughness.png",
+      .ao = "resources/textures/1x1-black.png",
+    },
+    TextureGroup{
+      .name = "rustediron-alt",
+      .albedo = "resources/textures/rustediron1-alt2-bl/rustediron2_basecolor.png",
+      .normal = "resources/textures/rustediron1-alt2-bl/rustediron2_normal.png",
+      .metallic = "resources/textures/rustediron1-alt2-bl/rustediron2_metallic.png",
+      .roughness = "resources/textures/rustediron1-alt2-bl/rustediron2_roughness.png",
+      .ao = "resources/textures/1x1-black.png",
+    },
+    TextureGroup{
+      .name = "scuffed-metal",
+      .albedo = "resources/textures/scuffed-metal1-bl/scuffed-metal1_albedo.png",
+      .normal = "resources/textures/scuffed-metal1-bl/scuffed-metal1_normal-ogl.png",
+      .metallic = "resources/textures/scuffed-metal1-bl/scuffed-metal1_metallic.png",
+      .roughness = "resources/textures/scuffed-metal1-bl/scuffed-metal1_roughness.png",
+      .ao = "resources/textures/scuffed-metal1-bl/scuffed-metal1_ao.png",
+    },
+  };
+
   Shader shader_;
   Shader textured_shader_;
 
-  Texture texture_albedo_ = Texture::Load("albedo", "resources/textures/rustediron1-alt2-bl/rustediron2_basecolor.png");
-  Texture texture_normal_ = Texture::Load("normal", "resources/textures/rustediron1-alt2-bl/rustediron2_normal.png");
-  Texture texture_metallic_ = Texture::Load("metallic", "resources/textures/rustediron1-alt2-bl/rustediron2_metallic.png");
-  Texture texture_roughness_ = Texture::Load("roughness", "resources/textures/rustediron1-alt2-bl/rustediron2_roughness.png");
-  Texture texture_ao_ = Texture::Load("ao", "resources/textures/1x1-black.png");
+  Texture texture_albedo_;
+  Texture texture_normal_;
+  Texture texture_metallic_;
+  Texture texture_roughness_;
+  Texture texture_ao_;
 
   Model backpack_ = Model::Load("resources/models/backpack/backpack.obj", { .texture_options = { .linear = true }});
 
@@ -448,6 +519,7 @@ private:
   float aspect_ratio_ = 800.0f / 600.0f;
 
   unsigned int sphere_vao_;
+  unsigned int selected_texture_idx_ = 0;
 
   int sphere_index_count_ = 0;
 };

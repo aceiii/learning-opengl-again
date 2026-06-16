@@ -407,7 +407,7 @@ private:
       .normal = "resources/textures/rustediron-streaks2-bl/rustediron-streaks_normal.png",
       .metallic = "resources/textures/rustediron-streaks2-bl/rustediron-streaks_metallic.png",
       .roughness = "resources/textures/rustediron-streaks2-bl/rustediron-streaks_roughness.png",
-      .ao = "resources/textures/1x1-black.png",
+      .ao = "resources/textures/1x1-white.png",
     },
     TextureGroup{
       .name = "rustediron-alt",
@@ -415,7 +415,7 @@ private:
       .normal = "resources/textures/rustediron1-alt2-bl/rustediron2_normal.png",
       .metallic = "resources/textures/rustediron1-alt2-bl/rustediron2_metallic.png",
       .roughness = "resources/textures/rustediron1-alt2-bl/rustediron2_roughness.png",
-      .ao = "resources/textures/1x1-black.png",
+      .ao = "resources/textures/1x1-white.png",
     },
     TextureGroup{
       .name = "scuffed-metal",

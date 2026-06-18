@@ -10,6 +10,7 @@ struct TextureOptions {
   int min_filter;
   int mag_filter;
   bool linear;
+  bool hdr;
 };
 
 struct Texture {

@@ -31,9 +31,9 @@ Texture Texture::Load(std::string_view type, std::string_view path, TextureOptio
 
   GLenum format, internal_format;
   switch (image.num_components) {
-    case 1: internal_format = format = GL_RED; break;
-    case 3: format = GL_RGB; internal_format = options.linear ? GL_SRGB : GL_RGB; break;
-    case 4: format = GL_RGBA; internal_format = options.linear ? GL_SRGB_ALPHA : GL_RGBA; break;
+    case 1: internal_format = options.hdr ? GL_R32F : GL_RED; format = GL_RED; break;
+    case 3: format = GL_RGB; internal_format = options.hdr ? GL_RGB16F : options.linear ? GL_SRGB : GL_RGB; break;
+    case 4: format = GL_RGBA; internal_format = options.hdr ? GL_RGBA16F : options.linear ? GL_SRGB_ALPHA : GL_RGBA; break;
     default: quill::warning(logger, "Unknown texture format: {}", image.num_components);
   }
 

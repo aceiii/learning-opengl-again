@@ -49,6 +49,14 @@ public:
     LoadTextureGroup();
     BindTextureGroup();
 
+    glGenFramebuffers(1, &capture_fbo_);
+    glGenRenderbuffers(1, & capture_rbo_);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo_);
+    glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo_);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER,  capture_rbo_);
+
     glEnable(GL_DEPTH_TEST);
   }
 
@@ -524,6 +532,8 @@ private:
 
   unsigned int sphere_vao_;
   unsigned int selected_texture_idx_ = 0;
+  unsigned int capture_fbo_;
+  unsigned int capture_rbo_;
 
   int sphere_index_count_ = 0;
 };

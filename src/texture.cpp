@@ -30,15 +30,29 @@ Texture Texture::Load(std::string_view type, std::string_view path, TextureOptio
   }
 
   GLenum format, internal_format;
+  GLenum byte_type = options.hdr ? GL_FLOAT : GL_UNSIGNED_BYTE;
   switch (image.num_components) {
-    case 1: internal_format = options.hdr ? GL_R32F : GL_RED; format = GL_RED; break;
-    case 3: format = GL_RGB; internal_format = options.hdr ? GL_RGB16F : options.linear ? GL_SRGB : GL_RGB; break;
-    case 4: format = GL_RGBA; internal_format = options.hdr ? GL_RGBA16F : options.linear ? GL_SRGB_ALPHA : GL_RGBA; break;
-    default: quill::warning(logger, "Unknown texture format: {}", image.num_components);
+    case 1:
+      internal_format = options.hdr ? GL_R32F : GL_RED;
+      format = GL_RED;
+      byte_type = GL_FLOAT;
+      break;
+    case 3:
+      format = GL_RGB;
+      internal_format = options.hdr ? GL_RGB16F : options.linear ? GL_SRGB : GL_RGB;
+      break;
+    case 4:
+      format = GL_RGBA;
+      internal_format = options.hdr ? GL_RGBA16F : options.linear ? GL_SRGB_ALPHA : GL_RGBA;
+      break;
+    default:
+      quill::warning(logger, "Unknown texture format: {}", image.num_components);
   }
 
+  quill::info(logger, "Loading texture:'{}', format:{}, internal_format:{}, byte_type:{}", path, format, internal_format, byte_type);
+
   glBindTexture(GL_TEXTURE_2D, texture_id);
-  glTexImage2D(GL_TEXTURE_2D, 0, internal_format, image.width, image.height, 0, format, GL_UNSIGNED_BYTE, image.data.get());
+  glTexImage2D(GL_TEXTURE_2D, 0, internal_format, image.width, image.height, 0, format, byte_type, image.data.get());
   glGenerateMipmap(GL_TEXTURE_2D);
 
   auto wrap_s = options.wrap_s ? options.wrap_s : kDefaultWrapS;

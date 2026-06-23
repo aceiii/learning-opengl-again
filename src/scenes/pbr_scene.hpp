@@ -37,6 +37,8 @@ public:
 
     shader_ = Shader::FromFiles("resources/shaders/pbr_scene/main.vs", "resources/shaders/pbr_scene/main.fs");
     textured_shader_ = Shader::FromFiles("resources/shaders/pbr_scene/textured.vs", "resources/shaders/pbr_scene/textured.fs");
+    env_shader_ = Shader::FromFiles("resources/shaders/pbr_scene/env.vs", "resources/shaders/pbr_scene/env.fs");
+    bg_shader_ = Shader::FromFiles("resources/shaders/pbr_scene/bg.vs", "resources/shaders/pbr_scene/bg.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
     camera_.position = glm::vec3(9.5f, 0.5f, 5.0f);
@@ -44,20 +46,70 @@ public:
     camera_.pitch = -4.5f;
     camera_.UpdateCameraVectors();
 
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
     InitSphere();
 
     LoadTextureGroup();
     BindTextureGroup();
 
+    InitCubeMap();
+
+    auto [width, height] = ctx_->GetFramebufferSize();
+    glViewport(0, 0, width, height);
+  }
+
+  void InitCubeMap() {
+    // texture_hdr_ = Texture::Load("hdr", "resources/textures/hdr/relax_inn_seaview_suite_4k.hdr", {
+    //   .hdr = true,
+    // });
+
     glGenFramebuffers(1, &capture_fbo_);
-    glGenRenderbuffers(1, & capture_rbo_);
+    glGenRenderbuffers(1, &capture_rbo_);
 
     glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo_);
     glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo_);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER,  capture_rbo_);
 
-    glEnable(GL_DEPTH_TEST);
+    glGenTextures(1, &env_cube_map_);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, env_cube_map_);
+    for (unsigned int idx = 0; idx < 6; idx++) {
+      glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glm::mat4 capture_projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+    std::array capture_views = {
+      glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+      glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+      glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+      glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+      glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+      glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+    };
+
+    env_shader_.Use();
+    env_shader_.SetInt("texture_equirectangular", 0);
+    env_shader_.SetMat4("projection", capture_projection);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_hdr_.id);
+
+    glViewport(0, 0, 512, 512);
+    glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo_);
+    for (unsigned int idx = 0; idx < 6; idx++) {
+      env_shader_.SetMat4("view", capture_views[idx]);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, env_cube_map_, 0);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      cube_mesh_.Draw(env_shader_);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 
   void InitSphere() {
@@ -207,6 +259,13 @@ public:
         RenderSphere();
       }
     }
+
+    bg_shader_.Use();
+    bg_shader_.SetMat4("view", view);
+    bg_shader_.SetMat4("projection", projection_);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, env_cube_map_);
+    cube_mesh_.Draw(bg_shader_);
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -437,12 +496,15 @@ private:
 
   Shader shader_;
   Shader textured_shader_;
+  Shader env_shader_;
+  Shader bg_shader_;
 
   Texture texture_albedo_;
   Texture texture_normal_;
   Texture texture_metallic_;
   Texture texture_roughness_;
   Texture texture_ao_;
+  Texture texture_hdr_;
 
   Model backpack_ = Model::Load("resources/models/backpack/backpack.obj", { .texture_options = { .linear = true }});
 
@@ -486,10 +548,10 @@ private:
       { { -1.0f,  1.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }, { 0.0f, 0.0f } },
     },
     {},
-    {
-      Texture::Load("diffuse", "resources/textures/wood.png", { .linear = true }),
-      Texture::Load("specular", "resources/textures/wood.png", { .linear = false }),
-    }
+    // {
+    //   Texture::Load("diffuse", "resources/textures/wood.png", { .linear = true }),
+    //   Texture::Load("specular", "resources/textures/wood.png", { .linear = false }),
+    // }
   };
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 5.0f)};
@@ -534,6 +596,7 @@ private:
   unsigned int selected_texture_idx_ = 0;
   unsigned int capture_fbo_;
   unsigned int capture_rbo_;
+  unsigned int env_cube_map_;
 
   int sphere_index_count_ = 0;
 };

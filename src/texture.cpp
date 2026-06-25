@@ -18,7 +18,7 @@ Texture Texture::Load(std::string_view type, std::string_view path, TextureOptio
   unsigned int texture_id;
   glGenTextures(1, &texture_id);
 
-  Image image = Image::Load(filename, 0);
+  Image image = Image::Load(filename, 0, options.flip_vertically, options.hdr);
 
   if (!image.data) {
     quill::warning(logger, "Texture failed to load at path: '{}'", filename);

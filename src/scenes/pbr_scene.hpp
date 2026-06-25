@@ -61,9 +61,9 @@ public:
   }
 
   void InitCubeMap() {
-    // texture_hdr_ = Texture::Load("hdr", "resources/textures/hdr/relax_inn_seaview_suite_4k.hdr", {
-    //   .hdr = true,
-    // });
+    texture_hdr_ = Texture::Load("hdr", "resources/textures/hdr/relax_inn_seaview_suite_4k.hdr", {
+      .hdr = true,
+    });
 
     glGenFramebuffers(1, &capture_fbo_);
     glGenRenderbuffers(1, &capture_rbo_);

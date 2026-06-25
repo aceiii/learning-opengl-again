@@ -11,6 +11,7 @@ struct TextureOptions {
   int mag_filter;
   bool linear;
   bool hdr;
+  bool flip_vertically = true;
 };
 
 struct Texture {

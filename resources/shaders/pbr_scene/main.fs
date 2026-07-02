@@ -19,6 +19,8 @@ uniform float ao;
 // uniform mat4 projection;
 uniform vec3 viewPos;
 
+uniform samplerCube texture_irradiance;
+
 struct Light {
     vec3 Position;
     vec3 Color;
@@ -59,6 +61,10 @@ vec3 FresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
+    return F0 + max(vec3(1.0 - roughness), F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
 float sphere(vec2 p, float r) {
     return length(p) - r;
 }
@@ -96,7 +102,7 @@ void main() {
 
         float NDF = DistributionGGX(N, H, roughness);
         float G = GeometrySmith(N, V, L, roughness);
-        vec3 F = FresnelSchlick(clamp(dot(H, V), 0.0, 1.0), F0);
+        vec3 F = FresnelSchlickRoughness(max(dot(H, V), 0.0), F0, roughness);
 
         vec3 numerator = NDF * G * F;
         float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
@@ -110,7 +116,14 @@ void main() {
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    vec3 ambient = vec3(0.03) * albedo * ao;
+    vec3 kS = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
+
+    vec3 irradiance = texture(texture_irradiance, N).rgb;
+    vec3 diffuse = irradiance * albedo;
+    vec3 ambient = (kD * diffuse) * ao;
+
     vec3 color = ambient + Lo;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / 2.2));

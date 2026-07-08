@@ -298,8 +298,7 @@ public:
     bg_shader_.SetMat4("view", view);
     bg_shader_.SetMat4("projection", projection_);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, env_cube_map_);
-    // glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_map_);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, show_irradiance_ ? irradiance_map_ : env_cube_map_);
     cube_mesh_.Draw(bg_shader_);
   }
 
@@ -326,6 +325,10 @@ public:
         ImGui::EndCombo();
       }
       ImGui::NewLine();
+      if (ImGui::CollapsingHeader("Environment", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Checkbox("Show irradiance map", &show_irradiance_);
+      }
+
       if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::ColorEdit3("Albedo", glm::value_ptr(albedo_));
       }
@@ -625,6 +628,7 @@ private:
   bool reset_mouse_ = true;
   bool hide_interface_ = true;
   bool show_textured_ = false;
+  bool show_irradiance_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
 

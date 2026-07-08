@@ -127,7 +127,7 @@ public:
 
     irradiance_shader_.Use();
     irradiance_shader_.SetInt("texture_environment", 0);
-    irradiance_shader_.SetMat4("projection", projection_);
+    irradiance_shader_.SetMat4("projection", capture_projection);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, env_cube_map_);
 
@@ -265,6 +265,9 @@ public:
     shader.SetVec3("albedo", albedo_);
     shader.SetFloat("ao", 1.0f);
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_map_);
+
     shader.SetVec3("ambient", ambient_);
     for (auto idx = 0; idx < lights_.size(); idx++) {
       shader.SetVec3("lights[" + std::to_string(idx) + "].Position", lights_[idx].position);
@@ -295,8 +298,8 @@ public:
     bg_shader_.SetMat4("view", view);
     bg_shader_.SetMat4("projection", projection_);
     glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_CUBE_MAP, env_cube_map_);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_map_);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, env_cube_map_);
+    // glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_map_);
     cube_mesh_.Draw(bg_shader_);
   }
 

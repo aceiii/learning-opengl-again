@@ -42,9 +42,9 @@ public:
     irradiance_shader_ = Shader::FromFiles("resources/shaders/pbr_scene/irradiance.vs", "resources/shaders/pbr_scene/irradiance.fs");
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
-    camera_.position = glm::vec3(9.5f, 0.5f, 5.0f);
-    camera_.yaw = -148.0f;
-    camera_.pitch = -4.5f;
+    camera_.position = glm::vec3(19.0f, 3.0f, 18.0f);
+    camera_.yaw = -130.0f;
+    camera_.pitch = -7.5f;
     camera_.UpdateCameraVectors();
 
     glEnable(GL_DEPTH_TEST);

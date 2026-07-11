@@ -110,6 +110,19 @@ public:
       cube_mesh_.Draw(env_shader_);
     }
 
+    glGenTextures(1, &prefilter_map_);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, prefilter_map_);
+    for (unsigned int idx = 0; idx < 6; idx++) {
+      glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + idx, 0, GL_RGB16F, 128, 128, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
     glGenTextures(1, &irradiance_map_);
     glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_map_);
     for (unsigned int idx = 0; idx < 6; idx++) {
@@ -638,6 +651,7 @@ private:
   unsigned int capture_rbo_;
   unsigned int env_cube_map_;
   unsigned int irradiance_map_;
+  unsigned int prefilter_map_;
 
   int sphere_index_count_ = 0;
 };

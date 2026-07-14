@@ -53,6 +53,7 @@ public:
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
+    InitQuad();
     InitSphere();
 
     LoadTextureGroup();
@@ -197,15 +198,35 @@ public:
 
     glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo_);
     glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo_);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);g
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdf_lut_map_, 0);
 
     glViewport(0, 0, 512, 512);
     brdf_shader_.Use();
-    glClearColor(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     RenderQuad();
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  }
+
+  void InitQuad() {
+    static const std::array quad_vertices{
+      -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+      -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+       1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+       1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+    };
+
+    glGenVertexArrays(1, &quad_vao_);
+    glGenBuffers(1, &quad_vbo_);
+    glBindVertexArray(quad_vao_);
+    glBindBuffer(GL_ARRAY_BUFFER, quad_vbo_);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glBindVertexArray(0);
   }
 
   void InitSphere() {
@@ -305,6 +326,12 @@ public:
     }
 
     projection_ = glm::perspective(glm::radians(camera_.fov), aspect_ratio_, 0.1f, 100.0f);
+  }
+
+  void RenderQuad() {
+    glBindVertexArray(quad_vao_);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
   }
 
   void RenderSphere() {
@@ -707,6 +734,8 @@ private:
   unsigned int irradiance_map_;
   unsigned int prefilter_map_;
   unsigned int brdf_lut_map_;
+  unsigned int quad_vao_;
+  unsigned int quad_vbo_;
 
   int sphere_index_count_ = 0;
 };

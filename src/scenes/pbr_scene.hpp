@@ -345,17 +345,21 @@ public:
     auto& shader = show_textured_ ? textured_shader_ : shader_;
 
     shader.Use();
-    shader.SetInt("texture_albedo", 0);
-    shader.SetInt("texture_normal", 1);
-    shader.SetInt("texture_metallic", 2);
-    shader.SetInt("texture_roughness", 3);
-    shader.SetInt("texture_ao", 4);
+    // shader.SetInt("texture_albedo", 0);
+    // shader.SetInt("texture_normal", 1);
+    // shader.SetInt("texture_metallic", 2);
+    // shader.SetInt("texture_roughness", 3);
+    // shader.SetInt("texture_ao", 4);
     shader.SetMat4("view", view);
     shader.SetMat4("projection", projection_);
     shader.SetVec3("viewPos", camera_.position);
 
     shader.SetVec3("albedo", albedo_);
     shader.SetFloat("ao", 1.0f);
+
+    shader.SetInt("texture_irradiance", 0);
+    shader.SetInt("texture_prefiltered", 1);
+    shader.SetInt("texture_brdf_lut", 2);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_map_);

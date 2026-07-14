@@ -13,13 +13,11 @@ uniform float metallic;
 uniform float roughness;
 uniform float ao;
 
-// uniform int width;
-// uniform int height;
-// uniform mat4 view;
-// uniform mat4 projection;
 uniform vec3 viewPos;
 
 uniform samplerCube texture_irradiance;
+uniform samplerCube texture_prefilter;
+uniform sampler2D texture_brdf_lut;
 
 struct Light {
     vec3 Position;
@@ -87,6 +85,7 @@ vec2 rotate(vec2 p, float r) {
 void main() {
     vec3 N = normalize(Normal);
     vec3 V = normalize(viewPos - WorldPos);
+    vec3 R = reflect(-V, N);
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
@@ -116,13 +115,20 @@ void main() {
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    vec3 kS = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+    vec3 F = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+    vec3 kS = F;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
 
     vec3 irradiance = texture(texture_irradiance, N).rgb;
     vec3 diffuse = irradiance * albedo;
-    vec3 ambient = (kD * diffuse) * ao;
+
+    const float MAX_REFLECTANCE_LOD = 4.0;
+    vec3 prefiltered_color = textureLod(texture_prefilter, R, roughness * MAX_REFLECTANCE_LOD).rgb;
+    vec2 brdf = texture(texture_brdf_lut, vec2(max(dot(N, V), 0.0), roughness)).rg;
+    vec3 specular = prefiltered_color * (F * brdf.x + brdf.y);
+
+    vec3 ambient = (kD * diffuse + specular) * ao;
 
     vec3 color = ambient + Lo;
     color = color / (color + vec3(1.0));

@@ -395,7 +395,13 @@ public:
     bg_shader_.SetMat4("projection", projection_);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, show_irradiance_ ? irradiance_map_ : env_cube_map_);
+    // glBindTexture(GL_TEXTURE_CUBE_MAP, prefilter_map_);
     cube_mesh_.Draw(bg_shader_);
+
+    if (show_brdf_) {
+      brdf_shader_.Use();
+      RenderQuad();
+    }
   }
 
   void RenderInterface(int window_width, int window_height) override {
@@ -408,6 +414,7 @@ public:
     if (ImGui::Begin("Scene Options")) {
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::Checkbox("Use textures", &show_textured_);
+      ImGui::Checkbox("Show BRDF LUT", &show_brdf_);
       if (ImGui::BeginCombo("Texture", kTextureGroups[selected_texture_idx_].name.c_str())) {
         for (auto idx = 0; idx < kTextureGroups.size(); idx++) {
           auto& texture_group = kTextureGroups[idx];
@@ -727,6 +734,7 @@ private:
   bool hide_interface_ = true;
   bool show_textured_ = false;
   bool show_irradiance_ = false;
+  bool show_brdf_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;
 

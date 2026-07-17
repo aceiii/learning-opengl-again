@@ -62,6 +62,7 @@ private:
 
   bool enable_interface_ = true;
   bool enable_multisampling_ = false;
+  bool hide_ui_ = false;
 
   float delta_time_ = 0;
 

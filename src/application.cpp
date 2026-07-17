@@ -224,6 +224,7 @@ void Application::RenderInterface() {
       }
 
       if (ImGui::BeginMenu("View")) {
+        ImGui::MenuItem("Hide UI", nullptr, &hide_ui_);
         ImGui::MenuItem("Demo Window", nullptr, &show_demo_window);
         ImGui::MenuItem("Logs", nullptr, &show_logs);
         ImGui::EndMenu();
@@ -242,11 +243,11 @@ void Application::RenderInterface() {
     }
     ImGui::EndMainMenuBar();
 
-    if (show_demo_window) {
+    if (!hide_ui_ && show_demo_window) {
       ImGui::ShowDemoWindow(&show_demo_window);
     }
 
-    if (show_logs) {
+    if (!hide_ui_ && show_logs) {
       constexpr auto padding = 5.0f;
       ImGui::SetNextWindowPos(ImVec2(padding, window_height_ - padding), ImGuiCond_Always, ImVec2(0.0f, 1.0f));
       ImGui::SetNextWindowSize(ImVec2(window_width_ - padding - padding, 180.0f - padding - padding), ImGuiCond_Always);
@@ -256,7 +257,7 @@ void Application::RenderInterface() {
       ImGui::End();
     }
 
-    {
+    if (!hide_ui_) {
       constexpr auto menu_bar_height = 24.0f;
       constexpr auto padding = 5.0f;
       ImGui::SetNextWindowPos(ImVec2(padding, menu_bar_height + padding), ImGuiCond_Always, ImVec2(0.0f, 0.0f));
@@ -281,7 +282,7 @@ void Application::RenderInterface() {
       ImGui::End();
     }
 
-    if (g_selected_scene_) {
+    if (!hide_ui_ && g_selected_scene_) {
       g_selected_scene_->RenderInterface(window_width_, window_height_);
     }
   }

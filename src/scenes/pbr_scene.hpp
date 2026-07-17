@@ -694,10 +694,6 @@ private:
       { { -1.0f,  1.0f,  1.0f }, {  0.0f,  1.0f,  0.0f }, { 0.0f, 0.0f } },
     },
     {},
-    // {
-    //   Texture::Load("diffuse", "resources/textures/wood.png", { .linear = true }),
-    //   Texture::Load("specular", "resources/textures/wood.png", { .linear = false }),
-    // }
   };
 
   Camera camera_{glm::vec3(0.0f, 0.0f, 5.0f)};

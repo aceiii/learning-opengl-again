@@ -340,6 +340,12 @@ public:
   }
 
   void Render() override {
+    if (show_brdf_) {
+      brdf_shader_.Use();
+      RenderQuad();
+      return;
+    }
+
     glm::mat4 view = camera_.GetViewMatrix();
 
     auto& shader = show_textured_ ? textured_shader_ : shader_;
@@ -363,6 +369,12 @@ public:
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_map_);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, prefilter_map_);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, brdf_lut_map_);
 
     shader.SetVec3("ambient", ambient_);
     for (auto idx = 0; idx < lights_.size(); idx++) {
@@ -397,11 +409,6 @@ public:
     glBindTexture(GL_TEXTURE_CUBE_MAP, show_irradiance_ ? irradiance_map_ : env_cube_map_);
     // glBindTexture(GL_TEXTURE_CUBE_MAP, prefilter_map_);
     cube_mesh_.Draw(bg_shader_);
-
-    if (show_brdf_) {
-      brdf_shader_.Use();
-      RenderQuad();
-    }
   }
 
   void RenderInterface(int window_width, int window_height) override {

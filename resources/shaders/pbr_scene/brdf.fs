@@ -1,21 +1,10 @@
 #version 330 core
 
-out vec2 FragColor;
+out vec4 FragColor;
 
 in vec2 TexCoords;
 
 const float PI = 3.14159265359;
-
-float DistributionGGX(vec3 N, vec3 H, float roughness) {
-    float a = roughness * roughness;
-    float a2 = a * a;
-    float NdotH = max(dot(N, H), 0.0);
-    float NdotH2 = NdotH * NdotH;
-    float num = a2;
-    float denom = NdotH2 * (a2 - 1.0) + 1.0;
-    denom = PI * denom * denom;
-    return num / denom;
-}
 
 float RadicalInverseVdC(uint bits) {
     bits = (bits << 16u) | (bits >> 16u);
@@ -41,14 +30,13 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness) {
         sin(phi) * sin_theta,
         cos_theta);
 
-    vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0., 0.0);
+    vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
     vec3 tangent = normalize(cross(up, N));
     vec3 bitangent = cross(N, tangent);
 
     vec3 sample_vec = tangent * H.x + bitangent * H.y + N * H.z;
     return normalize(sample_vec);
 }
-
 
 float GeometrySchlickGGX(float NdotV, float roughness) {
     float a = roughness;
@@ -65,7 +53,6 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
     float ggx2 = GeometrySchlickGGX(NdotL, roughness);
     return ggx1 * ggx2;
 }
-
 
 vec2 IntegrateBRDF(float NdotV, float roughness) {
     vec3 V = vec3(
@@ -106,5 +93,5 @@ vec2 IntegrateBRDF(float NdotV, float roughness) {
 }
 
 void main() {
-    FragColor = IntegrateBRDF(TexCoords.x, TexCoords.y);
+    FragColor = vec4(IntegrateBRDF(TexCoords.x, TexCoords.y), 0.0, 0.0);
 }

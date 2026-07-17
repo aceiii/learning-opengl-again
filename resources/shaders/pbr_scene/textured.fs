@@ -133,6 +133,5 @@ void main() {
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / 2.2));
 
-    FragColor = vec4(vec3(roughness), 1.0);
-    // FragColor = vec4(Lo, 1.0);
+    FragColor = vec4(Lo, 1.0);
 }

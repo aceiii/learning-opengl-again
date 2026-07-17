@@ -351,11 +351,6 @@ public:
     auto& shader = show_textured_ ? textured_shader_ : shader_;
 
     shader.Use();
-    // shader.SetInt("texture_albedo", 0);
-    // shader.SetInt("texture_normal", 1);
-    // shader.SetInt("texture_metallic", 2);
-    // shader.SetInt("texture_roughness", 3);
-    // shader.SetInt("texture_ao", 4);
     shader.SetMat4("view", view);
     shader.SetMat4("projection", projection_);
     shader.SetVec3("viewPos", camera_.position);
@@ -364,7 +359,7 @@ public:
     shader.SetFloat("ao", 1.0f);
 
     shader.SetInt("texture_irradiance", 0);
-    shader.SetInt("texture_prefiltered", 1);
+    shader.SetInt("texture_prefilter", 1);
     shader.SetInt("texture_brdf_lut", 2);
 
     glActiveTexture(GL_TEXTURE0);
@@ -406,8 +401,7 @@ public:
     bg_shader_.SetMat4("view", view);
     bg_shader_.SetMat4("projection", projection_);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, show_irradiance_ ? irradiance_map_ : env_cube_map_);
-    // glBindTexture(GL_TEXTURE_CUBE_MAP, prefilter_map_);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, show_prefilter_ ? prefilter_map_ : show_irradiance_ ? irradiance_map_ : env_cube_map_);
     cube_mesh_.Draw(bg_shader_);
   }
 
@@ -437,6 +431,7 @@ public:
       ImGui::NewLine();
       if (ImGui::CollapsingHeader("Environment", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Show irradiance map", &show_irradiance_);
+        ImGui::Checkbox("Show prefilter map", &show_prefilter_);
       }
 
       if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -741,6 +736,7 @@ private:
   bool hide_interface_ = true;
   bool show_textured_ = false;
   bool show_irradiance_ = false;
+  bool show_prefilter_ = false;
   bool show_brdf_ = false;
 
   float aspect_ratio_ = 800.0f / 600.0f;

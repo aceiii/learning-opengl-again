@@ -59,17 +59,17 @@ public:
     LoadTextureGroup();
     BindTextureGroup();
 
-    InitCubeMap();
+    LoadHdrEnvironment();
 
+    ResetViewportSize();
+  }
+
+  void ResetViewportSize() {
     auto [width, height] = ctx_->GetFramebufferSize();
     glViewport(0, 0, width, height);
   }
 
   void InitCubeMap() {
-    texture_hdr_ = Texture::Load("hdr", "resources/textures/hdr/relax_inn_seaview_suite_4k.hdr", {
-      .hdr = true,
-    });
-
     glGenFramebuffers(1, &capture_fbo_);
     glGenRenderbuffers(1, &capture_rbo_);
 
@@ -416,18 +416,20 @@ public:
       ImGui::Checkbox("Wireframe", &wireframe_);
       ImGui::Checkbox("Use textures", &show_textured_);
       ImGui::Checkbox("Show BRDF LUT", &show_brdf_);
-      if (ImGui::BeginCombo("Texture", kTextureGroups[selected_texture_idx_].name.c_str())) {
-        for (auto idx = 0; idx < kTextureGroups.size(); idx++) {
-          auto& texture_group = kTextureGroups[idx];
-          if (ImGui::Selectable(texture_group.name.c_str(), idx == selected_texture_idx_) && idx != selected_texture_idx_) {
-            UnloadTextureGroup();
-            selected_texture_idx_ = idx;
-            LoadTextureGroup();
-            BindTextureGroup();
+
+      if (ImGui::BeginCombo("HDR Envirionment", kHdrEnvironments[selected_hdr_idx_].name.c_str())) {
+        for (auto idx = 0; idx < kHdrEnvironments.size(); idx++) {
+          auto& texture_group = kHdrEnvironments[idx];
+          if (ImGui::Selectable(texture_group.name.c_str(), idx == selected_hdr_idx_) && idx != selected_hdr_idx_) {
+            UnloadHdrEnvironment();
+            selected_hdr_idx_ = idx;
+            LoadHdrEnvironment();
+            ResetViewportSize();
           }
         }
         ImGui::EndCombo();
       }
+
       ImGui::NewLine();
       if (ImGui::CollapsingHeader("Environment", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Show irradiance map", &show_irradiance_);
@@ -567,6 +569,29 @@ private:
     texture_ao_.Unload();
   }
 
+  void LoadHdrEnvironment() {
+    auto& path = kHdrEnvironments[selected_hdr_idx_].path;
+    texture_hdr_ = Texture::Load("hdr", path, {
+      .hdr = true,
+    });
+
+    InitCubeMap();
+  }
+
+  void UnloadHdrEnvironment() {
+    texture_hdr_.Unload();
+    UnloadCubeMap();
+  }
+
+  void UnloadCubeMap() {
+    glDeleteFramebuffers(1, &capture_fbo_);
+    glDeleteRenderbuffers(1, &capture_rbo_);
+    glDeleteTextures(1, &env_cube_map_);
+    glDeleteTextures(1, &irradiance_map_);
+    glDeleteTextures(1, &prefilter_map_);
+    glDeleteTextures(1, &brdf_lut_map_);
+  }
+
   struct Light {
     glm::vec3 position;
     glm::vec3 color;
@@ -581,6 +606,11 @@ private:
     std::string metallic;
     std::string roughness;
     std::string ao;
+  };
+
+  struct HdrEnvironment {
+    std::string name;
+    std::string path;
   };
 
   IAppContext* ctx_ = nullptr;
@@ -634,6 +664,25 @@ private:
       .metallic = "resources/textures/scuffed-metal1-bl/scuffed-metal1_metallic.png",
       .roughness = "resources/textures/scuffed-metal1-bl/scuffed-metal1_roughness.png",
       .ao = "resources/textures/scuffed-metal1-bl/scuffed-metal1_ao.png",
+    },
+  };
+
+  inline static const std::array kHdrEnvironments{
+    HdrEnvironment{
+      .name = "industrial sunset puresky",
+      .path = "resources/textures/hdr/industrial_sunset_puresky_4k.hdr",
+    },
+    HdrEnvironment{
+      .name = "relax inn seaview suite",
+      .path = "resources/textures/hdr/relax_inn_seaview_suite_4k.hdr",
+    },
+    HdrEnvironment{
+      .name = "sundowner deck",
+      .path = "resources/textures/hdr/sundowner_deck_4k.hdr",
+    },
+    HdrEnvironment{
+      .name = "sunny vondelpark",
+      .path = "resources/textures/hdr/sunny_vondelpark_4k.hdr",
     },
   };
 
@@ -737,8 +786,9 @@ private:
 
   float aspect_ratio_ = 800.0f / 600.0f;
 
-  unsigned int sphere_vao_;
   unsigned int selected_texture_idx_ = 0;
+  unsigned int selected_hdr_idx_ = 0;
+  unsigned int sphere_vao_;
   unsigned int capture_fbo_;
   unsigned int capture_rbo_;
   unsigned int env_cube_map_;
